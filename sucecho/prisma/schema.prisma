@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminLog {
+  id                    Int      @id @default(autoincrement())
+  targetFingerprintHash String
+  action                String
+  adminId               String
+  reason                String?
+  createdAt             DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model Post {
+  id              Int        @id @default(autoincrement())
+  content         String?
+  fingerprintHash String
+  parentPostId    Int?
+  createdAt       DateTime   @default(now()) @db.Timestamptz(6)
+  Post            Post?      @relation("PostToPost", fields: [parentPostId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_Post      Post[]     @relation("PostToPost")
+  PostStats       PostStats?
+  Vote            Vote[]
+}
+
+model PostStats {
+  postId       Int  @id
+  upvotes      Int  @default(0)
+  downvotes    Int  @default(0)
+  replyCount   Int  @default(0)
+  hotnessScore Int  @default(0)
+  Post         Post @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model UserAnonymizedProfile {
+  fingerprintHash   String    @id
+  codename          String
+  purifiedPostCount Int       @default(0)
+  isBanned          Boolean   @default(false)
+  banExpiresAt      DateTime? @db.Timestamptz(6)
+  firstSeenAt       DateTime  @default(now()) @db.Timestamptz(6)
+  lastSeenAt        DateTime  @default(now()) @db.Timestamptz(6)
+}
+
+model Vote {
+  id              Int    @id @default(autoincrement())
+  postId          Int
+  fingerprintHash String
+  voteType        Int    @db.SmallInt
+  Post            Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([postId, fingerprintHash])
+}
