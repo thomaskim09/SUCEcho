@@ -1,14 +1,15 @@
 # Project Document 3: UI/UX & Brand Identity Guide (Expanded)
 
-**Project Name:** SUC Echo
-**Version:** 1.1
+**Project Name:** SUC Echo (南方回音壁)
+**Version:** 1.2
 **Date:** June 25, 2025
 
 ---
 
 ### 1.0 Brand Identity
 
--   **Name:** SUC Echo (南方回音壁)
+-   **Name:** SUC Echo
+-   **Chinese Name:** 南方回音壁
 -   **Tagline:** 声音只存在一天。
 -   **Secondary Tagline (for onboarding):** 完全匿名，自由发声。
 -   **Core Personality & "Cruel Aesthetics":** 我们的品牌人格是 **神秘的、冷静的、转瞬即逝的**。它不讨好用户，而是通过设定绝对的、不可改变的规则（如24小时销毁）来提供一种独特的公平和自由。这种“不近人情”的规则之美，就是我们的“残酷美学”。所有UI、动画和文案都应服务于这种气质。
@@ -24,7 +25,7 @@
 
 ### 3.0 Visual Design System
 
--   **Theme:** Dark Mode exclusively. 这能增强沉浸感，符合夜晚“树洞”的使用场景。
+-   **Theme:** Dark Mode exclusively.
 -   **Background Color Palette:**
     -   Primary: Deep Midnight Blue (`#0B192F`)
     -   Secondary: Carbon Gray (`#1A1A1A`)
@@ -32,35 +33,110 @@
     -   Option A (Vibrant): Electric Purple (`#9F70FD`)
     -   Option B (Calm): Mint Green (`#A7F3D0`)
 -   **Typography:**
-    -   **Primary (Body Text):** Noto Sans SC (思源黑体). 保证在任何设备上都有最佳的可读性。
-    -   **Stylistic (Data & Accents):** Roboto Mono. 用于渲染所有数字（票数、倒计时）、时间戳、Logo文字和管理员代号。这种字体组合能在保证内容可读性的前提下，最大化“数字终端”的科技感和匿名感。
+    -   **Primary (Body Text):** Noto Sans SC (思源黑体).
+    -   **Stylistic (Data & Accents):** Roboto Mono. Used for numbers (`👍 90`), timers (`⏳ 23:59`), admin codes, and the Logo text.
 -   **Iconography:**
     -   **Style:** Thin, minimalist, line-art style.
-    -   **Recommendation:** 使用开源图标库如 **Feather Icons** 或 **Tabler Icons** 来保证全站图标风格的统一性。
+    -   **Recommendation:** Use a consistent open-source icon set like **Feather Icons** or **Tabler Icons**.
 
 ---
 
-### 4.0 UI Animation & Sound Effects (SFX) Dictionary
+### 4.0 Information Architecture & Page Flow
 
-音效默认关闭，用户可在`☰`菜单中开启。
+#### 4.1 Site Map (V1.0)
 
-| Trigger Event | Visual Animation | Sound Effect (SFX) | Feel / Purpose |
-| :--- | :--- | :--- | :--- |
-| **First-Time Visit** | 序列动画：Logo → 匿名标语 → 24小时标语 → 全体“化为尘埃” → UI浮现。 | 无 | 在5秒内快速、深刻地将产品的两大核心理念植入用户心中。 |
-| **New Echo Appears** | 从顶部平滑滑入并淡入。 | 空灵的“声纳Ping”声 (`píng...`)，带混响。 | 营造“思想不断汇入寂静空间”的氛围感。 |
-| **Upvote (`👍`) Click** | 数字“弹跳”或“放大”一下。 | 清脆、音调略高的`plink`声。 | 提供轻快、积极的即时反馈。 |
-| **Downvote (`👎`) Click** | 数字“弹跳”或“放大”一下。 | 沉闷、音调略低的`thump`声。 | 提供果断、负面但非攻击性的反馈。 |
-| **Community Purified** | “化为尘埃”/“碎裂”特效。 | 短暂的“信号干扰”`bzzzt`声，由强到弱。 | 象征着“不和谐”的内容被社区规则清除。 |
-| **24-Hour Expiration** | “化为尘埃”/“碎裂”特效。 | 轻微的玻璃碎裂声，接细碎的沙沙声，归于寂静。 | 强调“自然消亡”的宿命感，充满“残酷美学”。 |
-| **Post Reply (Send)** | “Whoosh”或文字汇聚飞出的动画。 | 短促、带有方向感的`whoosh`声。 | 给予“发送成功”的动态满足感。 |
-| **Scroll to Top** | “传送”特效：当前视图淡出，瞬间滚动，新视图淡入。 | 可选的、轻微的“相位转移”或“充能”声。 | 创造干净、高级、无打扰的页面跳转体验。 |
+/ (Home Page)
+|
+├── /compose (Post Creation Page)
+|
+├── /post/[id] (Post Detail & Echo Thread Page)
+|
+├── /my-echoes (User's personal post tracker)
+|
+└── (From Menu)
+├── /about (About & Donation Page)
+├── /how-it-works (Rules & Guides Page)
+└── /privacy (Privacy Policy Page)
+
+/a-d-m-i-n-portal (Admin Login - Hidden URL)
+|
+└── (Mobile Admin Hub - Modal/Overlay)
+├── Dashboard View
+├── Reports View
+└── User Management View
+
+```
+
+#### 4.2 Core User Flows
+1.  **Posting Flow (Ad-Optimized):**
+    `Home (/)` → Click `+` Button → **Navigate to `/compose`** → Write & Publish → **Auto-redirect to `/`** with special parameter → See new post appear with "Glow" animation.
+2.  **Reading & Replying Flow:**
+    `Home (/)` → Scroll Feed → Click on a Post Card (with `💬` indicator) → **Navigate to `/post/[id]`** → Read Main Echo and Child Echoes → Long-press Main Echo to reply → **Navigate to `/compose`** with parent post context.
+3.  **Self-Tracking Flow:**
+    `Home (/)` → Click `☰` Menu or a dedicated top-bar icon → Click "My Echoes" → **Navigate to `/my-echoes`**.
 
 ---
 
-### 5.0 Core Layout Principles
+### 5.0 Page & Component Breakdown
 
--   **Navigation:** `☰`汉堡菜单位于左上角，点击后从左侧滑出菜单面板，包含指向`/about`, `/how-it-works`, `/privacy`等页面的链接。
--   **Admin Access:** `🛡️`盾牌图标在激活“管理员模式”后，悬浮于右下角，作为移动端管理中心的入口。
--   **Reply Indication:** “堆叠卡片”效果。有回覆的帖子卡片后方会有一到两层带有透明度的“影子卡片”，通过`transform`属性在位置上进行微小偏移，创造3D堆叠感。
--   **Card Height:** 采用可变高度，优先保证阅读效率。
--   **Read More:** 超过10行或250字符的帖子将被截断，并显示`...[阅读全文]`链接，点击后跳转至该帖子的独立详情页`/post/[id]`。
+This section details the elements on each key page.
+
+#### 5.1 Main Page (`/`)
+-   **Components:**
+    -   **Header:** `☰ Menu Button` (left), `Logo` (center). For admins, `🛡️ Admin Hub Button` (right).
+    -   **Live Feed:** A vertical list of `Post Card` components.
+    -   **"New Echoes" Pill Button:** Appears at the top when user has scrolled down and new posts are available.
+    -   **Post Button:** A `+` floating action button in the bottom-right corner.
+    -   **Footer Ad:** A sticky Google AdSense banner at the bottom of the screen.
+
+#### 5.2 Anatomy of a `Post Card` Component
+This is the most important component, from top to bottom:
+-   **Header:**
+    -   Left: Relative Timestamp (e.g., "5分钟前").
+    -   Right: `⏳` Lifespan Countdown Timer.
+-   **Content:**
+    -   The main post text (variable height).
+    -   If text exceeds ~10 lines, it's truncated with a `...[阅读全文]` link that navigates to `/post/[id]`.
+-   **Footer (Interaction Bar):**
+    -   **Vote Dashboard:** Displays `👍 [Upvotes]`, `👎 [Downvotes]`, `🔥 [Total Votes]`. Numbers are clickable to vote.
+    -   **Community Purification Bar:** A thin progress bar that **only appears** when a post meets the "precarious" threshold (`total_votes >= 20` and `downvote_ratio > 40%`).
+    -   **Echo Thread Indicator:** A `💬 [Reply Count]` indicator. The card itself will also have the "Stacked Card" visual effect if `Reply Count > 0`.
+-   **Card Behavior:** The entire card is a clickable element that navigates to `/post/[id]`.
+
+#### 5.3 Post Detail Page (`/post/[id]`)
+-   **Components:**
+    -   A prominent display of the "Main Echo" (the parent post) at the top. Its full text is shown.
+    -   An admin-only `🚩 Report Button` in the corner of the Main Echo card.
+    -   A chronological list of "Child Echoes" (replies) below the Main Echo. Each Child Echo is a full `Post Card` component itself, with its own votes and timer.
+    -   A "Reply" button (`回应此声 💬`) that is sticky or at the bottom, which navigates to `/compose` with the `parentPostId`.
+
+---
+
+### 6.0 Core Interaction Design & Animation Details
+
+This section defines the "feel" of the application.
+
+#### 6.1 The "Stacked Card" Reply Animation
+-   **CSS Implementation:** This effect is achieved using the `::before` and `::after` pseudo-elements of the `Post Card` `div`.
+-   **Styling:**
+    -   The pseudo-elements are positioned absolutely behind the main card (`z-index: -1`).
+    -   They have the same `border-radius` and `background-color` as the main card but with a lower `opacity` (e.g., `0.5` and `0.2`).
+    -   They are slightly rotated and shifted using `transform`. Example:
+        -   `::before { transform: rotate(-3deg) translateY(4px); }`
+        -   `::after { transform: rotate(2deg) translateY(2px); }`
+-   **Animation:** When a post's reply count changes from 0 to 1, these pseudo-elements should transition into view. The `transition` property should be applied to `opacity` and `transform` for a duration of ~300ms.
+
+#### 6.2 The "Pixel Dust" (化为尘埃) Destruction Animation
+-   **Method:** This is a JavaScript-driven animation that manipulates multiple HTML elements.
+-   **Logic:**
+    1.  **Event Trigger:** JS receives the `destroy_post` event from the SSE connection.
+    2.  **Hide Original:** The target `Post Card`'s opacity is set to 0.
+    3.  **Generate Particles:** JS calculates the card's position and generates 50-100 small `<div>` "particles" at that location.
+    4.  **Animate Particles:** JS applies a CSS animation class to each particle.
+        -   The `@keyframes` for this class will move the particle to a random `translateX` and `translateY` position while fading its `opacity` to 0.
+        -   Crucially, JS assigns a **random `animation-delay` and `animation-duration`** to each particle. This ensures the "shattering" effect looks organic and not uniform.
+    5.  **Cleanup:** After the longest animation completes, the original (now hidden) `Post Card` element is removed from the DOM.
+
+#### 6.3 Button Micro-interaction
+-   **Principle:** All primary buttons (`👍`, `👎`, `+`, etc.) must provide physical feedback.
+-   **Implementation:** Use a CSS `transition` on the `transform` property. On `:active` (when the user is pressing down), apply a `transform: scale(0.90)` to make the button feel like it's being pressed into the screen. When released, it smoothly transitions back to `scale(1)`.
