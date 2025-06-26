@@ -1,10 +1,47 @@
+// sucecho/src/app/about/page.tsx
+"use client"; // Needs to be a client component for hooks
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function AboutPage() {
+    // --- Start of Admin Login Trigger Logic ---
+    const [logoClicks, setLogoClicks] = useState(0);
+    const router = useRouter();
+    const requiredClicks = 10;
+
+    useEffect(() => {
+        if (logoClicks === requiredClicks) {
+            console.log('Admin login triggered!');
+            router.push('/admin-login');
+            setLogoClicks(0); // Reset after triggering
+        }
+    }, [logoClicks, router]);
+
+    useEffect(() => {
+        if (logoClicks > 0) {
+            const timer = setTimeout(() => {
+                console.log('Resetting admin click counter.');
+                setLogoClicks(0);
+            }, 2000); // 2-second window
+
+            return () => clearTimeout(timer);
+        }
+    }, [logoClicks]);
+
+    const handleTitleClick = () => {
+        setLogoClicks(prevClicks => prevClicks + 1);
+    };
+    // --- End of Admin Login Trigger Logic ---
+
     return (
         <div className="container mx-auto max-w-2xl p-4 text-white">
             <header className="py-4">
-                <h1 className="text-3xl font-bold font-mono text-accent mb-4">关于南方回音壁</h1>
+                {/* The h1 is now the secret trigger */}
+                <div onClick={handleTitleClick} className="cursor-pointer select-none inline-block">
+                    <h1 className="text-3xl font-bold font-mono text-accent mb-4">关于南方回音壁</h1>
+                </div>
             </header>
             <main className="space-y-6 text-lg leading-relaxed">
                 <section>
