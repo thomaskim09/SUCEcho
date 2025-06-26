@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import type { PostWithStats } from "@/lib/types";
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
+import { motion } from 'framer-motion'; // Import motion
 
 const timeSince = (date: Date): string => {
     // ... (timeSince function remains the same)
@@ -19,12 +20,11 @@ const timeSince = (date: Date): string => {
     interval = seconds / 60;
     if (interval > 1) return Math.floor(interval) + "m ago";
     return Math.floor(seconds) + "s ago";
-}
+};
 
 export default function PostCard({ post }: { post: PostWithStats }) {
     const [fingerprint, setFingerprint] = useState<string | null>(null);
 
-    // Get the browser fingerprint once when the component loads
     useEffect(() => {
         const getFingerprint = async () => {
             const fp = await FingerprintJS.load();
@@ -50,8 +50,6 @@ export default function PostCard({ post }: { post: PostWithStats }) {
                     fingerprintHash: fingerprint,
                 }),
             });
-            // We don't need to update the state here directly.
-            // The SSE broadcast will do it for us, ensuring all clients are in sync.
         } catch (error) {
             console.error("Failed to submit vote:", error);
             alert("Failed to submit vote. Please try again.");
@@ -59,20 +57,28 @@ export default function PostCard({ post }: { post: PostWithStats }) {
     };
 
     return (
-        <div className="p-4 rounded-lg my-4" style={{ backgroundColor: 'var(--card-background)' }}>
+        <motion.div
+            layout // This helps animate position changes smoothly
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            className="p-4 rounded-lg my-4"
+            style={{ backgroundColor: 'var(--card-background)' }}
+        >
             <p className="text-white whitespace-pre-wrap">{post.content}</p>
             <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
                 <span className="font-mono">{timeSince(post.createdAt)}</span>
                 <div className="flex items-center gap-4 font-mono">
-                    <button onClick={() => handleVote(1)} className="hover:text-white transition-colors disabled:opacity-50" disabled={!fingerprint}>
+                    <button onClick={() => handleVote(1)} className="hover:text-white transition-colors disabled:opacity-50 press-animation" disabled={!fingerprint}>
                         👍 {post.stats?.upvotes ?? 0}
                     </button>
-                    <button onClick={() => handleVote(-1)} className="hover:text-white transition-colors disabled:opacity-50" disabled={!fingerprint}>
+                    <button onClick={() => handleVote(-1)} className="hover:text-white transition-colors disabled:opacity-50 press-animation" disabled={!fingerprint}>
                         👎 {post.stats?.downvotes ?? 0}
                     </button>
                     <span>💬 {post.stats?.replyCount ?? 0}</span>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

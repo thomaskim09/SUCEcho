@@ -4,23 +4,42 @@
 import { useState, useEffect } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import PostCard from './PostCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface PostFeedProps {
-    initialPosts: PostWithStats[];
-}
-
-export default function PostFeed({ initialPosts }: PostFeedProps) {
-    const [posts, setPosts] = useState<PostWithStats[]>(initialPosts);
+export default function PostFeed() {
+    const [posts, setPosts] = useState<PostWithStats[]>([]);
+    const [isLoading, setIsLoading] = useState(true); // Add loading state
 
     useEffect(() => {
+        // Function to fetch the initial set of posts
+        const fetchInitialPosts = async () => {
+            try {
+                const res = await fetch('/api/posts');
+                if (!res.ok) {
+                    throw new Error('Failed to fetch posts');
+                }
+                const initialPosts = await res.json();
+                setPosts(initialPosts);
+            } catch (error) {
+                console.error("Error fetching initial posts:", error);
+                // Optionally set an error state here to show in the UI
+            } finally {
+                setIsLoading(false); // Stop loading once done
+            }
+        };
+
+        // Fetch the posts when the component mounts
+        fetchInitialPosts();
+
+        // Set up the real-time event source
         const eventSource = new EventSource('/api/live');
 
         const handleNewPost = (event: MessageEvent) => {
             const newPost = JSON.parse(event.data);
+            // Add the new post to the top of the list
             setPosts(prevPosts => [newPost, ...prevPosts]);
         };
 
-        // NEW: Handler for vote updates
         const handleVoteUpdate = (event: MessageEvent) => {
             const { postId, stats } = JSON.parse(event.data);
             setPosts(prevPosts =>
@@ -30,25 +49,40 @@ export default function PostFeed({ initialPosts }: PostFeedProps) {
             );
         };
 
-        eventSource.addEventListener('new_post', handleNewPost);
-        eventSource.addEventListener('update_vote', handleVoteUpdate); // Add listener for votes
+        // Handler for when a post is purified
+        const handleDeletePost = (event: MessageEvent) => {
+            const { postId } = JSON.parse(event.data);
+            setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        };
 
+        eventSource.addEventListener('new_post', handleNewPost);
+        eventSource.addEventListener('update_vote', handleVoteUpdate);
+        eventSource.addEventListener('delete_post', handleDeletePost); // Listen for deletions
+
+        // Cleanup function to close the connection when the component unmounts
         return () => {
             eventSource.removeEventListener('new_post', handleNewPost);
-            eventSource.removeEventListener('update_vote', handleVoteUpdate); // Cleanup vote listener
+            eventSource.removeEventListener('update_vote', handleVoteUpdate);
+            eventSource.removeEventListener('delete_post', handleDeletePost);
             eventSource.close();
         };
-    }, []);
+    }, []); // The empty dependency array ensures this runs only once on mount
+
+    if (isLoading) {
+        return <p className="text-center text-gray-400">Loading echoes...</p>;
+    }
 
     return (
         <div>
-            {posts.length > 0 ? (
-                posts.map((post) => (
-                    <PostCard key={post.id} post={post} />
-                ))
-            ) : (
-                <p className="text-center text-gray-400">No echoes yet. Be the first!</p>
-            )}
+            <AnimatePresence>
+                {posts.length > 0 ? (
+                    posts.map((post) => (
+                        <PostCard key={post.id} post={post} />
+                    ))
+                ) : (
+                    <p className="text-center text-gray-400">No echoes yet. Be the first!</p>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

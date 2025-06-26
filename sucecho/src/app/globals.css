@@ -22,3 +22,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Add this class to any button-like element for a nice press animation */
+.press-animation {
+  transition: transform 150ms ease;
+}
+
+.press-animation:active {
+  transform: scale(0.95);
+}

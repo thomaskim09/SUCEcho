@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Noto_Sans_SC, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-import Header from "./components/Header"; // Import the new Header
+import Header from "./components/Header";
+import FramerWrapper from "./components/FramerWrapper"; // Import the wrapper
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -29,8 +30,8 @@ export default function RootLayout({
       <body
         className={`${notoSans.variable} ${robotoMono.variable} antialiased`}
       >
-        <Header /> {/* Add the Header here */}
-        {children}
+        <Header />
+        <FramerWrapper>{children}</FramerWrapper> {/* Wrap the children */}
       </body>
     </html>
   );
