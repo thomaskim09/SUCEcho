@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAdmin } from '@/context/AdminContext';
 
 export default function AdminLoginPage() {
     const [username, setUsername] = useState('');
@@ -10,6 +11,7 @@ export default function AdminLoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { login } = useAdmin();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,7 +30,7 @@ export default function AdminLoginPage() {
                 throw new Error(data.message || 'Login failed');
             }
 
-            // On successful login, redirect to a future admin dashboard
+            login(); // Update the global admin state
             router.push('/admin/dashboard');
 
         } catch (err: any) {

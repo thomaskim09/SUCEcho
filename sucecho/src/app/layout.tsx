@@ -3,7 +3,9 @@ import { Noto_Sans_SC, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "./components/Header";
 import FramerWrapper from "./components/FramerWrapper";
-import { FingerprintProvider } from '@/context/FingerprintContext'; // Import the provider
+import { FingerprintProvider } from '@/context/FingerprintContext';
+import { AdminProvider } from "@/context/AdminContext";
+import AdminShield from "./components/AdminShield";
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -31,10 +33,13 @@ export default function RootLayout({
       <body
         className={`${notoSans.variable} ${robotoMono.variable} antialiased`}
       >
-        <FingerprintProvider> {/* Wrap everything with the provider */}
-          <Header />
-          <FramerWrapper>{children}</FramerWrapper>
-        </FingerprintProvider>
+        <AdminProvider>
+          <FingerprintProvider>
+            <Header />
+            <FramerWrapper>{children}</FramerWrapper>
+            <AdminShield />
+          </FingerprintProvider>
+        </AdminProvider>
       </body>
     </html>
   );

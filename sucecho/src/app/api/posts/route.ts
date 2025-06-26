@@ -24,11 +24,26 @@ export async function GET(request: Request) {
         content: { not: null },
         parentPostId: null,
       },
+      // --- START OF CHANGE ---
+      // We need to explicitly select all the fields we need to ensure
+      // that fingerprintHash is included.
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        parentPostId: true,
+        fingerprintHash: true, // <-- The missing piece
+        stats: {
+          select: {
+            upvotes: true,
+            downvotes: true,
+            replyCount: true,
+          }
+        }
+      },
+      // --- END OF CHANGE ---
       orderBy: {
         createdAt: 'desc',
-      },
-      include: {
-        stats: true,
       },
     });
 

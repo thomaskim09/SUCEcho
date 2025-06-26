@@ -1,9 +1,11 @@
 // sucecho/src/lib/types.ts
+
 export interface PostWithStats {
   id: number;
   content: string | null; // Content can be null if the post is purified
   createdAt: Date;
-  parentId?: number | null; // Add this for identifying replies
+  fingerprintHash: string; // <<< ADD THIS LINE
+  parentId?: number | null;
   stats: {
     upvotes: number;
     downvotes: number;

@@ -5,6 +5,9 @@ import type { PostWithStats } from "@/lib/types";
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useFingerprint } from '@/context/FingerprintContext';
+import { useAdminSession } from '@/hooks/useAdminSession';
+import { generateCodename } from '@/lib/codename'; // Import the new codename generator
+import { useState } from 'react';
 
 const timeSince = (date: Date): string => {
     if (!date) return '';
@@ -22,7 +25,6 @@ const timeSince = (date: Date): string => {
     return Math.floor(seconds) + "秒前";
 };
 
-// Define the props for the PostCard component, including the optional userVote
 interface PostCardProps {
     post: PostWithStats;
     isLink?: boolean;
@@ -32,20 +34,55 @@ interface PostCardProps {
 
 export default function PostCard({ post, isLink = true, onVote, userVote }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
+    const isAdmin = useAdminSession();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const handleToggleMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsMenuOpen(!isMenuOpen);
+    };
 
     const handleVote = (e: React.MouseEvent, voteType: 1 | -1) => {
         e.preventDefault();
         e.stopPropagation();
-
         if (isFingerprintLoading || !fingerprint) {
             alert("无法识别您的浏览器，请稍候再试。");
             return;
         }
-
         onVote(post.id, voteType);
     };
 
-    // Determine button styles based on the user's vote for instant feedback
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm(`Are you sure you want to delete post #${post.id}? This cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/posts/${post.id}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Failed to delete post');
+            }
+            alert('Post deleted successfully.');
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
+        }
+        setIsMenuOpen(false);
+    };
+
+    // Handler for showing post details
+    const handleShowDetails = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        alert(`Post ID: ${post.id}\nFingerprint Hash: ${post.fingerprintHash}`);
+        setIsMenuOpen(false);
+    };
+
     const upvoteStyle = userVote === 1 ? 'text-accent' : 'hover:text-white';
     const downvoteStyle = userVote === -1 ? 'text-accent' : 'hover:text-white';
 
@@ -56,10 +93,27 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className={`p-4 rounded-lg my-2 transition-colors ${isLink ? 'cursor-pointer hover:bg-gray-800/50' : ''}`}
+            className={`p-4 rounded-lg my-2 transition-colors relative ${isLink ? 'cursor-pointer hover:bg-gray-800/50' : ''}`}
             style={{ backgroundColor: 'var(--card-background)' }}
         >
+            {isAdmin && (
+                <div className="absolute top-2 right-2">
+                    <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">
+                        ...
+                    </button>
+                </div>
+            )}
+
+            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                {isAdmin ? (
+                    <span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>
+                ) : (
+                    <span></span> // Empty span to keep the space
+                )}
+            </div>
+
             <p className="text-white whitespace-pre-wrap break-words">{post.content}</p>
+
             <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
                 <span className="font-mono">{timeSince(post.createdAt)}</span>
                 <div className="flex items-center gap-4 font-mono">
@@ -72,6 +126,17 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
                     <span>💬 {post.stats?.replyCount ?? 0}</span>
                 </div>
             </div>
+
+            {isMenuOpen && (
+                <div className="absolute top-12 right-2 bg-gray-900 rounded-lg shadow-lg p-2 z-10 w-48">
+                    <ul>
+                        <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
+                        <li><Link href={`/admin/users/${post.fingerprintHash}`} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</Link></li>
+                        <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ 帖子详情</button></li>
+                        <li><button className="w-full text-left p-2 rounded text-gray-500 cursor-not-allowed" disabled>📌 置顶24小时</button></li>
+                    </ul>
+                </div>
+            )}
         </motion.div>
     );
 
