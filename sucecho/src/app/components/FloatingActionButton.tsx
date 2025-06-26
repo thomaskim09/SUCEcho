@@ -14,7 +14,7 @@ export default function FloatingActionButton() {
             <Link
                 href="/compose"
                 className="bg-accent text-white rounded-full p-4 shadow-lg hover:opacity-90 transition-opacity flex items-center justify-center w-16 h-16 press-animation"
-                aria-label="Compose a new echo"
+                aria-label="发布新回音"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
             </Link>

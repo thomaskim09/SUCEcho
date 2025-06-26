@@ -28,7 +28,7 @@ export default function CreatePostForm() {
         e.preventDefault();
 
         if (!fingerprint) {
-            setError("Fingerprint is not ready yet, please try again in a moment.");
+            setError("指纹尚未准备好，请稍后再试。");
             return;
         }
 
@@ -46,7 +46,7 @@ export default function CreatePostForm() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Failed to submit post");
+                throw new Error(errorData.error || "发布失败");
             }
 
             router.push('/');
@@ -65,24 +65,24 @@ export default function CreatePostForm() {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     className="w-full bg-transparent border-b border-gray-600 focus:outline-none focus:border-accent p-2"
-                    placeholder="What's on your mind?"
+                    placeholder="此刻你想说什么？"
                     rows={5}
                     maxLength={charLimit}
                 />
                 <div className="flex justify-between items-center mt-3">
                     <span className="text-sm text-gray-400 font-mono">
-                        {charLimit - content.length} characters remaining
+                        还可输入 {charLimit - content.length} 字
                     </span>
                     <button
                         type="submit"
                         className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                         disabled={!content.trim() || isSubmitting || !fingerprint}
                     >
-                        {isSubmitting ? "Echoing..." : "Echo"}
+                        {isSubmitting ? "发布中..." : "发布回音"}
                     </button>
                 </div>
                 {error && <p className="text-red-500 mt-2">{error}</p>}
-                {!fingerprint && !error && <p className="text-gray-400 mt-2">Initializing...</p>}
+                {!fingerprint && !error && <p className="text-gray-400 mt-2">初始化中...</p>}
             </form>
         </div>
     );

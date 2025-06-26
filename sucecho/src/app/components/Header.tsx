@@ -30,10 +30,10 @@ export default function Header() {
                 </Link>
                 <nav className="flex items-center gap-6 font-mono text-lg">
                     <Link href="/how-it-works" className="text-gray-300 hover:text-white transition-colors">
-                        How It Works
+                        运作方式
                     </Link>
                     <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
-                        About
+                        关于我们
                     </Link>
                 </nav>
             </div>

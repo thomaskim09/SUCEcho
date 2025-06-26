@@ -69,7 +69,7 @@ export default function PostFeed() {
     }, []); // The empty dependency array ensures this runs only once on mount
 
     if (isLoading) {
-        return <p className="text-center text-gray-400">Loading echoes...</p>;
+        return <p className="text-center text-gray-400">正在加载回音...</p>;
     }
 
     return (
@@ -80,7 +80,7 @@ export default function PostFeed() {
                         <PostCard key={post.id} post={post} />
                     ))
                 ) : (
-                    <p className="text-center text-gray-400">No echoes yet. Be the first!</p>
+                    <p className="text-center text-gray-400">暂无回音，快来发表第一条吧！</p>
                 )}
             </AnimatePresence>
         </div>

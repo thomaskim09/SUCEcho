@@ -7,19 +7,18 @@ import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { motion } from 'framer-motion'; // Import motion
 
 const timeSince = (date: Date): string => {
-    // ... (timeSince function remains the same)
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + "y ago";
+    if (interval > 1) return Math.floor(interval) + "年前";
     interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + "mo ago";
+    if (interval > 1) return Math.floor(interval) + "个月前";
     interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + "d ago";
+    if (interval > 1) return Math.floor(interval) + "天前";
     interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + "h ago";
+    if (interval > 1) return Math.floor(interval) + "小时前";
     interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + "m ago";
-    return Math.floor(seconds) + "s ago";
+    if (interval > 1) return Math.floor(interval) + "分钟前";
+    return Math.floor(seconds) + "秒前";
 };
 
 export default function PostCard({ post }: { post: PostWithStats }) {
@@ -36,7 +35,7 @@ export default function PostCard({ post }: { post: PostWithStats }) {
 
     const handleVote = async (voteType: 1 | -1) => {
         if (!fingerprint) {
-            alert("Could not identify your browser. Please wait a moment and try again.");
+            alert("无法识别您的浏览器，请稍候再试。");
             return;
         }
 
@@ -52,7 +51,7 @@ export default function PostCard({ post }: { post: PostWithStats }) {
             });
         } catch (error) {
             console.error("Failed to submit vote:", error);
-            alert("Failed to submit vote. Please try again.");
+            alert("投票失败，请重试。");
         }
     };
 
