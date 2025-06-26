@@ -23,57 +23,69 @@
 
 -----
 
-### 2.0 Database Schema (PostgreSQL)
+### 2.0 Database Schema (Prisma)
 
-```sql
--- Main content table. Content is nulled after 24h, row deleted after 180 days.
-CREATE TABLE "Post" (
-    "id" SERIAL PRIMARY KEY,
-    "content" TEXT, -- The actual text of the echo.
-    "fingerprintHash" TEXT NOT NULL, -- Foreign key to UserAnonymizedProfile.
-    "parentPostId" INTEGER REFERENCES "Post"("id") ON DELETE CASCADE, -- Establishes the thread relationship. NULL if it's a Main Echo.
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+This schema is the source of truth for the database structure, managed by Prisma.
 
--- Aggregated stats for posts. Deleted along with Post after 180 days.
-CREATE TABLE "PostStats" (
-    "postId" INTEGER PRIMARY KEY REFERENCES "Post"("id") ON DELETE CASCADE,
-    "upvotes" INTEGER NOT NULL DEFAULT 0,
-    "downvotes" INTEGER NOT NULL DEFAULT 0,
-    "replyCount" INTEGER NOT NULL DEFAULT 0,
-    "hotnessScore" INTEGER NOT NULL DEFAULT 0 -- Stores the total vote count for sorting.
-);
+```prisma
+model Post {
+  id              Int        @id @default(autoincrement())
+  content         String?
+  fingerprintHash String
+  parentPostId    Int?
+  createdAt       DateTime   @default(now())
 
--- Records individual votes. Deleted after 180 days.
-CREATE TABLE "Vote" (
-    "id" SERIAL PRIMARY KEY,
-    "postId" INTEGER NOT NULL REFERENCES "Post"("id") ON DELETE CASCADE,
-    "fingerprintHash" TEXT NOT NULL,
-    "voteType" SMALLINT NOT NULL, -- 1 for upvote, -1 for downvote
-    UNIQUE ("postId", "fingerprintHash") -- Core constraint: one device, one vote per post.
-);
+  // Defines the self-relation for threaded replies
+  parent          Post?      @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
+  replies         Post[]     @relation("Thread")
 
--- Anonymized user profiles for moderation. Retained permanently unless user is fully purged.
-CREATE TABLE "UserAnonymizedProfile" (
-    "fingerprintHash" TEXT PRIMARY KEY,
-    "codename" TEXT NOT NULL, -- The readable name, e.g., "Brave-Red-Tiger"
-    "purifiedPostCount" INTEGER NOT NULL DEFAULT 0, -- Tracks community reputation.
-    "isBanned" BOOLEAN NOT NULL DEFAULT FALSE,
-    "banExpiresAt" TIMESTAMP WITH TIME ZONE,
-    "firstSeenAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "lastSeenAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+  // Relation to other models
+  stats           PostStats?
+  votes           Vote[]
 
--- Admin actions log. Retained permanently for security and accountability.
-CREATE TABLE "AdminLog" (
-    "id" SERIAL PRIMARY KEY,
-    "targetFingerprintHash" TEXT NOT NULL,
-    "action" TEXT NOT NULL, -- e.g., 'BAN_24H', 'DELETE_POST', 'UNBAN'
-    "adminId" TEXT NOT NULL, -- Admin's whitelisted email.
-    "reason" TEXT,
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+  @@index([createdAt])
+}
+
+model PostStats {
+  postId       Int      @id
+  upvotes      Int      @default(0)
+  downvotes    Int      @default(0)
+  replyCount   Int      @default(0)
+  hotnessScore Int      @default(0)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
 ```
+
+model Vote {
+  id              Int      @id @default(autoincrement())
+  postId          Int
+  fingerprintHash String
+  voteType        Int // 1 for upvote, -1 for downvote
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, fingerprintHash])
+}
+
+model UserAnonymizedProfile {
+  fingerprintHash   String    @id
+  codename          String
+  purifiedPostCount Int       @default(0)
+  isBanned          Boolean   @default(false)
+  banExpiresAt      DateTime?
+  firstSeenAt       DateTime  @default(now())
+  lastSeenAt        DateTime  @default(now())
+}
+
+model AdminLog {
+  id                    Int      @id @default(autoincrement())
+  targetFingerprintHash String
+  action                String
+  adminId               String
+  reason                String?
+  createdAt             DateTime @default(now())
+}
 
 -----
 
