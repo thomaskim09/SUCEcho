@@ -5,7 +5,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
-export default function CreatePostForm() {
+interface CreatePostFormProps {
+    parentId?: number;
+}
+
+export default function CreatePostForm({ parentId }: CreatePostFormProps) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -14,13 +18,11 @@ export default function CreatePostForm() {
     const charLimit = 400;
 
     useEffect(() => {
-        // Load the fingerprint in the background after the component mounts
         const getFingerprint = async () => {
             const fp = await FingerprintJS.load();
             const result = await fp.get();
             setFingerprint(result.visitorId);
         };
-
         getFingerprint();
     }, []);
 
@@ -41,7 +43,8 @@ export default function CreatePostForm() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ content, fingerprintHash: fingerprint }),
+                // Include parentId if it exists
+                body: JSON.stringify({ content, fingerprintHash: fingerprint, parentId }),
             });
 
             if (!response.ok) {
@@ -49,7 +52,8 @@ export default function CreatePostForm() {
                 throw new Error(errorData.error || "发布失败");
             }
 
-            router.push('/');
+            // Redirect to the parent post if it's a reply, otherwise to the homepage
+            router.push(parentId ? `/post/${parentId}` : '/');
 
         } catch (err: any) {
             setError(err.message);
@@ -65,9 +69,10 @@ export default function CreatePostForm() {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     className="w-full bg-transparent border-b border-gray-600 focus:outline-none focus:border-accent p-2"
-                    placeholder="此刻你想说什么？"
+                    placeholder={parentId ? "写下你的回应..." : "此刻你想说什么？"}
                     rows={5}
                     maxLength={charLimit}
+                    autoFocus
                 />
                 <div className="flex justify-between items-center mt-3">
                     <span className="text-sm text-gray-400 font-mono">
@@ -78,7 +83,7 @@ export default function CreatePostForm() {
                         className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                         disabled={!content.trim() || isSubmitting || !fingerprint}
                     >
-                        {isSubmitting ? "发布中..." : "发布回音"}
+                        {isSubmitting ? "发布中..." : (parentId ? "发布回应" : "发布回音")}
                     </button>
                 </div>
                 {error && <p className="text-red-500 mt-2">{error}</p>}

@@ -17,7 +17,6 @@ export default function PostDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const params = useParams();
-    const router = useRouter();
     const { id } = params;
 
     useEffect(() => {
@@ -68,15 +67,27 @@ export default function PostDetailPage() {
         return (
             <div>
                 {/* Main Post */}
-                <div className="mb-6">
-                    <h2 className="text-xl font-mono text-accent mb-2">主回声</h2>
+                <div className="mb-4">
                     <PostCard post={post} isLink={false} />
                 </div>
 
+                {/* Reply Button */}
+                <div className="my-6 text-center">
+                    <Link
+                        href={`/compose?parentId=${post.id}`}
+                        className="inline-block bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation"
+                    >
+                        💬 回应此声
+                    </Link>
+                </div>
+
+
                 {/* Replies */}
                 {post.replies && post.replies.length > 0 && (
-                    <div>
-                        <h2 className="text-xl font-mono text-accent mb-2">子回声 ({post.replies.length})</h2>
+                    <div className="mt-8">
+                        <h2 className="text-xl font-mono text-gray-400 mb-2">
+                            子回声 ({post.replies.length})
+                        </h2>
                         <div className="space-y-4 border-l-2 border-accent/30 pl-4 ml-4">
                             {post.replies.map(reply => (
                                 <PostCard key={reply.id} post={reply} isLink={false} />
@@ -84,16 +95,17 @@ export default function PostDetailPage() {
                         </div>
                     </div>
                 )}
-
-                {post.replies?.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">还没有回声，成为第一个吧。</p>
-                )}
             </div>
         );
     };
 
     return (
         <div className="container mx-auto max-w-2xl p-4">
+            <header className="py-4 flex items-center">
+                <Link href="/" className="text-accent hover:underline">
+                    ← 返回回音墙
+                </Link>
+            </header>
             <main className="mt-4">
                 {renderContent()}
             </main>
