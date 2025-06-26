@@ -4,9 +4,11 @@
 import { useState, useEffect } from 'react';
 import type { PostWithStats } from "@/lib/types";
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
-import { motion } from 'framer-motion'; // Import motion
+import { motion } from 'framer-motion';
+import Link from 'next/link'; // Import Link
 
 const timeSince = (date: Date): string => {
+    // ... (timeSince function remains the same)
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + "年前";
@@ -21,7 +23,13 @@ const timeSince = (date: Date): string => {
     return Math.floor(seconds) + "秒前";
 };
 
-export default function PostCard({ post }: { post: PostWithStats }) {
+// Add isLink prop to the props interface
+interface PostCardProps {
+    post: PostWithStats;
+    isLink?: boolean;
+}
+
+export default function PostCard({ post, isLink = true }: PostCardProps) {
     const [fingerprint, setFingerprint] = useState<string | null>(null);
 
     useEffect(() => {
@@ -33,7 +41,8 @@ export default function PostCard({ post }: { post: PostWithStats }) {
         getFingerprint();
     }, []);
 
-    const handleVote = async (voteType: 1 | -1) => {
+    const handleVote = async (e: React.MouseEvent, voteType: 1 | -1) => {
+        e.stopPropagation(); // Prevent navigation when clicking buttons
         if (!fingerprint) {
             alert("无法识别您的浏览器，请稍候再试。");
             return;
@@ -55,29 +64,39 @@ export default function PostCard({ post }: { post: PostWithStats }) {
         }
     };
 
-    return (
+    const cardContent = (
         <motion.div
             layout // This helps animate position changes smoothly
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.3 }}
-            className="p-4 rounded-lg my-4"
+            className={`p-4 rounded-lg my-2 transition-colors ${isLink ? 'cursor-pointer hover:bg-gray-800/50' : ''}`}
             style={{ backgroundColor: 'var(--card-background)' }}
         >
             <p className="text-white whitespace-pre-wrap">{post.content}</p>
             <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
                 <span className="font-mono">{timeSince(post.createdAt)}</span>
                 <div className="flex items-center gap-4 font-mono">
-                    <button onClick={() => handleVote(1)} className="hover:text-white transition-colors disabled:opacity-50 press-animation" disabled={!fingerprint}>
+                    <button onClick={(e) => handleVote(e, 1)} className="hover:text-white transition-colors disabled:opacity-50 press-animation" disabled={!fingerprint}>
                         👍 {post.stats?.upvotes ?? 0}
                     </button>
-                    <button onClick={() => handleVote(-1)} className="hover:text-white transition-colors disabled:opacity-50 press-animation" disabled={!fingerprint}>
+                    <button onClick={(e) => handleVote(e, -1)} className="hover:text-white transition-colors disabled:opacity-50 press-animation" disabled={!fingerprint}>
                         👎 {post.stats?.downvotes ?? 0}
                     </button>
                     <span>💬 {post.stats?.replyCount ?? 0}</span>
                 </div>
             </div>
         </motion.div>
+    );
+
+    if (!isLink) {
+        return cardContent;
+    }
+
+    return (
+        <Link href={`/post/${post.id}`} className="no-underline" scroll={false}>
+            {cardContent}
+        </Link>
     );
 }

@@ -1,4 +1,4 @@
-    // sucecho/src/app/api/cron/route.ts
+// sucecho/src/app/api/cron/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -10,13 +10,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 2. Find posts older than 24 hours that still have content
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // 2. Get survival time from environment variable, defaulting to 24 hours
+    const survivalHours = parseInt(process.env.POST_SURVIVAL_HOURS || '24', 10);
+    const timeAgo = new Date(Date.now() - survivalHours * 60 * 60 * 1000);
 
     const postsToNullify = await prisma.post.findMany({
       where: {
         createdAt: {
-          lt: twentyFourHoursAgo, // 'lt' means "less than"
+          lt: timeAgo, // 'lt' means "less than"
         },
         content: {
           not: null, // Only find posts that haven't been nullified yet
@@ -47,9 +48,6 @@ export async function GET(request: Request) {
     });
 
     console.log(`CRON: Successfully nullified content for ${result.count} posts.`);
-
-    // Note: We are not broadcasting this via SSE yet, as per the plan.
-    // The "化为尘埃" (pixel dust) animation is a future client-side enhancement.
 
     return NextResponse.json({
       message: 'Cron job completed successfully.',
