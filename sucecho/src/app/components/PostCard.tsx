@@ -42,14 +42,17 @@ export default function PostCard({ post, isLink = true }: PostCardProps) {
     }, []);
 
     const handleVote = async (e: React.MouseEvent, voteType: 1 | -1) => {
-        e.stopPropagation(); // Prevent navigation when clicking buttons
+        // ADD THIS LINE
+        e.preventDefault(); // This will prevent the Link from navigating
+        e.stopPropagation(); // This stops the event from bubbling up
+
         if (!fingerprint) {
             alert("无法识别您的浏览器，请稍候再试。");
             return;
         }
 
         try {
-            await fetch('/api/votes', {
+            const res = await fetch('/api/votes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -58,9 +61,15 @@ export default function PostCard({ post, isLink = true }: PostCardProps) {
                     fingerprintHash: fingerprint,
                 }),
             });
+            // FIX: Add a check for the response status
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "投票失败");
+            }
+
         } catch (error) {
             console.error("Failed to submit vote:", error);
-            alert("投票失败，请重试。");
+            alert(error);
         }
     };
 
