@@ -13,26 +13,32 @@ export default function PostFeed({ initialPosts }: PostFeedProps) {
     const [posts, setPosts] = useState<PostWithStats[]>(initialPosts);
 
     useEffect(() => {
-        // Establish a connection to our SSE endpoint
         const eventSource = new EventSource('/api/live');
 
-        // This handler will be called for 'new_post' events
         const handleNewPost = (event: MessageEvent) => {
             const newPost = JSON.parse(event.data);
-            // Add the new post to the top of the feed
             setPosts(prevPosts => [newPost, ...prevPosts]);
         };
 
-        // Add the event listener for 'new_post' events
-        eventSource.addEventListener('new_post', handleNewPost);
+        // NEW: Handler for vote updates
+        const handleVoteUpdate = (event: MessageEvent) => {
+            const { postId, stats } = JSON.parse(event.data);
+            setPosts(prevPosts =>
+                prevPosts.map(post =>
+                    post.id === postId ? { ...post, stats: { ...post.stats, ...stats } } : post
+                )
+            );
+        };
 
-        // This is the cleanup function that will be called when the component unmounts.
-        // It's crucial to close the connection to prevent memory leaks.
+        eventSource.addEventListener('new_post', handleNewPost);
+        eventSource.addEventListener('update_vote', handleVoteUpdate); // Add listener for votes
+
         return () => {
             eventSource.removeEventListener('new_post', handleNewPost);
+            eventSource.removeEventListener('update_vote', handleVoteUpdate); // Cleanup vote listener
             eventSource.close();
         };
-    }, []); // The empty dependency array means this effect runs only once on mount
+    }, []);
 
     return (
         <div>
