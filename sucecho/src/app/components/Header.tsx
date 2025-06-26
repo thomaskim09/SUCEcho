@@ -23,15 +23,15 @@ export default function Header() {
                 <path d="M50 25C36.1929 25 25 36.1929 25 50C25 63.8071 36.1929 75 50 75" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" strokeDasharray="5 15" />
                 <path d="M50 40C44.4772 40 40 44.4772 40 50C40 55.5228 44.4772 60 50 60" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" strokeDasharray="1 10" />
             </svg>
-            {/* FIX: Removed hidden sm:inline to make the name always visible */}
             <span className="text-xl font-bold text-gray-200">南方回音壁</span>
         </div>
     );
 
+    // Add "我的回音" to the navigation links
     const navLinks = [
         { href: "/how-it-works", label: "运作方式" },
         { href: "/about", label: "关于我们" },
-        // { href: "/my-echoes", label: "我的回音" }, // This can be added later
+        { href: "/my-echoes", label: "我的回音" },
     ];
 
     return (
@@ -41,7 +41,6 @@ export default function Header() {
                     <Logo />
                 </Link>
 
-                {/* Desktop Menu */}
                 <nav className="hidden md:flex items-center gap-6 font-mono text-lg">
                     {navLinks.map(link => (
                         <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors">
@@ -50,7 +49,6 @@ export default function Header() {
                     ))}
                 </nav>
 
-                {/* Mobile Menu Button */}
                 <div className="md:hidden">
                     <button onClick={toggleMenu} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -62,7 +60,6 @@ export default function Header() {
                 </div>
             </div>
 
-            {/* Mobile Menu Panel */}
             <AnimatePresence>
                 {isMenuOpen && (
                     <motion.div
