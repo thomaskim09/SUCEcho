@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
 
-## Getting Started
+## Troubleshooting
 
-First, run the development server:
+A quick guide for common setup errors.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### **Problem: Database is empty after running a Prisma command.**
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+* **Symptom:** You run a command, and your Supabase database has no tables, or only a `_prisma_migrations` table.
+* **Cause:** For the very first setup, `migrate` is not the right tool. You need to "push" your schema to the empty database.
+* **Solution:** Run `npx prisma db push`. This command reads your `schema.prisma` and creates all the tables.
+    * **Important:** Remember to use the `.env` rename trick for this command (see below).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### **Problem: Prisma command fails (e.g., `db push`, `migrate`).**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+* **Error:** `Environment variable not found: DIRECT_URL`.
+* **Cause:** Prisma's command-line tools read from a `.env` file, not `.env.local`.
+* **Solution:** **Temporarily rename `.env.local` to `.env`**, run the Prisma command, then **rename it back to `.env.local`** so your app can run.
 
-## Learn More
+### **Problem: Editor shows `"No exported member 'PrismaClient'"`**
 
-To learn more about Next.js, take a look at the following resources:
+* **Error:** A red squiggly line appears under your import from `@prisma/client`.
+* **Cause:** The editor's TypeScript cache is stale and hasn't seen the newly generated client.
+* **Solution:** Restart the TS Server. In VS Code/Cursor, press `Ctrl+Shift+P` (or `Cmd+Shift+P`) and run **`TypeScript: Restart TS Server`**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### **Problem: App fails to run (`npm run dev`)**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* **Error:** `PrismaClient did not initialize...`
+* **Cause:** This usually means the database tables don't exist (see the first problem) or the `DATABASE_URL` is incorrect in your `.env.local` file.

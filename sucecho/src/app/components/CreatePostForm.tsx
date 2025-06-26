@@ -9,26 +9,39 @@ export default function CreatePostForm() {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fingerprint, setFingerprint] = useState<string | null>(null);
     const router = useRouter();
     const charLimit = 400;
 
+    useEffect(() => {
+        // Load the fingerprint in the background after the component mounts
+        const getFingerprint = async () => {
+            const fp = await FingerprintJS.load();
+            const result = await fp.get();
+            setFingerprint(result.visitorId);
+        };
+
+        getFingerprint();
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!fingerprint) {
+            setError("Fingerprint is not ready yet, please try again in a moment.");
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
 
         try {
-            // Get the unique browser fingerprint
-            const fp = await FingerprintJS.load();
-            const result = await fp.get();
-            const fingerprintHash = result.visitorId;
-
             const response = await fetch('/api/posts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ content, fingerprintHash }),
+                body: JSON.stringify({ content, fingerprintHash: fingerprint }),
             });
 
             if (!response.ok) {
@@ -36,7 +49,6 @@ export default function CreatePostForm() {
                 throw new Error(errorData.error || "Failed to submit post");
             }
 
-            // Redirect to homepage after successful submission
             router.push('/');
 
         } catch (err: any) {
@@ -64,12 +76,13 @@ export default function CreatePostForm() {
                     <button
                         type="submit"
                         className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                        disabled={!content.trim() || isSubmitting}
+                        disabled={!content.trim() || isSubmitting || !fingerprint}
                     >
                         {isSubmitting ? "Echoing..." : "Echo"}
                     </button>
                 </div>
                 {error && <p className="text-red-500 mt-2">{error}</p>}
+                {!fingerprint && !error && <p className="text-gray-400 mt-2">Initializing...</p>}
             </form>
         </div>
     );
