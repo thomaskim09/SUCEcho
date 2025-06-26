@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Noto_Sans_SC, Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "./components/Header"; // Import the new Header
 
-// Corrected variable name from "noto Sans" to "notoSans"
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
   variable: "--font-noto-sans",
@@ -29,6 +29,7 @@ export default function RootLayout({
       <body
         className={`${notoSans.variable} ${robotoMono.variable} antialiased`}
       >
+        <Header /> {/* Add the Header here */}
         {children}
       </body>
     </html>

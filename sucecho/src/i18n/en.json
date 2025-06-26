@@ -1,0 +1,10 @@
+{
+    "HomePage": {
+        "title": "SUC Echo",
+        "composeButton": "Compose"
+    },
+    "AboutPage": {
+        "title": "About SUC Echo",
+        "vision": "Our Vision"
+    }
+}
