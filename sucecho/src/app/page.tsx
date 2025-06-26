@@ -1,22 +1,25 @@
 // sucecho/src/app/page.tsx
-import PostCard from "./components/PostCard";
+import PostFeed from "./components/PostFeed";
 import Link from "next/link";
 import type { PostWithStats } from "@/lib/types";
 
-// This function fetches posts from our API
+// The function to get initial posts remains the same
 async function getPosts(): Promise<PostWithStats[]> {
-  // We use { cache: 'no-store' } to ensure we always get the latest posts
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`, { cache: 'no-store' });
-  if (!res.ok) {
-    // This will be caught by the error page and should be handled gracefully
-    throw new Error('Failed to fetch posts');
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`, { cache: 'no-store' });
+    if (!res.ok) {
+      console.error('Failed to fetch initial posts:', await res.text());
+      return []; // Return an empty array on failure
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Error in getPosts:', error);
+    return []; // Return an empty array on network or other errors
   }
-  return res.json();
 }
 
-
 export default async function Home() {
-  const posts = await getPosts();
+  const initialPosts = await getPosts();
 
   return (
     <div className="container mx-auto max-w-2xl p-4">
@@ -27,13 +30,8 @@ export default async function Home() {
         </Link>
       </header>
       <main className="mt-4">
-        {posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))
-        ) : (
-          <p className="text-center text-gray-400">No echoes yet. Be the first!</p>
-        )}
+        {/* We now render the PostFeed component and pass the initial posts as a prop */}
+        <PostFeed initialPosts={initialPosts} />
       </main>
     </div>
   );

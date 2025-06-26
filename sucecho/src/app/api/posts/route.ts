@@ -1,37 +1,42 @@
 // sucecho/src/app/api/posts/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import eventEmitter from '@/lib/event-emitter';
 
+/**
+ * Handles GET requests to fetch the main feed of posts.
+ */
 export async function GET() {
   try {
     const posts = await prisma.post.findMany({
       where: {
+        // We only want posts that have not been scrubbed by the cron job
         content: {
-          not: null, // Only fetch posts that haven't been scrubbed by the cron job
+          not: null,
         },
-        parentPostId: null, // Only fetch top-level posts (not replies)
+        // We only want top-level posts for the main feed, not replies
+        parentPostId: null,
       },
       orderBy: {
         createdAt: 'desc', // Show the newest posts first
       },
       include: {
-        // This part is a placeholder for when you implement the stats table.
-        // For now, we'll simulate the stats.
+        // Include a count of the replies for each post
         _count: {
           select: {
-            replies: true, // Counts the number of replies
-            // upvotes and downvotes will be added later
+            replies: true,
           },
         },
       },
     });
 
-    // Simulate the full PostWithStats structure for now
+    // Map over the posts to add the 'stats' object, which the frontend expects.
+    // This simulates the full PostWithStats structure until the PostStats table is implemented.
     const postsWithStats = posts.map(post => ({
       ...post,
       stats: {
-        upvotes: 0, // Placeholder
-        downvotes: 0, // Placeholder
+        upvotes: 0,    // Placeholder value
+        downvotes: 0,  // Placeholder value
         replyCount: post._count.replies,
       },
     }));
@@ -45,11 +50,15 @@ export async function GET() {
   }
 }
 
+/**
+ * Handles POST requests to create a new post.
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { content, fingerprintHash } = body;
 
+    // Basic validation
     if (!content || !fingerprintHash) {
       return NextResponse.json({ error: 'Missing content or fingerprint' }, { status: 400 });
     }
@@ -58,14 +67,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Content exceeds 400 characters' }, { status: 400 });
     }
 
+    // Create the new post in the database
     const newPost = await prisma.post.create({
       data: {
         content,
         fingerprintHash,
       },
+      // Ensure the reply count is included in the returned object
+      include: {
+        _count: {
+          select: {
+            replies: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json(newPost, { status: 201 });
+    // Format the new post data to match the PostWithStats type for broadcasting
+    const postWithStats = {
+      ...newPost,
+      stats: {
+        upvotes: 0,
+        downvotes: 0,
+        replyCount: newPost._count.replies,
+      },
+    };
+
+    // Broadcast the 'new_post' event to all connected SSE clients
+    eventEmitter.emit('new_post', postWithStats);
+
+    // Return the newly created post to the original requester
+    return NextResponse.json(postWithStats, { status: 201 });
 
   } catch (error) {
     console.error("Error creating post:", error);
