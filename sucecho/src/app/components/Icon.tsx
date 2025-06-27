@@ -1,8 +1,8 @@
 // src/app/components/Icon.tsx
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'; //
 
-// SvgGlowFilter component remains the same.
+// SvgGlowFilter component (no changes needed here)
 export const SvgGlowFilter = () => (
     <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
@@ -32,7 +32,6 @@ export const SvgGlowFilter = () => (
 );
 
 
-// UPDATED: The paths for 'thumb-up' and 'thumb-down' have been swapped.
 const icons = {
     'thumb-up': (
         <path d="M7 14V3h3v11M10 13.5a4.5 4.5 0 0 0 9 0V8a2 2 0 0 0-2-2h-1.5a2 2 0 0 0-2 2v1.5a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 .5-.5H18a.5.5 0 0 1 .5.5v5.5a3 3 0 0 1-6 0v-1.5" />
@@ -43,6 +42,7 @@ const icons = {
     'comment': (
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
     ),
+    // NEW: The 'share' icon is defined here
     'share': (
         <>
             <circle cx="18" cy="5" r="3" />

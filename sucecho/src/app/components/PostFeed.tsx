@@ -214,6 +214,7 @@ export default function PostFeed() {
                         post={post}
                         onVote={handleOptimisticVote}
                         userVote={userVotes[post.id]}
+                        isStacked={true}
                     />
                 ))}
             </AnimatePresence>

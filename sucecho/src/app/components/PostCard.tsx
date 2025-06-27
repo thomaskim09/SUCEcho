@@ -33,9 +33,10 @@ interface PostCardProps {
     isLink?: boolean;
     onVote: (postId: number, voteType: 1 | -1) => void;
     userVote?: 1 | -1;
+    isStacked?: boolean;
 }
 
-export default function PostCard({ post, isLink = true, onVote, userVote }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, userVote, isStacked = false }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint(); //
     const isAdmin = useAdminSession(); //
     const router = useRouter();
@@ -99,8 +100,11 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
     // Conditions for applying color
     const hasUpvotes = (post.stats?.upvotes ?? 0) > 0;
     const hasDownvotes = (post.stats?.downvotes ?? 0) > 0;
-    // NEW: Condition for comment icon
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
+
+    const replyCount = post.stats?.replyCount ?? 0;
+    const stackLevel = isStacked ? Math.min(replyCount, 3) : 0;
+    const stackClass = stackLevel > 0 ? `stacked stacked-${stackLevel}` : '';
 
     const cardContent = (
         <motion.div
@@ -109,7 +113,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className={`p-4 rounded-lg my-2 relative glass-card ${isLink ? 'cursor-pointer' : ''}`}
+            className={`p-4 rounded-lg my-2 glass-card relative ${isLink ? 'cursor-pointer' : ''} ${stackClass}`}
         >
             {isAdmin && (
                 <div className="absolute top-2 right-2">
@@ -146,10 +150,17 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
                     >
                         <Icon name="thumb-down" value={post.stats?.downvotes ?? 0} />
                     </button>
-                    {/* UPDATED: Add conditional class here */}
-                    <div className={`icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                        <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                    </div>
+                    {isLink ? (
+                        <Link href={`/compose?parentId=${post.id}`} onClick={(e) => e.stopPropagation()} className="no-underline">
+                            <div className={`icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                                <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                            </div>
+                        </Link>
+                    ) : (
+                        <div className={`icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                            <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import PostSkeleton from '@/app/components/PostSkeleton';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { AnimatePresence } from 'framer-motion';
+import { Icon } from '@/app/components/Icon';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -107,7 +108,81 @@ export default function PostDetailPage() {
     }, [id]);
 
     const handleOptimisticVote = useCallback((postId: number, voteType: 1 | -1) => {
-        // This implementation does not need to change
+        if (!post) return;
+
+        const originalPostState = JSON.parse(JSON.stringify(post));
+        const originalUserVotes = { ...userVotes };
+
+        const currentVote = userVotes[postId];
+        let newVoteState: 1 | -1 | undefined = voteType;
+
+        let upvoteChange = 0;
+        let downvoteChange = 0;
+
+        if (currentVote === voteType) {
+            newVoteState = undefined;
+            voteType === 1 ? upvoteChange = -1 : downvoteChange = -1;
+        } else if (currentVote) {
+            voteType === 1 ? (upvoteChange = 1, downvoteChange = -1) : (upvoteChange = -1, downvoteChange = 1);
+        } else {
+            voteType === 1 ? upvoteChange = 1 : downvoteChange = 1;
+        }
+
+        setUserVotes(prev => {
+            const newVotes = { ...prev };
+            if (newVoteState) newVotes[postId] = newVoteState;
+            else delete newVotes[postId];
+            return newVotes;
+        });
+
+        setPost(currentPost => {
+            if (!currentPost) return null;
+
+            const updateStats = (p: PostWithStats) => {
+                if (p.id === postId && p.stats) {
+                    return {
+                        ...p,
+                        stats: {
+                            ...p.stats,
+                            upvotes: p.stats.upvotes + upvoteChange,
+                            downvotes: p.stats.downvotes + downvoteChange,
+                        }
+                    };
+                }
+                return p;
+            };
+
+            const newPost = updateStats(currentPost);
+            const newReplies = currentPost.replies.map(updateStats);
+
+            return { ...newPost, replies: newReplies };
+        });
+
+        const sendVoteRequest = async () => {
+            if (!fingerprint) {
+                setPost(originalPostState);
+                setUserVotes(originalUserVotes);
+                return;
+            }
+            try {
+                const res = await fetch('/api/votes', { //
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ postId, voteType, fingerprintHash: fingerprint }),
+                });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || "Server vote failed");
+                }
+            } catch (error) {
+                console.error("Reverting optimistic vote:", error);
+                setPost(originalPostState);
+                setUserVotes(originalUserVotes);
+                alert((error as Error).message);
+            }
+        };
+
+        sendVoteRequest();
     }, [fingerprint, post, userVotes]);
 
     const handleShare = async () => {
@@ -152,14 +227,12 @@ export default function PostDetailPage() {
                 <Link href="/" className="text-accent hover:underline">
                     ← 返回回音墙
                 </Link>
-                <button onClick={handleShare} aria-label="分享" className="text-accent hover:text-accent/80 p-2 rounded-lg transition-colors flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-                        <circle cx="18" cy="5" r="2" />
-                        <circle cx="6" cy="12" r="2" />
-                        <circle cx="18" cy="19" r="2" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                    </svg>
+                <button
+                    onClick={handleShare}
+                    aria-label="Share post"
+                    className="p-2 rounded-lg transition-colors icon-base icon-share"
+                >
+                    <Icon name="share" />
                 </button>
             </header>
             {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300">{shareFeedback}</div>}
@@ -171,9 +244,10 @@ export default function PostDetailPage() {
                 <div className="my-6 text-center">
                     <Link
                         href={`/compose?parentId=${post.id}`}
-                        className="inline-block bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation"
+                        className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation"
                     >
-                        💬 回复这回音
+                        <Icon name="comment" />
+                        回复这回音
                     </Link>
                 </div>
 
