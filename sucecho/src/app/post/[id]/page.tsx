@@ -173,7 +173,8 @@ export default function PostDetailPage() {
             try {
                 const res = await fetch('/api/votes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ postId, voteType, fingerprintHash: fingerprint }) });
                 if (!res.ok) throw new Error("Server vote failed");
-            } catch (error) {
+            } catch (err) { // FIX: Changed variable name from error to err
+                console.error("Reverting optimistic vote:", err);
                 setPost(originalPost);
                 setUserVotes(originalUserVotes);
                 alert("投票失败，请重试。");

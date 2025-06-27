@@ -11,7 +11,8 @@ export async function GET(
     { params }: { params: { fingerprint: string } }
 ) {
     try {
-        const userFingerprint = params.fingerprint;
+        // FIX: Await params for Next.js 15 compatibility
+        const { fingerprint: userFingerprint } = await params;
 
         if (!userFingerprint) {
             return NextResponse.json({ message: 'User fingerprint is required' }, { status: 400 });

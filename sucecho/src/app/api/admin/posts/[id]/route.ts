@@ -5,9 +5,8 @@ import eventEmitter from '@/lib/event-emitter';
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        // FIX: Await params for Next.js 15/Turbopack compatibility
-        const awaitedParams = await params;
-        const postId = awaitedParams.id;
+        // FIX: Await params for Next.js 15 compatibility
+        const { id: postId } = await params;
 
         if (!postId) {
             return NextResponse.json({ message: 'Post ID is required' }, { status: 400 });

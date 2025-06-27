@@ -2,6 +2,7 @@
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import eventEmitter from '@/lib/event-emitter';
+import { generateCodename } from '@/lib/codename';
 
 /**
  * Handles GET requests to fetch the main feed of posts with pagination.
@@ -80,7 +81,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Content exceeds 400 characters' }, { status: 400 });
     }
 
+    // --- START OF NEW LOGIC ---
+    // Use a transaction to ensure both post and user profile are handled together
     const newPostWithStats = await prisma.$transaction(async (tx) => {
+        // Step 1: Create or update the user's anonymized profile
+        await tx.userAnonymizedProfile.upsert({
+            where: { fingerprintHash },
+            update: {
+                lastSeenAt: new Date(),
+            },
+            create: {
+                fingerprintHash,
+                codename: generateCodename(fingerprintHash),
+                lastSeenAt: new Date(),
+            }
+        });
+
+        // Step 2: Create the post
         const createdPost = await tx.post.create({
             data: {
                 content,
@@ -88,24 +105,24 @@ export async function POST(request: Request) {
                 parentPostId: parentId ? Number(parentId) : null,
             },
         });
-
+        
+        // Step 3: Handle reply counts if it's a reply
         if (parentId) {
             await tx.postStats.upsert({
                 where: { postId: Number(parentId) },
                 update: { replyCount: { increment: 1 } },
                 create: { 
                     postId: Number(parentId), 
-                    replyCount: 1, 
-                    upvotes: 0, 
-                    downvotes: 0, 
-                    hotnessScore: 0 
+                    replyCount: 1,
                 }
             });
         }
         
+        // Step 4: Create the stats for the new post
         const createdStats = await tx.postStats.create({
           data: {
             postId: createdPost.id,
+            // default values are set in schema, but being explicit is fine
             upvotes: 0,
             downvotes: 0,
             replyCount: 0,
@@ -118,6 +135,7 @@ export async function POST(request: Request) {
             stats: createdStats
         };
     });
+    // --- END OF NEW LOGIC ---
 
     eventEmitter.emit('new_post', newPostWithStats);
     
@@ -125,7 +143,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error("Error creating post:", error);
-    if (error instanceof Error && 'code' in error && (error as Record<string, unknown>).code === 'P2025') {
+    if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
        return NextResponse.json({ error: 'The post you are replying to no longer exists.' }, { status: 404 });
     }
     return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });

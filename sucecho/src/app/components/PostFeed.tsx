@@ -17,7 +17,6 @@ export default function PostFeed() {
 
     const { fingerprint } = useFingerprint();
 
-    // FIX: Initialize useRef with null and update the type accordingly
     const observer = useRef<IntersectionObserver | null>(null);
 
     const loadMorePosts = useCallback(async () => {
@@ -112,14 +111,33 @@ export default function PostFeed() {
         let upvoteChange = 0;
         let downvoteChange = 0;
 
+        // --- FIX START ---
         if (currentVote === voteType) {
+            // Un-voting
             newVoteState = undefined;
-            voteType === 1 ? upvoteChange = -1 : downvoteChange = -1;
+            if (voteType === 1) {
+                upvoteChange = -1;
+            } else {
+                downvoteChange = -1;
+            }
         } else if (currentVote) {
-            voteType === 1 ? (upvoteChange = 1, downvoteChange = -1) : (upvoteChange = -1, downvoteChange = 1);
+            // Changing vote
+            if (voteType === 1) {
+                upvoteChange = 1;
+                downvoteChange = -1;
+            } else {
+                upvoteChange = -1;
+                downvoteChange = 1;
+            }
         } else {
-            voteType === 1 ? upvoteChange = 1 : downvoteChange = 1;
+            // New vote
+            if (voteType === 1) {
+                upvoteChange = 1;
+            } else {
+                downvoteChange = 1;
+            }
         }
+        // --- FIX END ---
 
         setUserVotes(prev => {
             const newVotes = { ...prev };

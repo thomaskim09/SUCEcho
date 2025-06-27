@@ -1,5 +1,30 @@
 ---
 
+## Important: Next.js 15+ Development Note
+
+A key change in Next.js 15 (especially when using Turbopack) is how parameters from dynamic routes are handled. They must be awaited.
+
+**Problem:** You get an error like `Error: Route "..." used \`params.id\`. \`params\` should be awaited before using its properties.`
+
+**Solution:** Always `await` the `params` object before accessing its properties in both page components and API routes.
+
+### **For Page Components (`/app/post/[id]/page.tsx`):**
+
+```typescript
+// Define the params type as a Promise
+export type PageParams = Promise<{ id: string }>;
+
+// The component must be async
+export default async function MyPage({ params }: { params: PageParams }) {
+  // Await the params to get the value
+  const { id } = await params;
+
+  // Now you can safely use `id`
+  return <div>The post ID is: {id}</div>;
+}
+
+---
+
 ## Troubleshooting
 
 A quick guide for common setup errors.
