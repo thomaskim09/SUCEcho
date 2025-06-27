@@ -152,8 +152,14 @@ export default function PostDetailPage() {
                 <Link href="/" className="text-accent hover:underline">
                     ← 返回回音墙
                 </Link>
-                <button onClick={handleShare} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                    Share
+                <button onClick={handleShare} aria-label="分享" className="text-accent hover:text-accent/80 p-2 rounded-lg transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+                        <circle cx="18" cy="5" r="2" />
+                        <circle cx="6" cy="12" r="2" />
+                        <circle cx="18" cy="19" r="2" />
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                    </svg>
                 </button>
             </header>
             {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300">{shareFeedback}</div>}
