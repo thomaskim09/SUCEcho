@@ -8,6 +8,7 @@ import { FingerprintProvider } from '@/context/FingerprintContext';
 import { AdminProvider } from "@/context/AdminContext";
 import AdminShield from "./components/AdminShield";
 import UserStatusBanner from "./components/UserStatusBanner";
+import OnboardingWrapper from "./components/OnboardingWrapper"; // Import the new wrapper
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -31,10 +32,14 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
       <body className={`${notoSans.variable} ${robotoMono.variable} antialiased`}>
         <AdminProvider>
           <FingerprintProvider>
-            <UserStatusBanner />
-            <Header />
-            <FramerWrapper>{children}</FramerWrapper>
-            <AdminShield />
+            {/* The Wrapper now controls what is displayed */}
+            <OnboardingWrapper>
+              {/* These components will only show AFTER onboarding is complete */}
+              <UserStatusBanner />
+              <Header />
+              <FramerWrapper>{children}</FramerWrapper>
+              <AdminShield />
+            </OnboardingWrapper>
           </FingerprintProvider>
         </AdminProvider>
       </body>

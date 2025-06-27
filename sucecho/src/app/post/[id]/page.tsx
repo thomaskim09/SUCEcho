@@ -150,7 +150,7 @@ export default function PostDetailPage() {
         <div className="container mx-auto max-w-2xl p-4">
             <header className="py-4 flex justify-between items-center">
                 <Link href="/" className="text-accent hover:underline">
-                    ← Back to the Echo Wall
+                    ← 返回回音墙
                 </Link>
                 <button onClick={handleShare} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                     Share
@@ -167,13 +167,13 @@ export default function PostDetailPage() {
                         href={`/compose?parentId=${post.id}`}
                         className="inline-block bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation"
                     >
-                        💬 Reply to this Echo
+                        💬 回复这回音
                     </Link>
                 </div>
 
                 <div className="mt-8">
                     <h2 className="text-xl font-mono text-gray-400 mb-2">
-                        Replies ({post.replies.length})
+                        回复 ({post.replies.length})
                     </h2>
                     <div className="space-y-2 border-l-2 border-accent/30 pl-4 ml-4">
                         {post.replies.length > 0 ? (
@@ -183,7 +183,7 @@ export default function PostDetailPage() {
                                 ))}
                             </AnimatePresence>
                         ) : (
-                            <p className="text-gray-500 text-sm">No replies yet.</p>
+                            <p className="text-gray-500 text-sm">目前并没有回复.</p>
                         )}
                     </div>
                 </div>
