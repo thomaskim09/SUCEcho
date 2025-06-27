@@ -1,3 +1,4 @@
+// sucecho/src/app/layout.tsx
 import type { Metadata } from "next";
 import { Noto_Sans_SC, Roboto_Mono } from "next/font/google";
 import "./globals.css";
@@ -6,6 +7,8 @@ import FramerWrapper from "./components/FramerWrapper";
 import { FingerprintProvider } from '@/context/FingerprintContext';
 import { AdminProvider } from "@/context/AdminContext";
 import AdminShield from "./components/AdminShield";
+import { PageTransitionProvider } from "@/context/PageTransitionContext"; // Import the new provider
+import UserStatusBanner from "./components/UserStatusBanner";
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -23,21 +26,18 @@ export const metadata: Metadata = {
   description: "Sounds only exist for a day.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode; }) {
   return (
     <html lang="en">
-      <body
-        className={`${notoSans.variable} ${robotoMono.variable} antialiased`}
-      >
+      <body className={`${notoSans.variable} ${robotoMono.variable} antialiased`}>
         <AdminProvider>
           <FingerprintProvider>
-            <Header />
-            <FramerWrapper>{children}</FramerWrapper>
-            <AdminShield />
+            <PageTransitionProvider>
+              <UserStatusBanner />
+              <Header />
+              <FramerWrapper>{children}</FramerWrapper>
+              <AdminShield />
+            </PageTransitionProvider>
           </FingerprintProvider>
         </AdminProvider>
       </body>

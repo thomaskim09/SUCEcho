@@ -178,12 +178,18 @@ export default function PostFeed() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ postId, voteType, fingerprintHash: fingerprint }),
                 });
-                if (!res.ok) throw new Error("Server vote failed");
+                if (!res.ok) {
+                    // Await the JSON body of the error response
+                    const errorData = await res.json();
+                    // Throw an error with the specific message from the server
+                    throw new Error(errorData.error || "Server vote failed");
+                }
             } catch (error) {
                 console.error("Reverting optimistic vote:", error);
                 setPosts(originalPosts);
                 setUserVotes(originalUserVotes);
-                alert("投票失败，请重试。");
+                // This alert will now show the detailed message from the API
+                alert((error as Error).message);
             }
         };
         sendVoteRequest();

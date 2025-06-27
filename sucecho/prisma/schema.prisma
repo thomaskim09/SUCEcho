@@ -56,10 +56,11 @@ model UserAnonymizedProfile {
 }
 
 model AdminLog {
-  id                    Int      @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   targetFingerprintHash String
   action                String
   adminId               String
   reason                String?
-  createdAt             DateTime @default(now())
+  createdAt             DateTime  @default(now())
+  isAcknowledged        Boolean   @default(false) 
 }

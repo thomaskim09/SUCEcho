@@ -81,6 +81,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Content exceeds 400 characters' }, { status: 400 });
     }
 
+    const userProfile = await prisma.userAnonymizedProfile.findUnique({
+      where: { fingerprintHash },
+    });
+    
+    if (userProfile?.isBanned) {
+        const expires = userProfile.banExpiresAt;
+        if (!expires || new Date(expires) > new Date()) {
+            const banLog = await prisma.adminLog.findFirst({
+                where: { targetFingerprintHash: fingerprintHash, action: 'BAN' },
+                orderBy: { createdAt: 'desc' },
+            });
+    
+            let message = `You are currently banned.`;
+            if (expires) {
+                message += ` Your ban will expire on ${new Date(expires).toLocaleString()}.`;
+            } else {
+                message += ` This ban is permanent.`;
+            }
+            if (banLog?.reason) {
+                message += ` Reason: ${banLog.reason}`;
+            }
+            
+            return NextResponse.json({ error: message }, { status: 403 });
+        }
+    }
+
     // --- START OF NEW LOGIC ---
     // Use a transaction to ensure both post and user profile are handled together
     const newPostWithStats = await prisma.$transaction(async (tx) => {

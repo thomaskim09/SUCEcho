@@ -11,6 +11,15 @@ export async function POST(request: Request) {
     if (!postId || !fingerprintHash || ![-1, 1].includes(voteType)) {
       return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 });
     }
+    const userProfile = await prisma.userAnonymizedProfile.findUnique({
+      where: { fingerprintHash },
+  });
+
+  if (userProfile?.isBanned) {
+      if (!userProfile.banExpiresAt || new Date(userProfile.banExpiresAt) > new Date()) {
+          return NextResponse.json({ error: 'You are currently banned and cannot vote.' }, { status: 403 });
+      }
+  }
     
     const minVotesForPurification = 20;
     const downvoteRatioForPurification = 0.7;

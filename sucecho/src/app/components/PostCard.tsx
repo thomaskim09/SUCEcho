@@ -8,10 +8,10 @@ import { useFingerprint } from '@/context/FingerprintContext';
 import { useAdminSession } from '@/hooks/useAdminSession';
 import { generateCodename } from '@/lib/codename';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Import the router
+import { useRouter } from 'next/navigation';
+import { usePageTransition } from '@/context/PageTransitionContext';
 
 const timeSince = (date: Date): string => {
-    // ... (timeSince function remains the same)
     if (!date) return '';
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     let interval = seconds / 31536000;
@@ -37,8 +37,16 @@ interface PostCardProps {
 export default function PostCard({ post, isLink = true, onVote, userVote }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
-    const router = useRouter(); // Initialize the router
+    const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { setPost: setTransitionPost } = usePageTransition();
+
+    const handleCardClick = () => {
+        // Set the post data into the context right before navigation
+        if (isLink) {
+            setTransitionPost(post);
+        }
+    };
 
     const handleToggleMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -50,7 +58,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
         e.preventDefault();
         e.stopPropagation();
         if (isFingerprintLoading || !fingerprint) {
-            alert("无法识别您的浏览器，请稍候再试。");
+            alert("Cannot identify your browser. Please try again later.");
             return;
         }
         onVote(post.id, voteType);
@@ -71,15 +79,17 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
                 const error = await res.json();
                 throw new Error(error.message || 'Failed to delete post');
             }
-            // The UI will now update via the SSE event, so an alert isn't strictly necessary
-            // alert('Post deleted successfully.');
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                alert(`Error: ${err.message}`);
-            } else {
-                alert('An unknown error occurred');
-            }
+            alert(`Error: ${(err as Error).message}`);
         }
+        setIsMenuOpen(false);
+    };
+
+    const handleViewProfile = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Here you would also set the user profile into the transition context if you implement that
+        router.push(`/admin/users/${post.fingerprintHash}`);
         setIsMenuOpen(false);
     };
 
@@ -89,15 +99,6 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
         alert(`Post ID: ${post.id}\nFingerprint Hash: ${post.fingerprintHash}`);
         setIsMenuOpen(false);
     };
-
-    // --- FIX: Handler for programmatic navigation ---
-    const handleViewProfile = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        router.push(`/admin/users/${post.fingerprintHash}`);
-        setIsMenuOpen(false);
-    };
-    // --- END FIX ---
 
     const upvoteStyle = userVote === 1 ? 'text-accent' : 'hover:text-white';
     const downvoteStyle = userVote === -1 ? 'text-accent' : 'hover:text-white';
@@ -122,9 +123,9 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
 
             <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
                 {isAdmin ? (
-                    <span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>
+                    <span className="font-mono text-xs opacity-50">Publisher: {generateCodename(post.fingerprintHash)}</span>
                 ) : (
-                    <span></span> // Empty span to keep the space
+                    <span></span>
                 )}
             </div>
 
@@ -146,12 +147,10 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
             {isMenuOpen && (
                 <div className="absolute top-12 right-2 bg-gray-900 rounded-lg shadow-lg p-2 z-10 w-48">
                     <ul>
-                        <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
-                        {/* --- FIX: Changed Link to a button with an onClick handler --- */}
-                        <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</button></li>
-                        {/* --- END FIX --- */}
-                        <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ 帖子详情</button></li>
-                        <li><button className="w-full text-left p-2 rounded text-gray-500 cursor-not-allowed" disabled>📌 置顶24小时</button></li>
+                        <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ Instant Delete</button></li>
+                        <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 View User Profile</button></li>
+                        <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ Post Details</button></li>
+                        <li><button className="w-full text-left p-2 rounded text-gray-500 cursor-not-allowed" disabled>📌 Pin for 24h</button></li>
                     </ul>
                 </div>
             )}
@@ -163,7 +162,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
     }
 
     return (
-        <Link href={`/post/${post.id}`} className="no-underline" scroll={false}>
+        <Link href={`/post/${post.id}`} className="no-underline" scroll={false} onClick={handleCardClick}>
             {cardContent}
         </Link>
     );

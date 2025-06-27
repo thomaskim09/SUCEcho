@@ -56,6 +56,7 @@ export default function CreatePostForm({ parentId }: CreatePostFormProps) {
 
         } catch (err: unknown) {
             if (err instanceof Error) {
+                // This will now display the detailed ban message from the API
                 setError(err.message);
             } else {
                 setError('An unknown error occurred');
