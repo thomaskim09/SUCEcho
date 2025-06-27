@@ -16,6 +16,7 @@ export default function PostFeed() {
     const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
 
     const { fingerprint } = useFingerprint();
+    const initialFetchDone = useRef(false); // Ref to prevent duplicate fetches
 
     const observer = useRef<IntersectionObserver | null>(null);
 
@@ -64,7 +65,11 @@ export default function PostFeed() {
             }
         };
 
-        fetchInitialPosts();
+        // Only fetch initial posts if it hasn't been done yet
+        if (!initialFetchDone.current) {
+            fetchInitialPosts();
+            initialFetchDone.current = true;
+        }
 
         const eventSource = new EventSource('/api/live');
 
@@ -111,7 +116,6 @@ export default function PostFeed() {
         let upvoteChange = 0;
         let downvoteChange = 0;
 
-        // --- FIX START ---
         if (currentVote === voteType) {
             // Un-voting
             newVoteState = undefined;
@@ -137,7 +141,6 @@ export default function PostFeed() {
                 downvoteChange = 1;
             }
         }
-        // --- FIX END ---
 
         setUserVotes(prev => {
             const newVotes = { ...prev };
@@ -179,16 +182,13 @@ export default function PostFeed() {
                     body: JSON.stringify({ postId, voteType, fingerprintHash: fingerprint }),
                 });
                 if (!res.ok) {
-                    // Await the JSON body of the error response
                     const errorData = await res.json();
-                    // Throw an error with the specific message from the server
                     throw new Error(errorData.error || "Server vote failed");
                 }
             } catch (error) {
                 console.error("Reverting optimistic vote:", error);
                 setPosts(originalPosts);
                 setUserVotes(originalUserVotes);
-                // This alert will now show the detailed message from the API
                 alert((error as Error).message);
             }
         };
@@ -220,14 +220,14 @@ export default function PostFeed() {
 
             {nextCursor && <div ref={sentinelRef} className="h-10" />}
 
-            {isFetchingMore && <p className="text-center text-gray-400 py-4">加载更多回音...</p>}
+            {isFetchingMore && <p className="text-center text-gray-400 py-4">正在加载更多回音...</p>}
 
             {!isLoading && !isFetchingMore && !nextCursor && posts.length > 0 &&
-                <p className="text-center text-gray-500 py-8">--- 已到达回音壁的尽头 ---</p>
+                <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>
             }
 
             {!isLoading && posts.length === 0 &&
-                <p className="text-center text-gray-400 py-4">暂无回音，快来发表第一条吧！</p>
+                <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>
             }
         </div>
     );

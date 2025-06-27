@@ -59,15 +59,15 @@ export default function UserStatusBanner() {
     return (
         <div className="bg-yellow-600 text-white p-3 font-mono relative">
             <div className="container mx-auto text-center">
-                <p><strong>Admin Warning:</strong> {warning.reason || "No reason provided."}</p>
-                <p className="text-xs opacity-80">Issued on: {new Date(warning.createdAt).toLocaleString()}</p>
+                <p><strong>管理员警告:</strong> {warning.reason || "未提供理由。"}</p>
+                <p className="text-xs opacity-80">发布于: {new Date(warning.createdAt).toLocaleString()}</p>
             </div>
             <button
                 onClick={handleDismiss}
                 className="absolute top-1/2 right-4 -translate-y-1/2 bg-yellow-700 hover:bg-yellow-800 rounded-full p-2 text-xs"
-                aria-label="Dismiss Warning"
+                aria-label="解除警告"
             >
-                Dismiss
+                解除
             </button>
         </div>
     );

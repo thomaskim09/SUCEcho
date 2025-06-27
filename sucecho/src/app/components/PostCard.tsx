@@ -49,7 +49,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
         e.preventDefault();
         e.stopPropagation();
         if (isFingerprintLoading || !fingerprint) {
-            alert("Cannot identify your browser. Please try again later.");
+            alert("无法识别您的浏览器。请稍后再试。");
             return;
         }
         onVote(post.id, voteType);
@@ -58,7 +58,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
     const handleDelete = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!confirm(`Are you sure you want to delete post #${post.id}? This cannot be undone.`)) {
+        if (!confirm(`您确定要删除帖子 #${post.id} 吗？此操作无法撤销。`)) {
             return;
         }
 
@@ -114,7 +114,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
 
             <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
                 {isAdmin ? (
-                    <span className="font-mono text-xs opacity-50">Publisher: {generateCodename(post.fingerprintHash)}</span>
+                    <span className="font-mono text-xs opacity-50">发布人: {generateCodename(post.fingerprintHash)}</span>
                 ) : (
                     <span></span>
                 )}
@@ -138,10 +138,10 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
             {isMenuOpen && (
                 <div className="absolute top-12 right-2 bg-gray-900 rounded-lg shadow-lg p-2 z-10 w-48">
                     <ul>
-                        <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ Instant Delete</button></li>
-                        <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 View User Profile</button></li>
-                        <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ Post Details</button></li>
-                        <li><button className="w-full text-left p-2 rounded text-gray-500 cursor-not-allowed" disabled>📌 Pin for 24h</button></li>
+                        <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
+                        <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</button></li>
+                        <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ 帖子详情</button></li>
+                        <li><button className="w-full text-left p-2 rounded text-gray-500 cursor-not-allowed" disabled>📌 置顶24小时</button></li>
                     </ul>
                 </div>
             )}

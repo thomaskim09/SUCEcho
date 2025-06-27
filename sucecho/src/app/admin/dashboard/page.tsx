@@ -58,35 +58,35 @@ export default function AdminDashboardPage() {
         <div className="container mx-auto max-w-6xl p-4 text-white">
             <header className="py-4 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold font-mono text-accent mb-2">Admin Dashboard</h1>
-                    <p>Welcome, Guardian. This is your command center.</p>
+                    <h1 className="text-3xl font-bold font-mono text-accent mb-2">管理员仪表板</h1>
+                    <p>欢迎，守护者。这是您的指挥中心。</p>
                 </div>
                 <button
                     onClick={handleLogout}
                     className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
                 >
-                    Logout
+                    登出
                 </button>
             </header>
 
             <section className="mt-8">
-                <h2 className="text-2xl font-bold mb-4">User Management</h2>
+                <h2 className="text-2xl font-bold mb-4">用户管理</h2>
                 {loadingUsers ? (
-                    <div className="text-white text-center mt-8">Loading users...</div>
+                    <div className="text-white text-center mt-8">正在加载用户...</div>
                 ) : errorUsers ? (
-                    <div className="text-red-500 text-center mt-8">Error: {errorUsers}</div>
+                    <div className="text-red-500 text-center mt-8">错误: {errorUsers}</div>
                 ) : users.length === 0 ? (
-                    <p>No users to display.</p>
+                    <p>没有用户可显示。</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
                             <thead>
                                 <tr className="text-left text-gray-400 font-mono border-b border-gray-700">
-                                    <th className="p-4">Codename</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4">Purified Posts</th>
-                                    <th className="p-4">Last Seen</th>
-                                    <th className="p-4">Actions</th>
+                                    <th className="p-4">代号</th>
+                                    <th className="p-4">状态</th>
+                                    <th className="p-4">净化帖子</th>
+                                    <th className="p-4">上次活跃</th>
+                                    <th className="p-4">操作</th>
                                 </tr>
                             </thead>
                             <tbody>

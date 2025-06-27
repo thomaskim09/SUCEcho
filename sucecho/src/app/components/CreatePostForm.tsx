@@ -59,7 +59,7 @@ export default function CreatePostForm({ parentId }: CreatePostFormProps) {
                 // This will now display the detailed ban message from the API
                 setError(err.message);
             } else {
-                setError('An unknown error occurred');
+                setError('发生未知错误');
             }
         } finally {
             setIsSubmitting(false);

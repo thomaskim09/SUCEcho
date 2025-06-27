@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
             if (err instanceof Error) {
                 setError(err.message);
             } else {
-                setError('An unknown error occurred');
+                setError('发生未知错误');
             }
         } finally {
             setIsLoading(false);
@@ -47,10 +47,10 @@ export default function AdminLoginPage() {
     return (
         <div className="container mx-auto max-w-sm p-4 mt-20">
             <div className="p-6 rounded-lg shadow-xl" style={{ backgroundColor: 'var(--card-background)' }}>
-                <h1 className="text-2xl font-bold font-mono text-center mb-6 text-accent">Admin Login</h1>
+                <h1 className="text-2xl font-bold font-mono text-center mb-6 text-accent">管理员登录</h1>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                        <label className="block text-gray-300 mb-2" htmlFor="username">Username</label>
+                        <label className="block text-gray-300 mb-2" htmlFor="username">用户名</label>
                         <input
                             type="text"
                             id="username"
@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
                         />
                     </div>
                     <div className="mb-6">
-                        <label className="block text-gray-300 mb-2" htmlFor="password">Password</label>
+                        <label className="block text-gray-300 mb-2" htmlFor="password">密码</label>
                         <input
                             type="password"
                             id="password"
@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
                         className="w-full bg-accent text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                         disabled={isLoading}
                     >
-                        {isLoading ? 'Logging in...' : 'Login'}
+                        {isLoading ? '正在登录...' : '登录'}
                     </button>
                     {error && <p className="text-red-500 text-center mt-4">{error}</p>}
                 </form>

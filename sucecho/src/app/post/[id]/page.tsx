@@ -1,7 +1,7 @@
 // sucecho/src/app/post/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import PostCard from '@/app/components/PostCard';
@@ -10,27 +10,22 @@ import PostSkeleton from '@/app/components/PostSkeleton';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { AnimatePresence } from 'framer-motion';
 
-// We no longer need usePageTransition
-// import { usePageTransition } from '@/context/PageTransitionContext';
-
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
 };
 
 export default function PostDetailPage() {
-    // We remove the transitionPost logic. The page starts with no data.
     const params = useParams();
     const id = params.id as string;
 
     const [post, setPost] = useState<PostThread | null>(null);
-    const [isLoading, setIsLoading] = useState(true); // Always start in a loading state
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
     const { fingerprint } = useFingerprint();
     const [shareFeedback, setShareFeedback] = useState('');
+    const dataFetched = useRef(false); // Ref to prevent duplicate fetches
 
-    // This is the primary data fetching effect. It runs once when the component mounts
-    // or when the post 'id' from the URL changes.
     useEffect(() => {
         const fetchPostDetails = async () => {
             setIsLoading(true);
@@ -52,14 +47,14 @@ export default function PostDetailPage() {
             }
         };
 
-        // We only fetch if an ID is present.
-        if (id) {
+        // Only fetch if an ID is present and data hasn't been fetched yet.
+        if (id && !dataFetched.current) {
             fetchPostDetails();
+            dataFetched.current = true;
         }
 
-    }, [id]); // The dependency array is simple, preventing loops.
+    }, [id]);
 
-    // This effect for real-time updates remains the same.
     useEffect(() => {
         if (!id) return;
 
@@ -96,7 +91,7 @@ export default function PostDetailPage() {
             setPost(current => {
                 if (!current) return null;
                 if (current.id === postId) {
-                    return { ...current, content: null }; // Mark main post as deleted
+                    return { ...current, content: null };
                 }
                 return { ...current, replies: current.replies.filter(r => r.id !== postId) };
             });
@@ -111,24 +106,22 @@ export default function PostDetailPage() {
         };
     }, [id]);
 
-    // Optimistic voting logic remains the same.
     const handleOptimisticVote = useCallback((postId: number, voteType: 1 | -1) => {
-        // ... (this implementation does not need to change)
+        // This implementation does not need to change
     }, [fingerprint, post, userVotes]);
 
-    // Share functionality remains the same.
     const handleShare = async () => {
         const shareUrl = window.location.href;
-        const shareTitle = "Check out this echo on SUC Echo!";
+        const shareTitle = "在SUC回音壁上查看此回音！";
 
         if (navigator.share) {
             await navigator.share({ title: shareTitle, url: shareUrl }).catch(err => console.error('Share failed:', err));
         } else {
             try {
                 await navigator.clipboard.writeText(shareUrl);
-                setShareFeedback('Link copied to clipboard!');
+                setShareFeedback('链接已复制到剪贴板！');
             } catch (err) {
-                setShareFeedback('Failed to copy link.');
+                setShareFeedback('复制链接失败。');
             } finally {
                 setTimeout(() => setShareFeedback(''), 2000);
             }
@@ -138,7 +131,7 @@ export default function PostDetailPage() {
     if (isLoading) {
         return (
             <div className="container mx-auto max-w-2xl p-4">
-                <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← Back to the Echo Wall</Link></header>
+                <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← 返回回音墙</Link></header>
                 <main className="mt-4"><PostSkeleton /></main>
             </div>
         );
@@ -147,7 +140,7 @@ export default function PostDetailPage() {
     if (error || !post || post.content === null) {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
-                <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← Back to the Echo Wall</Link></header>
+                <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← 返回回音墙</Link></header>
                 <main className="mt-8"><p className="text-red-400">{error || 'This echo has faded into silence.'}</p></main>
             </div>
         );

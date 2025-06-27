@@ -21,8 +21,8 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SUC Echo",
-  description: "Sounds only exist for a day.",
+  title: "SUC回音壁",
+  description: "声音只存在一天。",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
