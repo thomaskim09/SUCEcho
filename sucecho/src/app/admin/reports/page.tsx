@@ -64,7 +64,6 @@ export default function AdminReportsPage() {
                             onVote={handleDummyVote}
                             onDelete={handlePostDeleted}
                             isLink={true}
-                            isStacked={true}
                         />
                         <div className="mt-4 border-t border-red-700/50 pt-4">
                             {/* MODIFICATION: Removed the report count from the heading */}

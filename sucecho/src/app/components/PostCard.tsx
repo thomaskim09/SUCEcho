@@ -34,12 +34,11 @@ interface PostCardProps {
     onVote: (postId: number, voteType: 1 | -1) => void;
     onDelete?: (postId: number) => void;
     userVote?: 1 | -1;
-    isStacked?: boolean;
     isPurifying?: boolean;
     onPurificationComplete?: (postId: number) => void;
 }
 
-export default function PostCard({ post, isLink = true, onVote, onDelete, userVote, isStacked = false, isPurifying = false, onPurificationComplete }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, userVote, isPurifying = false, onPurificationComplete }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
     const router = useRouter();
@@ -70,7 +69,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, userVo
 
     const {
         showMeter: showPurificationMeter,
-        downvotesNeeded,
         meterFillPercentage
     } = checkPurificationStatus({
         upvotes: post.stats?.upvotes ?? 0,
@@ -82,9 +80,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, userVo
     const hasUpvotes = (post.stats?.upvotes ?? 0) > 0;
     const hasDownvotes = (post.stats?.downvotes ?? 0) > 0;
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
-    const replyCount = post.stats?.replyCount ?? 0;
-    const stackLevel = isStacked ? Math.min(replyCount, 3) : 0;
-    const stackClass = stackLevel > 0 ? `stacked stacked-${stackLevel}` : '';
 
     const cardVariants: Variants = {
         hidden: { opacity: 0, y: 50 },
@@ -118,7 +113,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, userVo
                     onPurificationComplete(post.id);
                 }
             }}
-            className={`p-4 rounded-lg my-2 glass-card relative ${isLink ? 'cursor-pointer' : ''} ${stackClass} ${isPurifying ? 'pointer-events-none' : ''}`}
+            className={`p-4 rounded-lg my-2 glass-card relative ${isLink ? 'cursor-pointer' : ''} ${isPurifying ? 'pointer-events-none' : ''}`}
         >
             {/* All card content goes directly here */}
             {isAdmin && (<div className="absolute top-2 right-2"> <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">...</button></div>)}
@@ -130,7 +125,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, userVo
                     <motion.div className="mt-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
                         <div className="flex items-center gap-2">
                             <span className="text-red-400 font-mono text-xs flex-shrink-0">
-                                距离净化还需 {downvotesNeeded} 票
+                                净化投票
                             </span>
                             <div className="w-full bg-gray-700 rounded-full h-1.5">
                                 <motion.div className="bg-gradient-to-r from-yellow-500 to-red-600 h-1.5 rounded-full" style={{ width: `${meterFillPercentage}%` }} />

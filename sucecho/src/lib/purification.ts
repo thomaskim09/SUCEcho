@@ -5,63 +5,54 @@ interface PurificationInput {
     downvotes: number;
 }
 
+// REMOVED: `downvotesNeededText` is no longer part of the return signature.
 interface PurificationStatus {
     shouldPurify: boolean;
     showMeter: boolean;
-    downvotesNeeded: number;
     meterFillPercentage: number;
 }
 
+/**
+ * Checks if a post should be purified based on votes and calculates UI display values.
+ */
 export function checkPurificationStatus(
     input: PurificationInput
 ): PurificationStatus {
     const { upvotes, downvotes } = input;
     const totalVotes = upvotes + downvotes;
 
-    // --- RULE DEFINITIONS ---
     const minVotesForPurification = parseInt(
         process.env.NEXT_PUBLIC_PURIFICATION_MIN_VOTES || '20',
         10
     );
-    const downvoteToUpvoteRatio = 2; // Rule: downvotes > upvotes * 2
+    const downvoteToUpvoteRatio = 2;
 
-    // --- CALCULATIONS ---
-    const isPastMinVotes = totalVotes >= minVotesForPurification;
     const isRatioMet = downvotes > upvotes * downvoteToUpvoteRatio;
+    const isTotalVotesMet = totalVotes >= minVotesForPurification;
+    const shouldPurify = isRatioMet && isTotalVotesMet;
 
-    const shouldPurify = isPastMinVotes && isRatioMet;
-    const showMeter = downvotes > upvotes;
+    const showMeter = downvotes > upvotes && !shouldPurify;
 
-    let downvotesNeeded = 0;
     let meterFillPercentage = 0;
 
     if (showMeter) {
-        // Calculate "Downvotes Needed"
-        const requiredByRatio = Math.floor(upvotes * downvoteToUpvoteRatio) + 1;
-        const neededForRatio = requiredByRatio - downvotes;
-        const neededForMinTotal = minVotesForPurification - totalVotes;
-        downvotesNeeded = Math.max(0, neededForRatio, neededForMinTotal);
+        const progressToMinVotes = (totalVotes / minVotesForPurification) * 100;
+        const targetDownvotesForRatio =
+            Math.floor(upvotes * downvoteToUpvoteRatio) + 1;
+        const currentDownvotesProgress = Math.max(0, downvotes - upvotes);
+        const requiredDownvoteRange = targetDownvotesForRatio - upvotes;
 
-        // Calculate Meter Fill Percentage
-        const meterStart = upvotes + 1;
-        const meterEnd = requiredByRatio;
-        const meterRange = meterEnd - meterStart;
-        const currentProgress = downvotes - meterStart;
+        const progressToRatio =
+            requiredDownvoteRange > 0
+                ? (currentDownvotesProgress / requiredDownvoteRange) * 100
+                : 100;
 
-        if (meterRange > 0) {
-            meterFillPercentage = Math.max(
-                0,
-                Math.min(100, (currentProgress / meterRange) * 100)
-            );
-        } else if (downvotes >= meterEnd) {
-            meterFillPercentage = 100;
-        }
+        meterFillPercentage = Math.min(progressToMinVotes, progressToRatio);
     }
 
     return {
         shouldPurify,
         showMeter,
-        downvotesNeeded,
         meterFillPercentage,
     };
 }
