@@ -31,7 +31,7 @@ export function checkPurificationStatus(
     const isTotalVotesMet = totalVotes >= minVotesForPurification;
     const shouldPurify = isRatioMet && isTotalVotesMet;
 
-    const showMeter = downvotes > upvotes && !shouldPurify;
+    const showMeter = downvotes > upvotes && !shouldPurify && isTotalVotesMet;
 
     let meterFillPercentage = 0;
 
