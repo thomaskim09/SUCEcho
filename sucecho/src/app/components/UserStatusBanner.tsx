@@ -23,10 +23,12 @@ export default function UserStatusBanner() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ fingerprintHash: fingerprint }),
                 });
-                const data = await res.json();
-                if (data.warning) {
-                    setWarning(data.warning);
-                    setIsVisible(true);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.warning) {
+                        setWarning(data.warning);
+                        setIsVisible(true);
+                    }
                 }
             };
             checkStatus();
@@ -37,7 +39,9 @@ export default function UserStatusBanner() {
         if (!fingerprint) return;
         setIsVisible(false); // Hide immediately for better UX
         try {
-            await fetch('/api/users/acknowledge-warning', {
+            // FIX: The URL was pointing to the old, non-existent endpoint.
+            // It should point to the correct admin route.
+            await fetch('/api/admin/users/acknowledge-warning', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fingerprintHash: fingerprint }),
