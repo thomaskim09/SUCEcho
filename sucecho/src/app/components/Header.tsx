@@ -6,6 +6,43 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// NEW: Live Indicator Component with heartbeat and glow effect
+const LiveIndicator = () => (
+    <div className="flex items-center gap-2 font-mono text-sm text-red-500">
+        <motion.div
+            className="w-2 h-2 bg-red-500 rounded-full"
+            animate={{
+                scale: [1, 1.4, 1, 1.2, 1], // Heartbeat pulse
+                boxShadow: [ // Glowing effect
+                    "0 0 5px rgba(239, 68, 68, 0.7)",
+                    "0 0 15px rgba(239, 68, 68, 0.9)",
+                    "0 0 5px rgba(239, 68, 68, 0.7)",
+                    "0 0 10px rgba(239, 68, 68, 0.8)",
+                    "0 0 5px rgba(239, 68, 68, 0.7)",
+                ]
+            }}
+            transition={{
+                duration: 1.5, // A bit faster for a heartbeat feel
+                repeat: Infinity,
+                ease: "easeInOut",
+            }}
+        />
+        <motion.span
+            animate={{
+                opacity: [1, 0.8, 1, 1, 0.8]
+            }}
+            transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+            }}
+        >
+            LIVE
+        </motion.span>
+    </div>
+);
+
+
 export default function Header() {
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,7 +64,6 @@ export default function Header() {
         </div>
     );
 
-    // Add "我的回音" to the navigation links
     const navLinks = [
         { href: "/how-it-works", label: "运作方式" },
         { href: "/about", label: "关于我们" },
@@ -41,15 +77,19 @@ export default function Header() {
                     <Logo />
                 </Link>
 
-                <nav className="hidden md:flex items-center gap-6 font-mono text-lg">
-                    {navLinks.map(link => (
-                        <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors">
-                            {link.label}
-                        </Link>
-                    ))}
-                </nav>
+                <div className="hidden md:flex items-center gap-6">
+                    {pathname === '/' && <LiveIndicator />}
+                    <nav className="flex items-center gap-6 font-mono text-lg">
+                        {navLinks.map(link => (
+                            <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors">
+                                {link.label}
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
 
-                <div className="md:hidden">
+                <div className="flex items-center gap-4 md:hidden">
+                    {pathname === '/' && <LiveIndicator />}
                     <button onClick={toggleMenu} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="3" y1="12" x2="21" y2="12"></line>
