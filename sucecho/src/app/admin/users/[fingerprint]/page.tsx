@@ -1,7 +1,18 @@
 // sucecho/src/app/admin/users/[fingerprint]/page.tsx
 import Link from 'next/link';
 
-export default function UserProfilePage({ params }: any) {
+// As per the solution for Next.js 15, we define the params type as a Promise.
+type UserProfilePageParams = Promise<{ fingerprint: string }>;
+
+interface UserProfilePageProps {
+    params: UserProfilePageParams;
+}
+
+// The component MUST be async to await the params.
+export default async function UserProfilePage({ params }: UserProfilePageProps) {
+    // Awaiting the params object resolves the type mismatch during build.
+    const { fingerprint } = await params;
+
     return (
         <div className="container mx-auto max-w-4xl p-4 text-white">
             <header className="py-4">
@@ -9,7 +20,7 @@ export default function UserProfilePage({ params }: any) {
                     &larr; Back to Dashboard
                 </Link>
                 <h1 className="text-2xl font-bold font-mono text-accent mb-2">User Anonymous Profile</h1>
-                <p className="font-mono text-sm opacity-70">Fingerprint: {params.fingerprint}</p>
+                <p className="font-mono text-sm opacity-70">Fingerprint: {fingerprint}</p>
             </header>
 
             <div className="mt-8 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>

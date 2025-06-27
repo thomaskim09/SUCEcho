@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ postId: transactionResult.postId, stats: transactionResult.stats });
 
   } catch (error) {
-    if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+    if (error instanceof Error && 'code' in error && (error as Record<string, unknown>).code === 'P2025') {
        return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
     console.error(`Error processing vote for post:`, error);

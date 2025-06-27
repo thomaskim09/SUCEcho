@@ -1,28 +1,33 @@
 // sucecho/src/app/api/admin/posts/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import eventEmitter from '@/lib/event-emitter';
 
-export async function DELETE(request: NextRequest, { params }: any) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const postId = params.id;
+        // FIX: Await params for Next.js 15/Turbopack compatibility
+        const awaitedParams = await params;
+        const postId = awaitedParams.id;
 
         if (!postId) {
             return NextResponse.json({ message: 'Post ID is required' }, { status: 400 });
         }
 
-        // Check if the post exists
+        const numericPostId = Number(postId);
+        
         const existingPost = await prisma.post.findUnique({
-            where: { id: Number(postId) },
+            where: { id: numericPostId },
         });
 
         if (!existingPost) {
             return NextResponse.json({ message: 'Post not found' }, { status: 404 });
         }
 
-        // Delete the post
         await prisma.post.delete({
-            where: { id: Number(postId) },
+            where: { id: numericPostId },
         });
+
+        eventEmitter.emit('delete_post', { postId: numericPostId });
 
         return NextResponse.json({ message: 'Post deleted successfully' }, { status: 200 });
     } catch (error) {

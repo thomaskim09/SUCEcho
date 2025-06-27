@@ -10,14 +10,14 @@ export async function GET(req: Request) {
     try {
       writer.write(encoder.encode(`event: ${event}\n`));
       writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-    } catch (e) {
+    } catch {
       console.warn('Write to SSE failed, client likely disconnected.');
     }
   };
 
-  const onNewPost = (post: any) => writeSseMessage('new_post', post);
-  const onUpdateVote = (voteData: any) => writeSseMessage('update_vote', voteData);
-  const onDeletePost = (deleteData: any) => writeSseMessage('delete_post', deleteData); // Handler for deletion
+  const onNewPost = (post: Record<string, unknown>) => writeSseMessage('new_post', post);
+  const onUpdateVote = (voteData: Record<string, unknown>) => writeSseMessage('update_vote', voteData);
+  const onDeletePost = (deleteData: Record<string, unknown>) => writeSseMessage('delete_post', deleteData); // Handler for deletion
 
   eventEmitter.on('new_post', onNewPost);
   eventEmitter.on('update_vote', onUpdateVote);

@@ -2,9 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET(request: Request, context: { params: { fingerprint: string } }) {
+/**
+ * Handles GET requests to fetch details for a specific user profile based on their fingerprint.
+ * The function signature has been updated to correctly destructure params.
+ */
+export async function GET(
+    request: NextRequest, 
+    { params }: { params: { fingerprint: string } }
+) {
     try {
-        const userFingerprint = context.params.fingerprint;
+        const userFingerprint = params.fingerprint;
 
         if (!userFingerprint) {
             return NextResponse.json({ message: 'User fingerprint is required' }, { status: 400 });

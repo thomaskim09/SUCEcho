@@ -4,14 +4,22 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
     try {
+        // Fetch all fields from the UserAnonymizedProfile model
         const users = await prisma.userAnonymizedProfile.findMany({
+            // No 'select' is needed if you want all fields,
+            // but we can be explicit for clarity.
             select: {
-                fingerprint: true,
-                createdAt: true,
-                _count: {
-                    select: { posts: true, votes: true },
-                },
+                fingerprintHash: true,
+                codename: true,
+                purifiedPostCount: true,
+                isBanned: true,
+                banExpiresAt: true,
+                firstSeenAt: true,
+                lastSeenAt: true
             },
+            orderBy: {
+                lastSeenAt: 'desc'
+            }
         });
         return NextResponse.json(users, { status: 200 });
     } catch (error) {

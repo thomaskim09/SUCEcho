@@ -6,9 +6,11 @@ interface Params {
   id: string;
 }
 
-export async function GET(request: Request, context: { params: Params }) {
+// FIX: Destructure `params` from the second argument directly.
+export async function GET(request: Request, { params }: { params: Params }) {
   try {
-    const postId = parseInt(context.params.id, 10);
+    // FIX: Use `params.id` instead of `context.params.id`.
+    const postId = parseInt(params.id, 10);
 
     if (isNaN(postId)) {
       return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 });
@@ -16,13 +18,12 @@ export async function GET(request: Request, context: { params: Params }) {
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      // --- START OF CHANGE ---
       select: {
         id: true,
         content: true,
         createdAt: true,
         parentPostId: true,
-        fingerprintHash: true, // <-- The missing piece for the main post
+        fingerprintHash: true,
         stats: {
           select: { upvotes: true, downvotes: true, replyCount: true }
         },
@@ -33,14 +34,13 @@ export async function GET(request: Request, context: { params: Params }) {
             content: true,
             createdAt: true,
             parentPostId: true,
-            fingerprintHash: true, // <-- The missing piece for the replies
+            fingerprintHash: true,
             stats: {
               select: { upvotes: true, downvotes: true, replyCount: true }
             }
           }
         },
       },
-      // --- END OF CHANGE ---
     });
 
     if (!post) {
@@ -54,7 +54,7 @@ export async function GET(request: Request, context: { params: Params }) {
     return NextResponse.json(post);
 
   } catch (error) {
-    console.error(`Error fetching post ${context.params.id}:`, error);
+    console.error(`Error fetching post ${params.id}:`, error);
     return NextResponse.json({ error: 'Failed to fetch post' }, { status: 500 });
   }
 }

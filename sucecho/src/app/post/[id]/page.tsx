@@ -17,7 +17,6 @@ type PostThread = PostWithStats & {
 export default function PostDetailPage() {
     const [post, setPost] = useState<PostThread | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
     const { fingerprint } = useFingerprint();
     const params = useParams();
@@ -28,7 +27,6 @@ export default function PostDetailPage() {
 
         const fetchPost = async () => {
             setIsLoading(true);
-            setError(null);
             try {
                 const res = await fetch(`/api/posts/${id}`);
                 if (!res.ok) {
@@ -39,9 +37,9 @@ export default function PostDetailPage() {
                 setPost(data);
             } catch (err) {
                 if (err instanceof Error) {
-                    setError(err.message);
+                    console.error(err.message);
                 } else {
-                    setError('An unexpected error occurred.');
+                    console.error('An unexpected error occurred.');
                 }
             } finally {
                 setIsLoading(false);
@@ -97,7 +95,7 @@ export default function PostDetailPage() {
             setPost(prevPost => {
                 if (!prevPost) return null;
                 if (prevPost.id === postId) {
-                    setError("This echo has faded into silence.");
+                    console.log("This echo has faded into silence.");
                     setPost(null); // Clear the post data
                     return null;
                 }
@@ -190,18 +188,6 @@ export default function PostDetailPage() {
                 <div>
                     <PostSkeleton />
                     <div className="my-6 h-12 bg-gray-700 rounded-lg w-40 mx-auto animate-pulse"></div>
-                </div>
-            );
-        }
-
-        if (error) {
-            return (
-                <div className="text-center text-red-400 p-8 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
-                    <p className="text-2xl mb-4">😔</p>
-                    <p className="text-xl">{error}</p>
-                    <Link href="/" className="text-accent hover:underline mt-6 inline-block">
-                        ← 返回回音墙
-                    </Link>
                 </div>
             );
         }

@@ -54,8 +54,12 @@ export default function CreatePostForm({ parentId }: CreatePostFormProps) {
             setContent("");
             router.push(parentId ? `/post/${parentId}` : '/');
 
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('An unknown error occurred');
+            }
         } finally {
             setIsSubmitting(false);
         }

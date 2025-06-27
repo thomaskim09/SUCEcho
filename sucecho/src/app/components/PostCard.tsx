@@ -6,10 +6,12 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { useAdminSession } from '@/hooks/useAdminSession';
-import { generateCodename } from '@/lib/codename'; // Import the new codename generator
+import { generateCodename } from '@/lib/codename';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; // Import the router
 
 const timeSince = (date: Date): string => {
+    // ... (timeSince function remains the same)
     if (!date) return '';
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     let interval = seconds / 31536000;
@@ -35,6 +37,7 @@ interface PostCardProps {
 export default function PostCard({ post, isLink = true, onVote, userVote }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
+    const router = useRouter(); // Initialize the router
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleToggleMenu = (e: React.MouseEvent) => {
@@ -68,20 +71,33 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
                 const error = await res.json();
                 throw new Error(error.message || 'Failed to delete post');
             }
-            alert('Post deleted successfully.');
-        } catch (err: any) {
-            alert(`Error: ${err.message}`);
+            // The UI will now update via the SSE event, so an alert isn't strictly necessary
+            // alert('Post deleted successfully.');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                alert(`Error: ${err.message}`);
+            } else {
+                alert('An unknown error occurred');
+            }
         }
         setIsMenuOpen(false);
     };
 
-    // Handler for showing post details
     const handleShowDetails = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         alert(`Post ID: ${post.id}\nFingerprint Hash: ${post.fingerprintHash}`);
         setIsMenuOpen(false);
     };
+
+    // --- FIX: Handler for programmatic navigation ---
+    const handleViewProfile = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        router.push(`/admin/users/${post.fingerprintHash}`);
+        setIsMenuOpen(false);
+    };
+    // --- END FIX ---
 
     const upvoteStyle = userVote === 1 ? 'text-accent' : 'hover:text-white';
     const downvoteStyle = userVote === -1 ? 'text-accent' : 'hover:text-white';
@@ -131,7 +147,9 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
                 <div className="absolute top-12 right-2 bg-gray-900 rounded-lg shadow-lg p-2 z-10 w-48">
                     <ul>
                         <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
-                        <li><Link href={`/admin/users/${post.fingerprintHash}`} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</Link></li>
+                        {/* --- FIX: Changed Link to a button with an onClick handler --- */}
+                        <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</button></li>
+                        {/* --- END FIX --- */}
                         <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ 帖子详情</button></li>
                         <li><button className="w-full text-left p-2 rounded text-gray-500 cursor-not-allowed" disabled>📌 置顶24小时</button></li>
                     </ul>

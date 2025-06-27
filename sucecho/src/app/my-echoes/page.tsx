@@ -12,8 +12,8 @@ import { AnimatePresence } from 'framer-motion';
 export default function MyEchoesPage() {
     const [myPosts, setMyPosts] = useState<PostWithStats[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    // We can reuse the optimistic voting logic here as well
-    const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
+    // const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
+    const [userVotes] = useState<Record<number, 1 | -1>>({});
 
     useEffect(() => {
         const fetchMyPosts = async () => {
