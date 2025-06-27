@@ -1,14 +1,15 @@
-// sucecho/src/app/components/PostCard.tsx
+// src/app/components/PostCard.tsx
 "use client";
 
-import type { PostWithStats } from "@/lib/types";
-import { motion } from 'framer-motion';
+import type { PostWithStats } from "@/lib/types"; //
+import { motion } from 'framer-motion'; //
 import Link from 'next/link';
-import { useFingerprint } from '@/context/FingerprintContext';
-import { useAdminSession } from '@/hooks/useAdminSession';
-import { generateCodename } from '@/lib/codename';
+import { useFingerprint } from '@/context/FingerprintContext'; //
+import { useAdminSession } from '@/hooks/useAdminSession'; //
+import { generateCodename } from '@/lib/codename'; //
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Icon } from './Icon';
 
 const timeSince = (date: Date): string => {
     if (!date) return '';
@@ -26,6 +27,7 @@ const timeSince = (date: Date): string => {
     return Math.floor(seconds) + "秒前";
 };
 
+
 interface PostCardProps {
     post: PostWithStats;
     isLink?: boolean;
@@ -34,8 +36,8 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, isLink = true, onVote, userVote }: PostCardProps) {
-    const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
-    const isAdmin = useAdminSession();
+    const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint(); //
+    const isAdmin = useAdminSession(); //
     const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -63,7 +65,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
         }
 
         try {
-            const res = await fetch(`/api/admin/posts/${post.id}`, {
+            const res = await fetch(`/api/admin/posts/${post.id}`, { ///route.ts]
                 method: 'DELETE',
             });
             if (!res.ok) {
@@ -79,8 +81,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
     const handleViewProfile = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // Here you would also set the user profile into the transition context if you implement that
-        router.push(`/admin/users/${post.fingerprintHash}`);
+        router.push(`/admin/users/${post.fingerprintHash}`); ///page.tsx]
         setIsMenuOpen(false);
     };
 
@@ -91,8 +92,15 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
         setIsMenuOpen(false);
     };
 
-    const upvoteStyle = userVote === 1 ? 'text-accent' : 'hover:text-white';
-    const downvoteStyle = userVote === -1 ? 'text-accent' : 'hover:text-white';
+
+    const upvoteIsActive = userVote === 1;
+    const downvoteIsActive = userVote === -1;
+
+    // Conditions for applying color
+    const hasUpvotes = (post.stats?.upvotes ?? 0) > 0;
+    const hasDownvotes = (post.stats?.downvotes ?? 0) > 0;
+    // NEW: Condition for comment icon
+    const hasComments = (post.stats?.replyCount ?? 0) > 0;
 
     const cardContent = (
         <motion.div
@@ -101,8 +109,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className={`p-4 rounded-lg my-2 transition-colors relative ${isLink ? 'cursor-pointer hover:bg-gray-800/50' : ''}`}
-            style={{ backgroundColor: 'var(--card-background)' }}
+            className={`p-4 rounded-lg my-2 relative glass-card ${isLink ? 'cursor-pointer' : ''}`}
         >
             {isAdmin && (
                 <div className="absolute top-2 right-2">
@@ -114,7 +121,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
 
             <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
                 {isAdmin ? (
-                    <span className="font-mono text-xs opacity-50">发布人: {generateCodename(post.fingerprintHash)}</span>
+                    <span className="font-mono text-xs opacity-50">发布人: {generateCodename(post.fingerprintHash)}</span> //
                 ) : (
                     <span></span>
                 )}
@@ -124,14 +131,25 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
 
             <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
                 <span className="font-mono">{timeSince(post.createdAt)}</span>
-                <div className="flex items-center gap-4 font-mono">
-                    <button onClick={(e) => handleVote(e, 1)} className={`${upvoteStyle} transition-colors disabled:opacity-50 press-animation`} disabled={isFingerprintLoading}>
-                        👍 {post.stats?.upvotes ?? 0}
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={(e) => handleVote(e, 1)}
+                        className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`}
+                        disabled={isFingerprintLoading}
+                    >
+                        <Icon name="thumb-up" value={post.stats?.upvotes ?? 0} />
                     </button>
-                    <button onClick={(e) => handleVote(e, -1)} className={`${downvoteStyle} transition-colors disabled:opacity-50 press-animation`} disabled={isFingerprintLoading}>
-                        👎 {post.stats?.downvotes ?? 0}
+                    <button
+                        onClick={(e) => handleVote(e, -1)}
+                        className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`}
+                        disabled={isFingerprintLoading}
+                    >
+                        <Icon name="thumb-down" value={post.stats?.downvotes ?? 0} />
                     </button>
-                    <span>💬 {post.stats?.replyCount ?? 0}</span>
+                    {/* UPDATED: Add conditional class here */}
+                    <div className={`icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                        <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                    </div>
                 </div>
             </div>
 

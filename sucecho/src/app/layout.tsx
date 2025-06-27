@@ -9,6 +9,7 @@ import { AdminProvider } from "@/context/AdminContext";
 import AdminShield from "./components/AdminShield";
 import UserStatusBanner from "./components/UserStatusBanner";
 import OnboardingWrapper from "./components/OnboardingWrapper"; // Import the new wrapper
+import { SvgGlowFilter } from "./components/Icon";
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
   return (
     <html lang="en">
       <body className={`${notoSans.variable} ${robotoMono.variable} antialiased`}>
+        <SvgGlowFilter />
         <AdminProvider>
           <FingerprintProvider>
             {/* The Wrapper now controls what is displayed */}

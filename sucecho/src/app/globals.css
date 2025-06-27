@@ -1,13 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0B192F;
-  /* Deep Midnight Blue */
+  /* UPDATED: Darker, space-like background color */
+  --background: #02040a; 
   --foreground: #ededed;
   --accent: #9F70FD;
-  /* Electric Purple */
-  --card-background: #1A1A1A;
-  /* Carbon Gray */
+  /* UPDATED: Card background is slightly more transparent for the glass effect */
+  --card-background: rgba(26, 26, 26, 0.5); 
 }
 
 @theme inline {
@@ -17,17 +16,137 @@
   --font-mono: var(--font-roboto-mono);
 }
 
+/* --- NEW: Outer Space Background --- */
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: 
+    /* A subtle nebula/galaxy glow */
+    radial-gradient(ellipse at 70% 30%, rgba(159, 112, 253, 0.15) 0%, transparent 50%),
+    /* A distant star cluster glow */
+    radial-gradient(ellipse at 10% 80%, rgba(45, 220, 125, 0.1) 0%, transparent 40%);
   color: var(--foreground);
   font-family: var(--font-sans);
+  overflow-x: hidden; /* Prevent horizontal scroll from stars */
+  position: relative;
 }
 
-/* Add this class to any button-like element for a nice press animation */
+/* Static stars layer */
+body::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  top: 0;
+  left: 0;
+  box-shadow: 
+    /* Create a random starfield using box-shadow */
+    -23vw 22vh 0px 0px #FFF, 2vw 29vh 1px 0px #FFF, 3vw 12vh 1px 0px #FFF,
+    -1vw 33vh 0px 0px #FFF, 32vw 4vh 0px 0px #FFF, -14vw 46vh 0px 0px #FFF,
+    4vw 2vh 0px 0px #FFF, -8vw 2vh 0px 0px #FFF, -29vw 11vh 1px 0px #FFF,
+    -31vw 25vh 0px 0px #FFF, 1vw 14vh 0px 0px #FFF, -16vw 2vh 0px 0px #FFF,
+    -12vw 29vh 1px 0px #FFF, -32vw 45vh 0px 0px #FFF, 2vw 14vh 0px 0px #FFF,
+    -20vw 4vh 1px 0px #FFF, 23vw 49vh 1px 0px #FFF, -6vw 2vh 1px 0px #FFF,
+    18vw 27vh 1px 0px #FFF, -25vw 38vh 1px 0px #FFF;
+}
+
+/* Twinkling stars layer */
+@keyframes twinkle {
+  0% { opacity: 0; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    top: 0;
+    left: 0;
+    box-shadow: 
+        15vw 10vh 2px 2px #FFF, 30vw 30vh 2px 2px #FFF, 5vw 40vh 2px 2px #FFF, 
+        -20vw 5vh 2px 2px #FFF, -30vw 20vh 2px 2px #FFF, 10vw 45vh 2px 2px #FFF;
+    animation: twinkle 7s infinite;
+}
+
+
+/* --- Other Styles --- */
+
 .press-animation {
   transition: transform 150ms ease;
 }
 
 .press-animation:active {
   transform: scale(0.95);
+}
+
+.glass-card {
+  background: var(--card-background);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* --- UPDATED ICON STYLES --- */
+
+/* Base style for all icons */
+.icon-base {
+    color: #9ca3af;
+    transition: color 150ms ease-in-out, transform 150ms ease-in-out;
+}
+.icon-base svg {
+    stroke: #9ca3af;
+    transition: all 150ms ease-in-out;
+}
+
+/* Thumb Up: Color applied via 'has-votes' class */
+.icon-thumb-up.has-votes {
+    color: #2ddc7d;
+}
+.icon-thumb-up.has-votes svg {
+    stroke: #2ddc7d;
+    filter: url(#glow-green);
+}
+
+/* Thumb Down: Color applied via 'has-votes' class */
+.icon-thumb-down.has-votes {
+    color: #dc2d2d;
+}
+.icon-thumb-down.has-votes svg {
+    stroke: #dc2d2d;
+    filter: url(#glow-red);
+}
+
+/* NEW: Comment icon gets color via 'has-comments' class */
+.icon-comment.has-comments {
+    color: white;
+}
+.icon-comment.has-comments svg {
+    stroke: white;
+    filter: url(#glow-white);
+}
+
+/* Hover effects for non-active icons */
+.icon-thumb-up:not(.active):hover,
+.icon-thumb-down:not(.active):hover,
+.icon-comment:hover {
+    color: white;
+}
+.icon-thumb-up:not(.active):hover svg,
+.icon-thumb-down:not(.active):hover svg,
+.icon-comment:hover svg {
+    stroke: white;
+}
+
+/* Active (voted) state still fills the icon */
+.icon-thumb-up.active svg {
+    fill: rgba(45, 220, 125, 0.25);
+    transform: scale(1.1);
+}
+.icon-thumb-down.active svg {
+    fill: rgba(220, 45, 45, 0.25);
+    transform: scale(1.1);
 }
