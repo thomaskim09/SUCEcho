@@ -175,6 +175,15 @@ body {
     stroke: white;
 }
 
+/* NEW: Added hover effect for the report flag icon */
+.icon-report-flag:hover {
+  color: #dc2d2d; 
+}
+.icon-report-flag:hover svg {
+  stroke: #dc2d2d; 
+  filter: url(#glow-red); 
+}
+
 .icon-comment:hover, .icon-share:hover {
   color: white;
 }

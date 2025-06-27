@@ -23,11 +23,13 @@ export default function AdminDashboardPage() {
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loadingUsers, setLoadingUsers] = useState(true);
     const [errorUsers, setErrorUsers] = useState<string | null>(null);
+    const [reportCount, setReportCount] = useState(0);
 
     useEffect(() => {
         const fetchUsers = async () => {
             setLoadingUsers(true);
             setErrorUsers(null);
+            // Fetch users
             try {
                 const response = await fetch('/api/admin/users');
                 if (!response.ok) {
@@ -44,6 +46,17 @@ export default function AdminDashboardPage() {
                 }
             } finally {
                 setLoadingUsers(false);
+            }
+
+            // Fetch report count
+            try {
+                const reportsResponse = await fetch('/api/admin/reports');
+                if (reportsResponse.ok) {
+                    const reportsData = await reportsResponse.json();
+                    setReportCount(reportsData.length);
+                }
+            } catch (e) {
+                console.error("Could not fetch report count", e);
             }
         };
         fetchUsers();
@@ -68,6 +81,23 @@ export default function AdminDashboardPage() {
                     登出
                 </button>
             </header>
+
+            {/* NEW: High-priority reports card */}
+            <section className="mt-8">
+                {reportCount > 0 ? (
+                    <Link href="/admin/reports" className="block p-6 rounded-lg hover:bg-red-800/50 transition-colors" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #ef4444' }}>
+                        <h2 className="text-2xl font-bold text-red-400">待处理举报</h2>
+                        <p className="text-5xl font-mono mt-2">{reportCount}</p>
+                        <p className="text-sm text-gray-400 mt-1">点击此处进行审查</p>
+                    </Link>
+                ) : (
+                    <div className="block p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #22c55e' }}>
+                        <h2 className="text-2xl font-bold text-green-400">举报队列清空</h2>
+                        <p className="text-5xl font-mono mt-2">{reportCount}</p>
+                        <p className="text-sm text-gray-400 mt-1">太棒了！没有待处理的举报。</p>
+                    </div>
+                )}
+            </section>
 
             <section className="mt-8">
                 <h2 className="text-2xl font-bold mb-4">用户管理</h2>

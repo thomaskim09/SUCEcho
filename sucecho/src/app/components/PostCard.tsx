@@ -33,17 +33,44 @@ interface PostCardProps {
     post: PostWithStats;
     isLink?: boolean;
     onVote: (postId: number, voteType: 1 | -1) => void;
+    onDelete?: (postId: number) => void;
     userVote?: 1 | -1;
     isStacked?: boolean;
 }
 
-export default function PostCard({ post, isLink = true, onVote, userVote, isStacked = false }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, userVote, isStacked = false }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
     const router = useRouter(); // Use the router hook
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // --- NEW HANDLER FOR COMMENT BUTTON ---
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm(`您确定要删除帖子 #${post.id} 吗？此操作无法撤销。`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/posts/${post.id}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Failed to delete post');
+            }
+
+            // SUCCESS: Call the onDelete callback if it was provided
+            if (onDelete) {
+                onDelete(post.id);
+            }
+
+        } catch (err: unknown) {
+            alert(`Error: ${(err as Error).message}`);
+        }
+        setIsMenuOpen(false);
+    };
+
     const handleCommentClick = (e: React.MouseEvent) => {
         // Stop the click from bubbling up to the parent Link
         e.stopPropagation();
@@ -67,27 +94,6 @@ export default function PostCard({ post, isLink = true, onVote, userVote, isStac
             return;
         }
         onVote(post.id, voteType);
-    };
-
-    const handleDelete = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!confirm(`您确定要删除帖子 #${post.id} 吗？此操作无法撤销。`)) {
-            return;
-        }
-
-        try {
-            const res = await fetch(`/api/admin/posts/${post.id}`, {
-                method: 'DELETE',
-            });
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.message || 'Failed to delete post');
-            }
-        } catch (err: unknown) {
-            alert(`Error: ${(err as Error).message}`);
-        }
-        setIsMenuOpen(false);
     };
 
     const handleViewProfile = (e: React.MouseEvent) => {

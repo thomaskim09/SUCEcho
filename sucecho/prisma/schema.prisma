@@ -15,13 +15,28 @@ model Post {
   parentPostId    Int?
   createdAt       DateTime   @default(now())
 
-  parent  Post?  @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
-  replies Post[] @relation("Thread")
+  // Defines the self-relation for threaded replies
+  parent          Post?      @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
+  replies         Post[]     @relation("Thread")
 
-  stats PostStats?
-  votes Vote[]
+  // Relation to other models
+  stats           PostStats?
+  votes           Vote[]
+  reports         Report[]   // Add this relation
 
   @@index([createdAt])
+}
+
+model Report {
+  id              Int      @id @default(autoincrement())
+  postId          Int
+  fingerprintHash String
+  reason          String?
+  createdAt       DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, fingerprintHash]) // A user can only report a post once
 }
 
 model PostStats {

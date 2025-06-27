@@ -10,6 +10,7 @@ import PostSkeleton from '@/app/components/PostSkeleton';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { AnimatePresence } from 'framer-motion';
 import { Icon } from '@/app/components/Icon';
+import ReportModal from '@/app/components/ReportModal';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -25,6 +26,8 @@ export default function PostDetailPage() {
     const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
     const { fingerprint } = useFingerprint();
     const [shareFeedback, setShareFeedback] = useState('');
+    const [reportFeedback, setReportFeedback] = useState('');
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const dataFetched = useRef(false); // Ref to prevent duplicate fetches
 
     useEffect(() => {
@@ -203,6 +206,38 @@ export default function PostDetailPage() {
         }
     };
 
+    const handleOpenReportModal = () => {
+        if (!fingerprint) {
+            alert("无法识别您的浏览器，无法举报。");
+            return;
+        }
+        setIsReportModalOpen(true);
+    };
+
+    const handleReportSubmit = async (reason: string) => {
+        setIsReportModalOpen(false); // Close the modal immediately
+
+        try {
+            const res = await fetch('/api/reports', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ postId: post?.id, fingerprintHash: fingerprint, reason }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "举报失败。");
+            }
+
+            setReportFeedback('感谢您的举报，管理员将会审查。');
+
+        } catch (err) {
+            setReportFeedback((err as Error).message);
+        } finally {
+            setTimeout(() => setReportFeedback(''), 3000);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="container mx-auto max-w-2xl p-4">
@@ -223,19 +258,35 @@ export default function PostDetailPage() {
 
     return (
         <div className="container mx-auto max-w-2xl p-4">
+            <ReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                onSubmit={handleReportSubmit}
+            />
+
             <header className="py-4 flex justify-between items-center">
                 <Link href="/" className="text-accent hover:underline">
                     ← 返回回音墙
                 </Link>
-                <button
-                    onClick={handleShare}
-                    aria-label="Share post"
-                    className="p-2 rounded-lg transition-colors icon-base icon-share"
-                >
-                    <Icon name="share" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleShare}
+                        aria-label="Share post"
+                        className="p-2 rounded-lg transition-colors icon-base icon-share"
+                    >
+                        <Icon name="share" />
+                    </button>
+                    <button
+                        onClick={handleOpenReportModal}
+                        aria-label="Report post"
+                        className="p-2 rounded-lg transition-colors icon-base icon-report-flag"
+                    >
+                        <Icon name="report-flag" />
+                    </button>
+                </div>
             </header>
-            {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300">{shareFeedback}</div>}
+            {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300" >{shareFeedback}</div>}
+            {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
             <main className="mt-4">
                 <div className="mb-4">
                     <PostCard post={post} isLink={false} onVote={handleOptimisticVote} userVote={userVotes[post.id]} />

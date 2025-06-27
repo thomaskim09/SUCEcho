@@ -42,7 +42,6 @@ const icons = {
     'comment': (
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
     ),
-    // NEW: The 'share' icon is defined here
     'share': (
         <>
             <circle cx="18" cy="5" r="3" />
@@ -51,6 +50,9 @@ const icons = {
             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
         </>
+    ),
+    'report-flag': (
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" />
     ),
 };
 
