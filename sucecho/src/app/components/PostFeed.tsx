@@ -18,7 +18,7 @@ export default function PostFeed() {
     const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
 
     const { fingerprint } = useFingerprint();
-    const initialFetchDone = useRef(false); // Ref to prevent duplicate fetches
+    const initialFetchDone = useRef(false);
 
     const observer = useRef<IntersectionObserver | null>(null);
 
@@ -29,14 +29,18 @@ export default function PostFeed() {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
-            setPosts(prev => [...prev, ...newPosts]);
+
+            const existingIds = new Set(posts.map(p => p.id));
+            const uniqueNewPosts = newPosts.filter((p: PostWithStats) => !existingIds.has(p.id));
+
+            setPosts(prev => [...prev, ...uniqueNewPosts]);
             setNextCursor(newNextCursor);
         } catch (error) {
             console.error("Error loading more posts:", error);
         } finally {
             setIsFetchingMore(false);
         }
-    }, [nextCursor, isFetchingMore]);
+    }, [nextCursor, isFetchingMore, posts]);
 
     const sentinelRef = useCallback((node: HTMLDivElement | null) => {
         if (isLoading) return;
@@ -50,6 +54,11 @@ export default function PostFeed() {
 
         if (node) observer.current.observe(node);
     }, [isLoading, loadMorePosts, nextCursor]);
+
+    // --- NEW HANDLER FOR WHEN ANIMATION FINISHES ---
+    const handlePurificationComplete = (postId: number) => {
+        setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+    };
 
     useEffect(() => {
         const fetchInitialPosts = async () => {
@@ -67,7 +76,6 @@ export default function PostFeed() {
             }
         };
 
-        // Only fetch initial posts if it hasn't been done yet
         if (!initialFetchDone.current) {
             fetchInitialPosts();
             initialFetchDone.current = true;
@@ -77,7 +85,7 @@ export default function PostFeed() {
 
         const handleNewPost = (event: MessageEvent) => {
             const newPost = JSON.parse(event.data);
-            if (!newPost.parentId) { // Only add top-level posts to the feed
+            if (!newPost.parentId) {
                 setPosts(prevPosts => [newPost, ...prevPosts]);
             }
         };
@@ -93,7 +101,12 @@ export default function PostFeed() {
 
         const handleDeletePost = (event: MessageEvent) => {
             const { postId } = JSON.parse(event.data);
-            setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+            // This now ONLY starts the animation. It does not remove the post.
+            setPosts(prevPosts =>
+                prevPosts.map(p =>
+                    p.id === postId ? { ...p, isPurifying: true } : p
+                )
+            );
         };
 
         eventSource.addEventListener('new_post', handleNewPost);
@@ -118,30 +131,22 @@ export default function PostFeed() {
         let upvoteChange = 0;
         let downvoteChange = 0;
 
-        if (currentVote === voteType) {
-            // Un-voting
+        // This logic correctly handles all 3 cases: new vote, un-vote, and changing a vote.
+        if (currentVote === voteType) { // UN-VOTING
             newVoteState = undefined;
-            if (voteType === 1) {
-                upvoteChange = -1;
-            } else {
-                downvoteChange = -1;
-            }
-        } else if (currentVote) {
-            // Changing vote
-            if (voteType === 1) {
+            if (voteType === 1) upvoteChange = -1;
+            else downvoteChange = -1;
+        } else if (currentVote) { // CHANGING VOTE (e.g., from up to down)
+            if (voteType === 1) { // Changing to upvote
                 upvoteChange = 1;
                 downvoteChange = -1;
-            } else {
+            } else { // Changing to downvote
                 upvoteChange = -1;
                 downvoteChange = 1;
             }
-        } else {
-            // New vote
-            if (voteType === 1) {
-                upvoteChange = 1;
-            } else {
-                downvoteChange = 1;
-            }
+        } else { // NEW VOTE
+            if (voteType === 1) upvoteChange = 1;
+            else downvoteChange = 1;
         }
 
         setUserVotes(prev => {
@@ -170,6 +175,7 @@ export default function PostFeed() {
             })
         );
 
+        // The backend request remains the same
         const sendVoteRequest = async () => {
             if (!fingerprint) {
                 setPosts(originalPosts);
@@ -198,13 +204,7 @@ export default function PostFeed() {
     };
 
     if (isLoading) {
-        return (
-            <div>
-                <PostSkeleton />
-                <PostSkeleton />
-                <PostSkeleton />
-            </div>
-        );
+        return (<div> <PostSkeleton /> <PostSkeleton /> <PostSkeleton /> </div>);
     }
 
     return (
@@ -217,21 +217,16 @@ export default function PostFeed() {
                         onVote={handleOptimisticVote}
                         userVote={userVotes[post.id]}
                         isStacked={true}
+                        isPurifying={post.isPurifying}
+                        onPurificationComplete={handlePurificationComplete}
                     />
                 ))}
             </AnimatePresence>
 
             {nextCursor && <div ref={sentinelRef} className="h-10" />}
-
             {isFetchingMore && <p className="text-center text-gray-400 py-4">正在加载更多回音...</p>}
-
-            {!isLoading && !isFetchingMore && !nextCursor && posts.length > 0 &&
-                <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>
-            }
-
-            {!isLoading && posts.length === 0 &&
-                <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>
-            }
+            {!isLoading && !isFetchingMore && !nextCursor && posts.length > 0 && <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>}
+            {!isLoading && posts.length === 0 && <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>}
         </div>
     );
 }
