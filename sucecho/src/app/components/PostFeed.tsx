@@ -8,6 +8,8 @@ import PostSkeleton from './PostSkeleton';
 import { AnimatePresence } from 'framer-motion';
 import { useFingerprint } from '@/context/FingerprintContext';
 
+const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
+
 export default function PostFeed() {
     const [posts, setPosts] = useState<PostWithStats[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -24,7 +26,7 @@ export default function PostFeed() {
         if (isFetchingMore || !nextCursor) return;
         setIsFetchingMore(true);
         try {
-            const res = await fetch(`/api/posts?limit=20&cursor=${nextCursor}`);
+            const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
             setPosts(prev => [...prev, ...newPosts]);
@@ -53,7 +55,7 @@ export default function PostFeed() {
         const fetchInitialPosts = async () => {
             setIsLoading(true);
             try {
-                const res = await fetch('/api/posts?limit=20');
+                const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
                 if (!res.ok) throw new Error('Failed to fetch posts');
                 const { posts: initialPosts, nextCursor: initialNextCursor } = await res.json();
                 setPosts(initialPosts);

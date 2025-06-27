@@ -1,16 +1,17 @@
 // src/app/components/PostCard.tsx
 "use client";
 
-import type { PostWithStats } from "@/lib/types"; //
-import { motion } from 'framer-motion'; //
+import type { PostWithStats } from "@/lib/types";
+import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useFingerprint } from '@/context/FingerprintContext'; //
-import { useAdminSession } from '@/hooks/useAdminSession'; //
-import { generateCodename } from '@/lib/codename'; //
+import { useRouter } from 'next/navigation'; // Import useRouter
+import { useFingerprint } from '@/context/FingerprintContext';
+import { useAdminSession } from '@/hooks/useAdminSession';
+import { generateCodename } from '@/lib/codename';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Icon } from './Icon';
 
+// timeSince function remains the same...
 const timeSince = (date: Date): string => {
     if (!date) return '';
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
@@ -37,11 +38,21 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, isLink = true, onVote, userVote, isStacked = false }: PostCardProps) {
-    const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint(); //
-    const isAdmin = useAdminSession(); //
-    const router = useRouter();
+    const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
+    const isAdmin = useAdminSession();
+    const router = useRouter(); // Use the router hook
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    // --- NEW HANDLER FOR COMMENT BUTTON ---
+    const handleCommentClick = (e: React.MouseEvent) => {
+        // Stop the click from bubbling up to the parent Link
+        e.stopPropagation();
+        e.preventDefault();
+        // Programmatically navigate to the compose page
+        router.push(`/compose?parentId=${post.id}`);
+    };
+
+    // Other handlers remain the same...
     const handleToggleMenu = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -66,7 +77,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote, isStac
         }
 
         try {
-            const res = await fetch(`/api/admin/posts/${post.id}`, { ///route.ts]
+            const res = await fetch(`/api/admin/posts/${post.id}`, {
                 method: 'DELETE',
             });
             if (!res.ok) {
@@ -82,7 +93,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote, isStac
     const handleViewProfile = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        router.push(`/admin/users/${post.fingerprintHash}`); ///page.tsx]
+        router.push(`/admin/users/${post.fingerprintHash}`);
         setIsMenuOpen(false);
     };
 
@@ -97,7 +108,6 @@ export default function PostCard({ post, isLink = true, onVote, userVote, isStac
     const upvoteIsActive = userVote === 1;
     const downvoteIsActive = userVote === -1;
 
-    // Conditions for applying color
     const hasUpvotes = (post.stats?.upvotes ?? 0) > 0;
     const hasDownvotes = (post.stats?.downvotes ?? 0) > 0;
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
@@ -125,7 +135,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote, isStac
 
             <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
                 {isAdmin ? (
-                    <span className="font-mono text-xs opacity-50">发布人: {generateCodename(post.fingerprintHash)}</span> //
+                    <span className="font-mono text-xs opacity-50">发布人: {generateCodename(post.fingerprintHash)}</span>
                 ) : (
                     <span></span>
                 )}
@@ -150,17 +160,14 @@ export default function PostCard({ post, isLink = true, onVote, userVote, isStac
                     >
                         <Icon name="thumb-down" value={post.stats?.downvotes ?? 0} />
                     </button>
-                    {isLink ? (
-                        <Link href={`/compose?parentId=${post.id}`} onClick={(e) => e.stopPropagation()} className="no-underline">
-                            <div className={`icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                                <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                            </div>
-                        </Link>
-                    ) : (
-                        <div className={`icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                            <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                        </div>
-                    )}
+
+                    {/* --- MODIFIED: This is now a button that navigates via the router --- */}
+                    <button
+                        onClick={handleCommentClick}
+                        className={`icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}
+                    >
+                        <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                    </button>
                 </div>
             </div>
 

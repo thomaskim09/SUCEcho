@@ -1,11 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  /* UPDATED: Darker, space-like background color */
-  --background: #02040a; 
+  --background: #000; /* A true black for a deep space feel */
   --foreground: #ededed;
   --accent: #9F70FD;
-  /* UPDATED: Card background is slightly more transparent for the glass effect */
   --card-background: rgba(26, 26, 26, 0.5); 
 }
 
@@ -16,59 +14,95 @@
   --font-mono: var(--font-roboto-mono);
 }
 
-/* --- NEW: Outer Space Background --- */
+/* --- REPLACED a static background with the new dynamic one --- */
 body {
-  background-color: var(--background);
-  background-image: 
-    /* A subtle nebula/galaxy glow */
-    radial-gradient(ellipse at 70% 30%, rgba(159, 112, 253, 0.15) 0%, transparent 50%),
-    /* A distant star cluster glow */
-    radial-gradient(ellipse at 10% 80%, rgba(45, 220, 125, 0.1) 0%, transparent 40%);
+  background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
-  overflow-x: hidden; /* Prevent horizontal scroll from stars */
-  position: relative;
+  overflow-x: hidden; 
+  min-height: 100vh; /* Use min-height to ensure the body can grow */
 }
 
-/* Static stars layer */
-body::after {
-  content: '';
+/* --- ADDED Animation Keyframes from Codepen --- */
+@keyframes animStar {
+  from {
+    transform: translateY(0px);
+  }
+  to {
+    transform: translateY(-2000px);
+  }
+}
+
+/* --- ADDED Star Layer Styles from Codepen --- */
+/* Each layer has a different size and animation duration to create the parallax effect */
+
+#stars, #stars2, #stars3 {
   position: absolute;
-  width: 2px;
-  height: 2px;
-  background: white;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: -1; /* Place stars behind all other content */
+}
+
+#stars {
+  background: transparent;
+  width: 1px;
+  height: 1px;
   box-shadow: 
-    /* Create a random starfield using box-shadow */
-    -23vw 22vh 0px 0px #FFF, 2vw 29vh 1px 0px #FFF, 3vw 12vh 1px 0px #FFF,
-    -1vw 33vh 0px 0px #FFF, 32vw 4vh 0px 0px #FFF, -14vw 46vh 0px 0px #FFF,
-    4vw 2vh 0px 0px #FFF, -8vw 2vh 0px 0px #FFF, -29vw 11vh 1px 0px #FFF,
-    -31vw 25vh 0px 0px #FFF, 1vw 14vh 0px 0px #FFF, -16vw 2vh 0px 0px #FFF,
-    -12vw 29vh 1px 0px #FFF, -32vw 45vh 0px 0px #FFF, 2vw 14vh 0px 0px #FFF,
-    -20vw 4vh 1px 0px #FFF, 23vw 49vh 1px 0px #FFF, -6vw 2vh 1px 0px #FFF,
-    18vw 27vh 1px 0px #FFF, -25vw 38vh 1px 0px #FFF;
+    /* --- MODIFIED: Added more stars --- */
+    675px 824px #FFF, 17px 1152px #FFF, 1503px 1740px #FFF, 1619px 1239px #FFF, 
+    1397px 1055px #FFF, 107px 165px #FFF, 1269px 746px #FFF, 1528px 1461px #FFF, 
+    1443px 569px #FFF, 290px 1756px #FFF, 345px 1285px #FFF, 946px 148px #FFF, 
+    549px 49px #FFF, 804px 1024px #FFF, 1872px 1493px #FFF, 762px 1403px #FFF,
+    1821px 1999px #FFF, 1734px 493px #FFF, 928px 281px #FFF, 1390px 1867px #FFF,
+    1060px 1154px #FFF, 8px 1235px #FFF, 1374px 388px #FFF, 609px 1279px #FFF;
+  animation: animStar 50s linear infinite;
 }
 
-/* Twinkling stars layer */
-@keyframes twinkle {
-  0% { opacity: 0; }
-  50% { opacity: 0.7; }
-  100% { opacity: 0; }
+#stars2 {
+  background: transparent;
+  width: 2px;
+  height: 2px;
+  box-shadow: 
+    /* --- MODIFIED: Added more stars --- */
+    800px 900px #FFF, 1201px 1902px #FFF, 1693px 830px #FFF, 989px 349px #FFF, 
+    1887px 565px #FFF, 177px 75px #FFF, 1659px 1456px #FFF, 118px 1561px #FFF, 
+    1433px 999px #FFF, 190px 1856px #FFF, 545px 185px #FFF, 46px 548px #FFF, 
+    1049px 1049px #FFF, 1204px 124px #FFF, 172px 1393px #FFF, 72px 103px #FFF,
+    235px 1467px #FFF, 1756px 901px #FFF, 493px 664px #FFF, 1121px 1386px #FFF;
+  animation: animStar 100s linear infinite;
 }
 
-body::before {
-    content: '';
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: transparent;
-    top: 0;
-    left: 0;
-    box-shadow: 
-        15vw 10vh 2px 2px #FFF, 30vw 30vh 2px 2px #FFF, 5vw 40vh 2px 2px #FFF, 
-        -20vw 5vh 2px 2px #FFF, -30vw 20vh 2px 2px #FFF, 10vw 45vh 2px 2px #FFF;
-    animation: twinkle 7s infinite;
+#stars3 {
+  background: transparent;
+  width: 3px;
+  height: 3px;
+  box-shadow: 
+    /* --- MODIFIED: Added more stars --- */
+    1575px 1824px #FFF, 1017px 152px #FFF, 3px 140px #FFF, 119px 239px #FFF, 
+    197px 155px #FFF, 107px 65px #FFF, 169px 76px #FFF, 128px 161px #FFF, 
+    443px 59px #FFF, 290px 756px #FFF, 35px 285px #FFF, 96px 148px #FFF,
+    1834px 129px #FFF, 743px 1823px #FFF, 1445px 788px #FFF, 902px 453px #FFF;
+  animation: animStar 150s linear infinite;
+}
+
+.press-animation {
+  transition: transform 150ms ease;
+}
+.press-animation:active {
+  transform: scale(0.95);
+}
+
+.glass-card {
+  background: var(--card-background);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
 

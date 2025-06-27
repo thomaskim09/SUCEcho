@@ -8,7 +8,7 @@ import { FingerprintProvider } from '@/context/FingerprintContext';
 import { AdminProvider } from "@/context/AdminContext";
 import AdminShield from "./components/AdminShield";
 import UserStatusBanner from "./components/UserStatusBanner";
-import OnboardingWrapper from "./components/OnboardingWrapper"; // Import the new wrapper
+import OnboardingWrapper from "./components/OnboardingWrapper";
 import { SvgGlowFilter } from "./components/Icon";
 
 const notoSans = Noto_Sans_SC({
@@ -31,12 +31,17 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
   return (
     <html lang="en">
       <body className={`${notoSans.variable} ${robotoMono.variable} antialiased`}>
+        {/* --- ADDED STAR LAYERS --- */}
+        {/* These divs are the elements that will be animated to create the parallax star effect. */}
+        <div id="stars"></div>
+        <div id="stars2"></div>
+        <div id="stars3"></div>
+        {/* --- END OF ADDED STAR LAYERS --- */}
+
         <SvgGlowFilter />
         <AdminProvider>
           <FingerprintProvider>
-            {/* The Wrapper now controls what is displayed */}
             <OnboardingWrapper>
-              {/* These components will only show AFTER onboarding is complete */}
               <UserStatusBanner />
               <Header />
               <FramerWrapper>{children}</FramerWrapper>
