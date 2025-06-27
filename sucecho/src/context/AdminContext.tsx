@@ -2,41 +2,52 @@
 "use client";
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface AdminContextType {
     isAdmin: boolean;
     login: () => void;
     logout: () => void;
+    checkSession: () => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
     const [isAdmin, setIsAdmin] = useState(false);
+    const router = useRouter();
+
+    const checkSession = async () => {
+        try {
+            const response = await fetch('/api/admin/session');
+            const data = await response.json();
+            setIsAdmin(data.isAdmin);
+        } catch (error) {
+            console.error('Failed to check session:', error);
+            setIsAdmin(false);
+        }
+    };
 
     useEffect(() => {
-        // Check for the session cookie on initial load
-        const hasSessionCookie = document.cookie.split(';').some((item) => item.trim().startsWith('session='));
-        setIsAdmin(hasSessionCookie);
+        checkSession();
     }, []);
 
     const login = () => {
-        // The cookie is set by the API, this just updates the state
         setIsAdmin(true);
     };
 
     const logout = async () => {
-        // Clear the cookie by sending a request to the logout endpoint
         try {
             await fetch('/api/admin/logout', { method: 'POST' });
+            setIsAdmin(false);
+            router.push('/');
         } catch (error) {
             console.error('Failed to logout:', error);
         }
-        setIsAdmin(false);
     };
 
     return (
-        <AdminContext.Provider value={{ isAdmin, login, logout }}>
+        <AdminContext.Provider value={{ isAdmin, login, logout, checkSession }}>
             {children}
         </AdminContext.Provider>
     );

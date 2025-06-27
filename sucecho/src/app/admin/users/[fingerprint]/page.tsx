@@ -1,13 +1,7 @@
 // sucecho/src/app/admin/users/[fingerprint]/page.tsx
 import Link from 'next/link';
 
-interface PageProps {
-    params: {
-        fingerprint: string;
-    };
-}
-
-export default function UserProfilePage({ params }: PageProps) {
+export default function UserProfilePage({ params }: any) {
     return (
         <div className="container mx-auto max-w-4xl p-4 text-white">
             <header className="py-4">

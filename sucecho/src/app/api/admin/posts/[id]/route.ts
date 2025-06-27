@@ -1,38 +1,32 @@
 // sucecho/src/app/api/admin/posts/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
-import eventEmitter from '@/lib/event-emitter';
 
-interface Params {
-    id: string;
-}
-
-export async function DELETE(request: Request, context: { params: Params }) {
+export async function DELETE(request: NextRequest, { params }: any) {
     try {
-        const postId = parseInt(context.params.id, 10);
-        if (isNaN(postId)) {
-            return NextResponse.json({ message: 'Invalid Post ID' }, { status: 400 });
+        const postId = params.id;
+
+        if (!postId) {
+            return NextResponse.json({ message: 'Post ID is required' }, { status: 400 });
         }
 
-        // We use a transaction to ensure we delete the post and its related data atomically
-        await prisma.$transaction(async (tx) => {
-            await tx.vote.deleteMany({ where: { postId } });
-            await tx.postStats.delete({ where: { postId } });
-            await tx.post.delete({ where: { id: postId } });
+        // Check if the post exists
+        const existingPost = await prisma.post.findUnique({
+            where: { id: Number(postId) },
         });
 
-        // Emit an event to notify all connected clients to remove this post
-        eventEmitter.emit('delete_post', { postId });
-        
-        console.log(`Admin has deleted post ${postId}`);
-        return NextResponse.json({ message: `Post ${postId} deleted successfully.` });
-
-    } catch (error) {
-        console.error(`Error deleting post ${context.params.id}:`, error);
-        // Prisma throws a specific error code if the record to delete is not found
-        if (error instanceof Error && (error as any).code === 'P2025') {
-            return NextResponse.json({ message: 'Post not found or already deleted' }, { status: 404 });
+        if (!existingPost) {
+            return NextResponse.json({ message: 'Post not found' }, { status: 404 });
         }
-        return NextResponse.json({ message: 'Failed to delete post' }, { status: 500 });
+
+        // Delete the post
+        await prisma.post.delete({
+            where: { id: Number(postId) },
+        });
+
+        return NextResponse.json({ message: 'Post deleted successfully' }, { status: 200 });
+    } catch (error) {
+        console.error('Error deleting post:', error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }
