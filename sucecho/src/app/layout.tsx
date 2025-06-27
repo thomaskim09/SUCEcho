@@ -7,7 +7,6 @@ import FramerWrapper from "./components/FramerWrapper";
 import { FingerprintProvider } from '@/context/FingerprintContext';
 import { AdminProvider } from "@/context/AdminContext";
 import AdminShield from "./components/AdminShield";
-import { PageTransitionProvider } from "@/context/PageTransitionContext"; // Import the new provider
 import UserStatusBanner from "./components/UserStatusBanner";
 
 const notoSans = Noto_Sans_SC({
@@ -32,12 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
       <body className={`${notoSans.variable} ${robotoMono.variable} antialiased`}>
         <AdminProvider>
           <FingerprintProvider>
-            <PageTransitionProvider>
-              <UserStatusBanner />
-              <Header />
-              <FramerWrapper>{children}</FramerWrapper>
-              <AdminShield />
-            </PageTransitionProvider>
+            <UserStatusBanner />
+            <Header />
+            <FramerWrapper>{children}</FramerWrapper>
+            <AdminShield />
           </FingerprintProvider>
         </AdminProvider>
       </body>

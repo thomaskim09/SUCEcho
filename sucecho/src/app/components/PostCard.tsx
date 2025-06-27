@@ -9,7 +9,6 @@ import { useAdminSession } from '@/hooks/useAdminSession';
 import { generateCodename } from '@/lib/codename';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePageTransition } from '@/context/PageTransitionContext';
 
 const timeSince = (date: Date): string => {
     if (!date) return '';
@@ -39,14 +38,6 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
     const isAdmin = useAdminSession();
     const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { setPost: setTransitionPost } = usePageTransition();
-
-    const handleCardClick = () => {
-        // Set the post data into the context right before navigation
-        if (isLink) {
-            setTransitionPost(post);
-        }
-    };
 
     const handleToggleMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -162,7 +153,7 @@ export default function PostCard({ post, isLink = true, onVote, userVote }: Post
     }
 
     return (
-        <Link href={`/post/${post.id}`} className="no-underline" scroll={false} onClick={handleCardClick}>
+        <Link href={`/post/${post.id}`} className="no-underline" scroll={false}>
             {cardContent}
         </Link>
     );
