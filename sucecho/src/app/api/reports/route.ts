@@ -1,4 +1,5 @@
 // sucecho/src/app/api/reports/route.ts
+import logger from '@/lib/logger';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
             { status: 201 }
         );
     } catch (error) {
-        console.error('Error creating report:', error);
+        logger.error('Error creating report:', error);
         // Handle cases where the post might have been deleted
         if (
             error instanceof Error &&

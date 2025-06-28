@@ -5,6 +5,7 @@ import { useAdmin } from '@/context/AdminContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link'; // Import Link for navigation
+import logger from '@/lib/logger';
 
 // Define a type for our user object based on the schema
 interface UserProfile {
@@ -56,7 +57,7 @@ export default function AdminDashboardPage() {
                     setReportCount(reportsData.length);
                 }
             } catch (e) {
-                console.error("Could not fetch report count", e);
+                logger.error("Could not fetch report count", e);
             }
         };
         fetchUsers();

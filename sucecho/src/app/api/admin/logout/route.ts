@@ -1,4 +1,5 @@
 // sucecho/src/app/api/admin/logout/route.ts
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
@@ -17,7 +18,10 @@ export async function POST() {
 
         return response;
     } catch (error) {
-        console.error("Logout error:", error);
-        return NextResponse.json({ message: 'An internal server error occurred' }, { status: 500 });
+        logger.error('Logout error:', error);
+        return NextResponse.json(
+            { message: 'An internal server error occurred' },
+            { status: 500 }
+        );
     }
 }

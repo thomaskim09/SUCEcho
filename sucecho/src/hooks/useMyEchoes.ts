@@ -1,5 +1,7 @@
 // src/hooks/useMyEchoes.ts
-"use client";
+'use client';
+
+import logger from '@/lib/logger';
 
 const MY_ECHOES_KEY = 'my_echoes';
 
@@ -17,12 +19,12 @@ export const getMyEchoes = (): number[] => {
         if (!item) return [];
         const ids = JSON.parse(item);
         // Basic validation to ensure it's an array of numbers
-        if (Array.isArray(ids) && ids.every(id => typeof id === 'number')) {
+        if (Array.isArray(ids) && ids.every((id) => typeof id === 'number')) {
             return ids;
         }
         return [];
     } catch (error) {
-        console.error("Failed to parse my echoes from localStorage", error);
+        logger.error('Failed to parse my echoes from localStorage', error);
         return [];
     }
 };
@@ -40,9 +42,12 @@ export const addMyEcho = (postId: number): void => {
         // Avoid adding duplicates
         if (!currentEchoes.includes(postId)) {
             const newEchoes = [postId, ...currentEchoes];
-            window.localStorage.setItem(MY_ECHOES_KEY, JSON.stringify(newEchoes));
+            window.localStorage.setItem(
+                MY_ECHOES_KEY,
+                JSON.stringify(newEchoes)
+            );
         }
     } catch (error) {
-        console.error("Failed to add echo to localStorage", error);
+        logger.error('Failed to add echo to localStorage', error);
     }
 };

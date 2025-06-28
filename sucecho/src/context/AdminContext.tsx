@@ -3,6 +3,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import logger from '@/lib/logger';
 
 interface AdminContextType {
     isAdmin: boolean;
@@ -23,7 +24,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             const data = await response.json();
             setIsAdmin(data.isAdmin);
         } catch (error) {
-            console.error('Failed to check session:', error);
+            logger.error('Failed to check session:', error);
             setIsAdmin(false);
         }
     };
@@ -42,7 +43,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             setIsAdmin(false);
             router.push('/');
         } catch (error) {
-            console.error('Failed to logout:', error);
+            logger.error('Failed to logout:', error);
         }
     };
 

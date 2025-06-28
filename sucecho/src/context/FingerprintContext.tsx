@@ -2,6 +2,7 @@
 
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
+import logger from '@/lib/logger';
 
 interface FingerprintContextType {
     fingerprint: string | null;
@@ -21,7 +22,7 @@ export const FingerprintProvider = ({ children }: { children: ReactNode }) => {
                 const result = await fp.get();
                 setFingerprint(result.visitorId);
             } catch (error) {
-                console.error("Error getting fingerprint:", error);
+                logger.error("Error getting fingerprint:", error);
             } finally {
                 setIsLoading(false);
             }

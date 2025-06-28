@@ -1,6 +1,7 @@
 // sucecho/src/app/api/users/status/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
     try {
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
         // If no unacknowledged warnings are found, return an empty object.
         return NextResponse.json({});
     } catch (error) {
-        console.error('Failed to fetch user status:', error);
+        logger.error('Failed to fetch user status:', error);
         return NextResponse.json(
             { error: 'Failed to fetch user status' },
             { status: 500 }

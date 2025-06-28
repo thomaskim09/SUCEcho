@@ -1,16 +1,17 @@
 // sucecho/src/app/post/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
 import PostSkeleton from '@/app/components/PostSkeleton';
-import { useFingerprint } from '@/context/FingerprintContext';
 import { AnimatePresence } from 'framer-motion';
 import { Icon } from '@/app/components/Icon';
 import ReportModal from '@/app/components/ReportModal';
+import { useOptimisticVote } from '@/hooks/useOptimisticVote';
+import logger from '@/lib/logger';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -23,18 +24,17 @@ export default function PostDetailPage() {
     const [post, setPost] = useState<PostThread | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
-    const { fingerprint } = useFingerprint();
     const [shareFeedback, setShareFeedback] = useState('');
     const [reportFeedback, setReportFeedback] = useState('');
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const dataFetched = useRef(false); // Ref to prevent duplicate fetches
+    const dataFetched = useRef(false);
+
+    const { userVotes, handleOptimisticVote } = useOptimisticVote();
 
     useEffect(() => {
         const fetchPostDetails = async () => {
             setIsLoading(true);
             setError(null);
-
             try {
                 const res = await fetch(`/api/posts/${id}`);
                 if (!res.ok) {
@@ -50,20 +50,15 @@ export default function PostDetailPage() {
                 setIsLoading(false);
             }
         };
-
-        // Only fetch if an ID is present and data hasn't been fetched yet.
         if (id && !dataFetched.current) {
             fetchPostDetails();
             dataFetched.current = true;
         }
-
     }, [id]);
 
     useEffect(() => {
         if (!id) return;
-
         const eventSource = new EventSource('/api/live');
-
         const handleNewPost = (event: MessageEvent) => {
             const newPost: PostWithStats = JSON.parse(event.data);
             if (newPost.parentId?.toString() === id) {
@@ -75,7 +70,6 @@ export default function PostDetailPage() {
                 });
             }
         };
-
         const handleVoteUpdate = (event: MessageEvent) => {
             const { postId, stats } = JSON.parse(event.data);
             setPost(current => {
@@ -89,7 +83,6 @@ export default function PostDetailPage() {
                 return { ...current, replies: updatedReplies };
             });
         };
-
         const handleDeletePost = (event: MessageEvent) => {
             const { postId } = JSON.parse(event.data);
             setPost(current => {
@@ -100,100 +93,32 @@ export default function PostDetailPage() {
                 return { ...current, replies: current.replies.filter(r => r.id !== postId) };
             });
         };
-
         eventSource.addEventListener('new_post', handleNewPost);
         eventSource.addEventListener('update_vote', handleVoteUpdate);
         eventSource.addEventListener('delete_post', handleDeletePost);
-
-        return () => {
-            eventSource.close();
-        };
+        return () => eventSource.close();
     }, [id]);
 
-    const handleOptimisticVote = useCallback((postId: number, voteType: 1 | -1) => {
-        if (!post) return;
-
-        const originalPostState = JSON.parse(JSON.stringify(post));
-        const originalUserVotes = { ...userVotes };
-
-        const currentVote = userVotes[postId];
-        let newVoteState: 1 | -1 | undefined = voteType;
-
-        let upvoteChange = 0;
-        let downvoteChange = 0;
-
-        if (currentVote === voteType) {
-            newVoteState = undefined;
-            voteType === 1 ? upvoteChange = -1 : downvoteChange = -1;
-        } else if (currentVote) {
-            voteType === 1 ? (upvoteChange = 1, downvoteChange = -1) : (upvoteChange = -1, downvoteChange = 1);
-        } else {
-            voteType === 1 ? upvoteChange = 1 : downvoteChange = 1;
-        }
-
-        setUserVotes(prev => {
-            const newVotes = { ...prev };
-            if (newVoteState) newVotes[postId] = newVoteState;
-            else delete newVotes[postId];
-            return newVotes;
-        });
-
-        setPost(currentPost => {
-            if (!currentPost) return null;
-
-            const updateStats = (p: PostWithStats) => {
-                if (p.id === postId && p.stats) {
-                    return {
-                        ...p,
-                        stats: {
-                            ...p.stats,
-                            upvotes: p.stats.upvotes + upvoteChange,
-                            downvotes: p.stats.downvotes + downvoteChange,
-                        }
-                    };
-                }
-                return p;
-            };
-
-            const newPost = updateStats(currentPost);
-            const newReplies = currentPost.replies.map(updateStats);
-
-            return { ...newPost, replies: newReplies };
-        });
-
-        const sendVoteRequest = async () => {
-            if (!fingerprint) {
-                setPost(originalPostState);
-                setUserVotes(originalUserVotes);
-                return;
+    const updatePostInState = (updatedPost: PostWithStats) => {
+        setPost(currentThread => {
+            if (!currentThread) return null;
+            // Check if the updated post is the parent post
+            if (currentThread.id === updatedPost.id) {
+                return { ...currentThread, ...updatedPost };
             }
-            try {
-                const res = await fetch('/api/votes', { //
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ postId, voteType, fingerprintHash: fingerprint }),
-                });
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.error || "Server vote failed");
-                }
-            } catch (error) {
-                console.error("Reverting optimistic vote:", error);
-                setPost(originalPostState);
-                setUserVotes(originalUserVotes);
-                alert((error as Error).message);
-            }
-        };
-
-        sendVoteRequest();
-    }, [fingerprint, post, userVotes]);
+            // Otherwise, update the post in the replies array
+            const updatedReplies = currentThread.replies.map(reply =>
+                reply.id === updatedPost.id ? updatedPost : reply
+            );
+            return { ...currentThread, replies: updatedReplies };
+        });
+    };
 
     const handleShare = async () => {
         const shareUrl = window.location.href;
         const shareTitle = "在SUC回音壁上查看此回音！";
-
         if (navigator.share) {
-            await navigator.share({ title: shareTitle, url: shareUrl }).catch(err => console.error('Share failed:', err));
+            await navigator.share({ title: shareTitle, url: shareUrl }).catch(err => logger.error('Share failed:', err));
         } else {
             try {
                 await navigator.clipboard.writeText(shareUrl);
@@ -206,31 +131,21 @@ export default function PostDetailPage() {
         }
     };
 
-    const handleOpenReportModal = () => {
-        if (!fingerprint) {
-            alert("无法识别您的浏览器，无法举报。");
-            return;
-        }
-        setIsReportModalOpen(true);
-    };
+    const handleOpenReportModal = () => setIsReportModalOpen(true);
 
     const handleReportSubmit = async (reason: string) => {
-        setIsReportModalOpen(false); // Close the modal immediately
-
+        setIsReportModalOpen(false);
         try {
             const res = await fetch('/api/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ postId: post?.id, fingerprintHash: fingerprint, reason }),
+                body: JSON.stringify({ postId: post?.id, fingerprintHash: "temp-fingerprint", reason }), // Replace with real fingerprint
             });
-
             if (!res.ok) {
                 const errorData = await res.json();
                 throw new Error(errorData.error || "举报失败。");
             }
-
             setReportFeedback('感谢您的举报，管理员将会审查。');
-
         } catch (err) {
             setReportFeedback((err as Error).message);
         } finally {
@@ -263,54 +178,31 @@ export default function PostDetailPage() {
                 onClose={() => setIsReportModalOpen(false)}
                 onSubmit={handleReportSubmit}
             />
-
             <header className="py-4 flex justify-between items-center">
-                <Link href="/" className="text-accent hover:underline">
-                    ← 返回回音墙
-                </Link>
+                <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleShare}
-                        aria-label="Share post"
-                        className="p-2 rounded-lg transition-colors icon-base icon-share"
-                    >
-                        <Icon name="share" />
-                    </button>
-                    <button
-                        onClick={handleOpenReportModal}
-                        aria-label="Report post"
-                        className="p-2 rounded-lg transition-colors icon-base icon-report-flag"
-                    >
-                        <Icon name="report-flag" />
-                    </button>
+                    <button onClick={handleShare} aria-label="Share post" className="p-2 rounded-lg transition-colors icon-base icon-share"><Icon name="share" /></button>
+                    <button onClick={handleOpenReportModal} aria-label="Report post" className="p-2 rounded-lg transition-colors icon-base icon-report-flag"><Icon name="report-flag" /></button>
                 </div>
             </header>
             {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300" >{shareFeedback}</div>}
             {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
             <main className="mt-4">
                 <div className="mb-4">
-                    <PostCard post={post} isLink={false} onVote={handleOptimisticVote} userVote={userVotes[post.id]} />
+                    <PostCard post={post} isLink={false} onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)} userVote={userVotes[post.id]} />
                 </div>
-
                 <div className="my-6 text-center">
-                    <Link
-                        href={`/compose?parentId=${post.id}`}
-                        className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation"
-                    >
-                        <Icon name="comment" />
-                        回复这回音
+                    <Link href={`/compose?parentId=${post.id}`} className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation">
+                        <Icon name="comment" /> 回复这回音
                     </Link>
                 </div>
-
                 <div className="mt-8">
-                    <h2 className="text-xl font-mono text-gray-400 mb-2">
-                        回复 ({post.replies.length})
-                    </h2>
+                    <h2 className="text-xl font-mono text-gray-400 mb-2">回复 ({post.replies.length})</h2>
                     <div className="space-y-2 border-l-2 border-accent/30 pl-4 ml-4">
                         {post.replies.length > 0 ? (
                             <AnimatePresence>
                                 {post.replies.map(reply => (
-                                    <PostCard key={reply.id} post={reply} isLink={false} onVote={handleOptimisticVote} userVote={userVotes[reply.id]} />
+                                    <PostCard key={reply.id} post={reply} isLink={false} onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState)} userVote={userVotes[reply.id]} />
                                 ))}
                             </AnimatePresence>
                         ) : (

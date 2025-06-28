@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import eventEmitter from '@/lib/event-emitter';
 import { generateCodename } from '@/lib/codename';
+import logger from '@/lib/logger';
 
 /**
  * Handles GET requests to fetch the main feed of posts with pagination.
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
             nextCursor,
         });
     } catch (error) {
-        console.error('Error fetching posts:', error);
+        logger.error('Error fetching posts:', error);
         return NextResponse.json(
             { error: 'Failed to fetch posts' },
             { status: 500 }
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(newPostWithStats, { status: 201 });
     } catch (error) {
-        console.error('Error creating post:', error);
+        logger.error('Error creating post:', error);
         if (
             error instanceof Error &&
             'code' in error &&

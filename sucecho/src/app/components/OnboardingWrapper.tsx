@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import WelcomeAnimation from './WelcomeAnimation';
+import logger from '@/lib/logger';
 
 // This is a simple, non-React component to prevent the main app from flashing
 // before we can check localStorage.
@@ -23,16 +24,16 @@ export default function OnboardingWrapper({ children }: { children: React.ReactN
     useEffect(() => {
         // This effect runs only once on the client.
         const visited = localStorage.getItem('hasVisitedSUCEcho');
-        console.log('[OnboardingWrapper] localStorage hasVisitedSUCEcho:', visited);
+        logger.log('[OnboardingWrapper] localStorage hasVisitedSUCEcho:', visited);
 
         if (visited === 'true') {
             setShowSplash(false);
-            console.log('[OnboardingWrapper] Splash will NOT show (visited)');
+            logger.log('[OnboardingWrapper] Splash will NOT show (visited)');
         } else {
             // It's the first visit. Set the flag so we don't show it again.
             localStorage.setItem('hasVisitedSUCEcho', 'true');
             setShowSplash(true);
-            console.log('[OnboardingWrapper] Splash WILL show (first visit)');
+            logger.log('[OnboardingWrapper] Splash WILL show (first visit)');
         }
 
         // The check is complete.
@@ -41,7 +42,7 @@ export default function OnboardingWrapper({ children }: { children: React.ReactN
 
     const handleAnimationComplete = () => {
         setShowSplash(false);
-        console.log('[OnboardingWrapper] Animation complete, hiding splash');
+        logger.log('[OnboardingWrapper] Animation complete, hiding splash');
     };
 
     if (isChecking) {

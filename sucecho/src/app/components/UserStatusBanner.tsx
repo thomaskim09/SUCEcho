@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFingerprint } from '@/context/FingerprintContext';
+import logger from '@/lib/logger';
 
 interface AdminLogEntry {
     action: string;
@@ -47,7 +48,7 @@ export default function UserStatusBanner() {
                 body: JSON.stringify({ fingerprintHash: fingerprint }),
             });
         } catch (error) {
-            console.error("Failed to dismiss warning:", error);
+            logger.error("Failed to dismiss warning:", error);
             setIsVisible(true); // Re-show if API call fails
         }
     };

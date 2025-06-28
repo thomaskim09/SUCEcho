@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import eventEmitter from '@/lib/event-emitter';
 import { checkPurificationStatus } from '@/lib/purification';
+import logger from '@/lib/logger';
 
 export async function POST(request: Request) {
     try {
@@ -145,7 +146,7 @@ export async function POST(request: Request) {
                 { status: 404 }
             );
         }
-        console.error(`Error processing vote for post:`, error);
+        logger.error(`Error processing vote for post:`, error);
         return NextResponse.json(
             { error: 'Failed to process vote' },
             { status: 500 }

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifySession } from '@/lib/auth';
+import logger from '@/lib/logger';
 
 export async function POST(
     request: NextRequest,
@@ -9,7 +10,7 @@ export async function POST(
 ) {
     const session = request.cookies.get('session')?.value;
     const adminUser = await verifySession(session || '');
-    
+
     // Ensure an admin is making the request
     if (!adminUser) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -19,10 +20,16 @@ export async function POST(
     const { reason } = await request.json();
 
     if (!targetFingerprintHash) {
-        return NextResponse.json({ message: 'User fingerprint is required' }, { status: 400 });
+        return NextResponse.json(
+            { message: 'User fingerprint is required' },
+            { status: 400 }
+        );
     }
     if (!reason) {
-        return NextResponse.json({ message: 'A reason for the warning is required' }, { status: 400 });
+        return NextResponse.json(
+            { message: 'A reason for the warning is required' },
+            { status: 400 }
+        );
     }
 
     try {
@@ -36,7 +43,10 @@ export async function POST(
         });
         return NextResponse.json(log, { status: 201 });
     } catch (error) {
-        console.error("Failed to create warning log:", error);
-        return NextResponse.json({ message: 'Failed to issue warning' }, { status: 500 });
+        logger.error('Failed to create warning log:', error);
+        return NextResponse.json(
+            { message: 'Failed to issue warning' },
+            { status: 500 }
+        );
     }
 }

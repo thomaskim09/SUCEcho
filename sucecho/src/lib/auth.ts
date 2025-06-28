@@ -1,5 +1,6 @@
 // sucecho/src/lib/auth.ts
 import { jwtVerify, type JWTPayload } from 'jose';
+import logger from './logger';
 
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 
@@ -14,7 +15,9 @@ export interface UserPayload extends JWTPayload {
     username: string;
 }
 
-export async function verifySession(session: string): Promise<UserPayload | null> {
+export async function verifySession(
+    session: string
+): Promise<UserPayload | null> {
     try {
         // 1. Await the verification and let it return its default payload type
         const { payload } = await jwtVerify(session, JWT_SECRET, {
@@ -23,16 +26,15 @@ export async function verifySession(session: string): Promise<UserPayload | null
 
         // 2. Check if the 'username' exists on the payload
         if (typeof payload.username !== 'string') {
-            console.error("JWT payload is missing 'username'.");
+            logger.error("JWT payload is missing 'username'.");
             return null;
         }
 
         // 3. We can now safely cast and return the payload as our UserPayload type
         return payload as UserPayload;
-
     } catch (error) {
         // Catches invalid/expired tokens and other errors
-        console.error("JWT Verification Failed:", error);
+        logger.error('JWT Verification Failed:', error);
         return null;
     }
 }

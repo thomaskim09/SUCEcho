@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import logger from '@/lib/logger';
 
 export default function AboutPage() {
     const [logoClicks, setLogoClicks] = useState(0);
@@ -12,7 +13,7 @@ export default function AboutPage() {
 
     useEffect(() => {
         if (logoClicks === requiredClicks) {
-            console.log('Admin login triggered!');
+            logger.log('Admin login triggered!');
             router.push('/admin-login');
             setLogoClicks(0);
         }
@@ -21,7 +22,7 @@ export default function AboutPage() {
     useEffect(() => {
         if (logoClicks > 0) {
             const timer = setTimeout(() => {
-                console.log('Resetting admin click counter.');
+                logger.log('Resetting admin click counter.');
                 setLogoClicks(0);
             }, 2000);
 

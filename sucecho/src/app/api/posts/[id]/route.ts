@@ -1,4 +1,5 @@
 // sucecho/src/app/api/posts/[id]/route.ts
+import logger from '@/lib/logger';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -75,7 +76,7 @@ export async function GET(
 
         return NextResponse.json(post);
     } catch (error) {
-        console.error(`Error fetching post:`, error);
+        logger.error(`Error fetching post:`, error);
         return NextResponse.json(
             { error: 'Failed to fetch post' },
             { status: 500 }

@@ -1,8 +1,7 @@
-// src/app/components/Icon.tsx
+// sucecho/src/app/components/Icon.tsx
 import React from 'react';
-import { motion } from 'framer-motion'; //
+import { motion } from 'framer-motion';
 
-// SvgGlowFilter component (no changes needed here)
 export const SvgGlowFilter = () => (
     <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
@@ -54,6 +53,16 @@ const icons = {
     'report-flag': (
         <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" />
     ),
+    'menu': (
+        <>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </>
+    ),
+    'info': <><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></>,
+    'heart': <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />,
+    'edit': <><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></>,
 };
 
 export interface IconProps {

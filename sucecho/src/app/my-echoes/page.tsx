@@ -8,12 +8,14 @@ import PostCard from '@/app/components/PostCard';
 import PostSkeleton from '@/app/components/PostSkeleton';
 import Link from 'next/link';
 import { AnimatePresence } from 'framer-motion';
+import { useOptimisticVote } from '@/hooks/useOptimisticVote';
+import logger from '@/lib/logger';
 
 export default function MyEchoesPage() {
     const [myPosts, setMyPosts] = useState<PostWithStats[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    // const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
-    const [userVotes] = useState<Record<number, 1 | -1>>({});
+
+    const { userVotes, handleOptimisticVote } = useOptimisticVote();
 
     useEffect(() => {
         const fetchMyPosts = async () => {
@@ -22,36 +24,65 @@ export default function MyEchoesPage() {
                 setIsLoading(false);
                 return;
             }
-
             try {
                 const res = await fetch('/api/posts/mine', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ postIds }),
                 });
-
                 if (!res.ok) {
                     throw new Error('Failed to fetch your echoes');
                 }
-
                 const posts = await res.json();
                 setMyPosts(posts);
             } catch (error) {
-                console.error(error);
+                logger.error(error);
             } finally {
                 setIsLoading(false);
             }
         };
-
         fetchMyPosts();
     }, []);
 
-    // You can copy the handleOptimisticVote logic from PostFeed.tsx or PostDetailPage
-    // for instant voting feedback on this page too. For brevity, it's omitted here
-    // but should be included for a consistent UX.
-    const handleVote = (postId: number, voteType: 1 | -1) => {
-        // Placeholder for optimistic vote logic
-        console.log(`Voting on post ${postId} with type ${voteType}`);
+    useEffect(() => {
+        const eventSource = new EventSource('/api/live');
+
+        const handleVoteUpdate = (event: MessageEvent) => {
+            const voteData = JSON.parse(event.data);
+            logger.log("SSE [update_vote] received in my-echoes:", voteData);
+
+            setMyPosts(currentPosts =>
+                currentPosts.map(post =>
+                    post.id === voteData.postId
+                        ? { ...post, stats: voteData.stats }
+                        : post
+                )
+            );
+        };
+
+        const handleDeletePost = (event: MessageEvent) => {
+            const deleteData = JSON.parse(event.data);
+            logger.log("SSE [delete_post] received in my-echoes:", deleteData);
+
+            setMyPosts(currentPosts =>
+                currentPosts.filter(p => p.id !== deleteData.postId)
+            );
+        };
+
+        eventSource.addEventListener('update_vote', handleVoteUpdate);
+        eventSource.addEventListener('delete_post', handleDeletePost);
+
+        return () => {
+            eventSource.removeEventListener('update_vote', handleVoteUpdate);
+            eventSource.removeEventListener('delete_post', handleDeletePost);
+            eventSource.close();
+        };
+    }, []);
+
+    const updateMyPostsState = (updatedPost: PostWithStats) => {
+        setMyPosts(currentPosts =>
+            currentPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
+        );
     };
 
     const renderContent = () => {
@@ -63,7 +94,6 @@ export default function MyEchoesPage() {
                 </div>
             );
         }
-
         if (myPosts.length === 0) {
             return (
                 <div className="text-center text-gray-400 p-8 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
@@ -76,14 +106,13 @@ export default function MyEchoesPage() {
                 </div>
             );
         }
-
         return (
             <AnimatePresence>
                 {myPosts.map(post => (
                     <PostCard
                         key={post.id}
                         post={post}
-                        onVote={handleVote} // Replace with full optimistic handler
+                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState)}
                         userVote={userVotes[post.id]}
                     />
                 ))}

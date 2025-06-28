@@ -2,6 +2,7 @@
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth';
+import logger from '@/lib/logger';
 
 export async function GET(request: Request) {
     const session = request.headers
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json(reportedPosts);
     } catch (error) {
-        console.error('Error fetching reported posts:', error);
+        logger.error('Error fetching reported posts:', error);
         return NextResponse.json(
             { error: 'Failed to fetch reports' },
             { status: 500 }
