@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Icon } from './Icon';
 import { checkPurificationStatus } from "@/lib/purification";
 import { timeSince } from "@/lib/time-helpers"; // Import the helper
+import { useCountdown } from "@/hooks/useCountdown";
 
 interface PostCardProps {
     post: PostWithStats;
@@ -30,6 +31,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const isChildEcho = !!post.parentPostId;
+    const { countdownText, colorClass } = useCountdown(new Date(post.createdAt));
 
     const handleDelete = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onDelete) onDelete(post.id); setIsMenuOpen(false); };
     const handleCommentClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); router.push(`/compose?parentPostId=${post.id}`); };
@@ -97,7 +99,9 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             </AnimatePresence>
 
             <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
-                <span className="font-mono flex-shrink-0">{timeSince(new Date(post.createdAt))}</span>
+                <span className={`font-mono flex-shrink-0 ${isChildEcho ? 'text-gray-400' : colorClass}`}>
+                    {isChildEcho ? timeSince(new Date(post.createdAt)) : countdownText}
+                </span>
                 <div className="flex items-center gap-4 flex-shrink-0">
                     <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
                     <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>

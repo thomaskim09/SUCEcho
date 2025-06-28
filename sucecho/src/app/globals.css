@@ -6,6 +6,9 @@
   --foreground: #ededed;
   --accent: #9F70FD;
   --card-background: rgba(26, 26, 26, 0.8); /* Less transparent */
+  --countdown-soon: #f97316; /* orange-500 */
+  --countdown-hour: #f59e0b;  /* yellow-500 */
+  --countdown-critical: #ef4444; /* red-500 */
 }
 
 @theme {
@@ -30,6 +33,18 @@ body {
   to {
     transform: translateY(-2000px);
   }
+}
+
+.text-countdown-soon {
+  color: var(--countdown-soon);
+}
+
+.text-countdown-hour {
+  color: var(--countdown-hour);
+}
+
+.text-countdown-critical {
+  color: var(--countdown-critical);
 }
 
 #stars, #stars2, #stars3 {

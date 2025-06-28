@@ -31,13 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
   return (
     <html lang="en">
       <body className={`${notoSans.variable} ${robotoMono.variable} antialiased`}>
-        {/* --- ADDED STAR LAYERS --- */}
-        {/* These divs are the elements that will be animated to create the parallax star effect. */}
         <div id="stars"></div>
         <div id="stars2"></div>
         <div id="stars3"></div>
-        {/* --- END OF ADDED STAR LAYERS --- */}
-
         <SvgGlowFilter />
         <AdminProvider>
           <FingerprintProvider>
