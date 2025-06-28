@@ -1,4 +1,3 @@
-// sucecho/src/app/components/PostFeed.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -49,7 +48,7 @@ export default function PostFeed() {
         if (node) observer.current.observe(node);
     }, [isLoading, loadMorePosts, nextCursor]);
 
-    const handlePurificationComplete = (postId: number) => {
+    const handlePostFaded = (postId: number) => {
         setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
     };
 
@@ -132,12 +131,6 @@ export default function PostFeed() {
         );
     };
 
-    const now = Date.now();
-    const postsWithin24Hours = posts.filter(post => {
-        const created = new Date(post.createdAt).getTime();
-        return now - created <= 24 * 60 * 60 * 1000;
-    });
-
     if (isLoading) {
         return (<div> <PostSkeleton /> <PostSkeleton /> <PostSkeleton /> </div>);
     }
@@ -145,12 +138,13 @@ export default function PostFeed() {
     return (
         <div className="flex flex-col gap-4">
             <AnimatePresence initial={false}>
-                {postsWithin24Hours.map(post => (
+                {posts.map(post => (
                     <PostCard
                         key={post.id}
                         post={post}
                         isPurifying={post.isPurifying}
-                        onPurificationComplete={handlePurificationComplete}
+                        onPurificationComplete={handlePostFaded}
+                        onFaded={handlePostFaded}
                         onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)}
                         onDelete={handleDelete}
                         userVote={userVotes[post.id]}

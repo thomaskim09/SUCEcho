@@ -9,6 +9,7 @@ import logger from '@/lib/logger';
 
 interface AdminStats {
     totalUsers: number;
+    expiredPostsCount: number; // Add this to the interface
 }
 
 export default function AdminDashboardPage() {
@@ -22,7 +23,7 @@ export default function AdminDashboardPage() {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                // Fetch stats
+                // Fetch stats, which now includes the expired posts count
                 const statsResponse = await fetch('/api/admin/stats');
                 if (statsResponse.ok) {
                     setStats(await statsResponse.json());
@@ -37,11 +38,11 @@ export default function AdminDashboardPage() {
                     setReportCount(reportsData.length);
                 } else {
                     logger.warn("Could not fetch report count");
-                    setReportCount(0); // Set to 0 on failure
+                    setReportCount(0);
                 }
             } catch (e) {
                 logger.error("Error fetching dashboard data:", e);
-                setReportCount(0); // Set to 0 on error
+                setReportCount(0);
             }
         };
         fetchDashboardData();
@@ -145,13 +146,20 @@ export default function AdminDashboardPage() {
                         <div>
                             <h2 className="text-2xl font-bold text-orange-400">数据清理</h2>
                             <p className="text-sm text-gray-400 mt-1 mb-4">手动运行日常或深度数据清理任务。</p>
+                            {stats ? (
+                                <p className="text-lg font-mono">
+                                    <span className="font-bold text-xl text-yellow-400">{stats.expiredPostsCount}</span> 篇回音已过期
+                                </p>
+                            ) : (
+                                <p className="text-lg text-gray-500 mt-2">加载中...</p>
+                            )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 mt-4">
                             <button onClick={handleRunCron} disabled={isCronRunning} className="bg-blue-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
-                                {isCronRunning ? '...' : '24小时'}
+                                {isCronRunning ? '...' : '清理24小时前'}
                             </button>
                             <button onClick={handleDeepClean} disabled={isDeepCleaning} className="bg-orange-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
-                                {isDeepCleaning ? '...' : '180天'}
+                                {isDeepCleaning ? '...' : '清理180天前'}
                             </button>
                         </div>
                     </div>

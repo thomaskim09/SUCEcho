@@ -1,4 +1,3 @@
-// sucecho/src/app/components/PostCard.tsx
 "use client";
 
 import type { PostWithStats } from "@/lib/types";
@@ -7,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { useAdminSession } from '@/hooks/useAdminSession';
 import { generateCodename } from '@/lib/codename';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from './Icon';
 import { checkPurificationStatus } from "@/lib/purification";
-import { timeSince } from "@/lib/time-helpers"; // Import the helper
-import { useCountdown } from "@/hooks/useCountdown";
+import { timeSince } from "@/lib/time-helpers";
+import { useCountdown } from '@/hooks/useCountdown';
 
 interface PostCardProps {
     post: PostWithStats;
@@ -22,16 +21,24 @@ interface PostCardProps {
     userVote?: 1 | -1;
     isPurifying?: boolean;
     onPurificationComplete?: (postId: number) => void;
+    onFaded?: (postId: number) => void;
 }
 
-export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onFaded }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
     const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isFadingOut, setIsFadingOut] = useState(false);
 
     const isChildEcho = !!post.parentPostId;
-    const { countdownText, colorClass } = useCountdown(new Date(post.createdAt));
+    const { countdownText, colorClass, isExpired } = useCountdown(new Date(post.createdAt));
+
+    useEffect(() => {
+        if (isExpired && !isChildEcho) {
+            setIsFadingOut(true);
+        }
+    }, [isExpired, isChildEcho]);
 
     const handleDelete = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onDelete) onDelete(post.id); setIsMenuOpen(false); };
     const handleCommentClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); router.push(`/compose?parentPostId=${post.id}`); };
@@ -61,23 +68,29 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         hidden: { opacity: 0, y: 20 },
         enter: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } },
         exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } },
-        purify: { opacity: 0, scale: 0.8, transition: { duration: 0.6, ease: "easeOut" } }
+        purify: { opacity: 0, scale: 0.8, transition: { duration: 0.6, ease: "easeOut" } },
+        fadeOut: { opacity: 0, y: -20, transition: { duration: 0.5 } }
     };
+
+    const animationState = isFadingOut ? "fadeOut" : (isPurifying ? "purify" : "enter");
 
     return (
         <motion.div
             layout
             variants={cardVariants}
             initial="hidden"
-            animate={isPurifying ? "purify" : "enter"}
+            animate={animationState}
             exit="exit"
             onAnimationComplete={(definition) => {
                 if (definition === "purify" && onPurificationComplete) {
                     onPurificationComplete(post.id);
                 }
+                if (definition === "fadeOut" && onFaded) {
+                    onFaded(post.id);
+                }
             }}
             onClick={handleCardClick}
-            className={`p-4 rounded-lg my-2 glass-card relative ${isLink && !isChildEcho ? 'cursor-pointer' : ''} ${isPurifying ? 'pointer-events-none' : ''}`}
+            className={`p-4 rounded-lg my-2 glass-card relative ${isPurifying || isFadingOut ? 'pointer-events-none' : ''} ${isLink && !isChildEcho ? 'cursor-pointer' : ''}`}
         >
             {(isAdmin || isChildEcho) && (
                 <div className="absolute top-2 right-2">

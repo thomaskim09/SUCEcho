@@ -15,8 +15,22 @@ export async function GET(request: Request) {
 
     try {
         const totalUsers = await prisma.userAnonymizedProfile.count();
+
+        // Calculate the cutoff time for 24 hours ago
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        // Count posts older than 24 hours
+        const expiredPostsCount = await prisma.post.count({
+            where: {
+                createdAt: {
+                    lt: twentyFourHoursAgo,
+                },
+            },
+        });
+
         return NextResponse.json({
             totalUsers,
+            expiredPostsCount, // Add the new count to the response
         });
     } catch (error) {
         logger.error('Error fetching admin stats:', error);
