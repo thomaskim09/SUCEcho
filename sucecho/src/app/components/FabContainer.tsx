@@ -9,15 +9,19 @@ import { usePathname } from "next/navigation"
 export default function FabContainer() {
     const { isAdmin } = useAdmin();
     const pathname = usePathname();
-
-    if (pathname !== '/') {
+    if (pathname.startsWith('/admin') || pathname === '/compose') {
         return null;
     }
-
-    return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-4">
-            <FloatingActionButton />
-            {isAdmin && <AdminShield />}
-        </div>
-    )
+    if (pathname === '/') {
+        return (
+            <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-4">
+                <FloatingActionButton />
+                {isAdmin && <AdminShield />}
+            </div>
+        )
+    }
+    if (isAdmin) {
+        return <AdminShield />
+    }
+    return null;
 }

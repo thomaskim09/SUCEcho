@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { useAdminSession } from '@/hooks/useAdminSession';
 import { generateCodename } from '@/lib/codename';
-import { useState, useEffect, useRef } from 'react'; // Import useRef
+import { useState, useEffect, useRef } from 'react';
 import { Icon } from './Icon';
 import { checkPurificationStatus } from "@/lib/purification";
 import { timeSince } from "@/lib/time-helpers";
@@ -26,6 +26,15 @@ interface PostCardProps {
     onFaded?: (postId: number) => void;
 }
 
+// Define the variants for the card. These are the "animation states" it can be in.
+const cardVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.8 } },
+    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } },
+    purify: { opacity: 0, scale: 0.8, transition: { duration: 0.6, ease: "easeOut" } },
+    fadeOut: { opacity: 0, y: -20, transition: { duration: 0.5 } }
+};
+
 export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onFaded }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
@@ -35,14 +44,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [showUpvoteTooltip, setShowUpvoteTooltip] = useState(false);
     const [showDownvoteTooltip, setShowDownvoteTooltip] = useState(false);
 
-    // NEW: Refs to hold timer IDs for auto-dismissal
     const upvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
     const downvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
 
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired } = useCountdown(new Date(post.createdAt));
 
-    // NEW: Effect to clear timers when the component unmounts to prevent memory leaks
     useEffect(() => {
         return () => {
             if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current);
@@ -121,26 +128,17 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const hasDownvotes = (post.stats?.downvotes ?? 0) > 0;
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
 
-    const cardVariants: Variants = {
-        hidden: { opacity: 0, y: 20 },
-        enter: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } },
-        exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } },
-        purify: { opacity: 0, scale: 0.8, transition: { duration: 0.6, ease: "easeOut" } },
-        fadeOut: { opacity: 0, y: -20, transition: { duration: 0.5 } }
-    };
-
-    const animationState = isFadingOut ? "fadeOut" : (isPurifying ? "purify" : "enter");
+    const specialAnimation = isFadingOut ? "fadeOut" : (isPurifying ? "purify" : undefined);
 
     const upvoteTooltipContent = "点赞是对于内容的肯定，\n让有共鸣的声音浮现。";
     const downvoteTooltipContent = "到赞是社区净化的力量，\n当一个回声被足够多的人反对，\n它将被永久销毁。";
 
     return (
         <motion.div
-            layout
             variants={cardVariants}
-            initial="hidden"
-            animate={animationState}
+            animate={specialAnimation}
             exit="exit"
+            layout
             onAnimationComplete={(definition) => {
                 if (definition === "purify" && onPurificationComplete) {
                     onPurificationComplete(post.id);

@@ -11,6 +11,10 @@
   --countdown-critical: #ef4444; /* red-500 */
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

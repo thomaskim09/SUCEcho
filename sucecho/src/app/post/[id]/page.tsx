@@ -1,4 +1,3 @@
-// sucecho/src/app/post/[id]/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -6,12 +5,13 @@ import { useParams } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Icon } from '@/app/components/Icon';
 import ReportModal from '@/app/components/ReportModal';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
+import { useStaggeredRender } from '@/hooks/useStaggeredRender';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -33,6 +33,8 @@ export default function PostDetailPage() {
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
 
+    const [renderedReplies] = useStaggeredRender(post?.replies || []);
+
     const handleDelete = async (postId: number) => {
         if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) return;
         try {
@@ -41,14 +43,11 @@ export default function PostDetailPage() {
                 const errorData = await res.json();
                 throw new Error(errorData.message || 'Failed to delete post');
             }
-            // Trigger animation
             updatePostInState({ ...post!.replies.find(p => p.id === postId)!, isPurifying: true });
-
         } catch (err: unknown) {
             alert(`Error: ${(err as Error).message}`);
         }
     };
-
 
     useEffect(() => {
         const fetchPostDetails = async () => {
@@ -77,7 +76,9 @@ export default function PostDetailPage() {
 
     useEffect(() => {
         if (!id) return;
+
         const eventSource = new EventSource('/api/live');
+
         const handleNewPost = (event: MessageEvent) => {
             const newPost: PostWithStats = JSON.parse(event.data);
             if (newPost.parentPostId?.toString() === id) {
@@ -89,6 +90,7 @@ export default function PostDetailPage() {
                 });
             }
         };
+
         const handleVoteUpdate = (event: MessageEvent) => {
             const { postId, stats } = JSON.parse(event.data);
             setPost(current => {
@@ -102,6 +104,7 @@ export default function PostDetailPage() {
                 return { ...current, replies: updatedReplies };
             });
         };
+
         const handleDeletePost = (event: MessageEvent) => {
             const { postId } = JSON.parse(event.data);
             setPost(current => {
@@ -115,18 +118,22 @@ export default function PostDetailPage() {
                 return { ...current, replies: updatedReplies };
             });
         };
+
         eventSource.addEventListener('new_post', handleNewPost);
         eventSource.addEventListener('update_vote', handleVoteUpdate);
         eventSource.addEventListener('delete_post', handleDeletePost);
+
         return () => eventSource.close();
     }, [id]);
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {
             if (!currentThread) return null;
+
             if (currentThread.id === updatedPost.id) {
                 return { ...currentThread, ...updatedPost };
             }
+
             const updatedReplies = currentThread.replies.map(reply =>
                 reply.id === updatedPost.id ? updatedPost : reply
             );
@@ -230,7 +237,15 @@ export default function PostDetailPage() {
             {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
             <main className="mt-4">
                 <div className="mb-4">
-                    <PostCard post={post} isLink={false} onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)} userVote={userVotes[post.id]} onPurificationComplete={handlePurificationComplete} isPurifying={post.isPurifying} onDelete={handleDelete} />
+                    <PostCard
+                        post={post}
+                        isLink={false}
+                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)}
+                        userVote={userVotes[post.id]}
+                        onPurificationComplete={handlePurificationComplete}
+                        isPurifying={post.isPurifying}
+                        onDelete={handleDelete}
+                    />
                 </div>
                 <div className="my-6 text-center">
                     <Link href={`/compose?parentPostId=${post.id}`} className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation">
@@ -242,12 +257,29 @@ export default function PostDetailPage() {
                     <div className="space-y-2 border-l-2 border-accent/30 pl-4 ml-4">
                         {post.replies.length > 0 ? (
                             <AnimatePresence>
-                                {post.replies.map(reply => (
-                                    <PostCard key={reply.id} post={reply} isLink={false} onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState)} userVote={userVotes[reply.id]} onReport={handleOpenReportModal} onPurificationComplete={handlePurificationComplete} isPurifying={reply.isPurifying} onDelete={handleDelete} />
+                                {renderedReplies.map(reply => (
+                                    <motion.div
+                                        key={reply.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.8 } }}
+                                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                                        layout
+                                    >
+                                        <PostCard
+                                            post={reply}
+                                            isLink={false}
+                                            onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState)}
+                                            userVote={userVotes[reply.id]}
+                                            onReport={handleOpenReportModal}
+                                            onPurificationComplete={handlePurificationComplete}
+                                            isPurifying={reply.isPurifying}
+                                            onDelete={handleDelete}
+                                        />
+                                    </motion.div>
                                 ))}
                             </AnimatePresence>
                         ) : (
-                            <p className="text-gray-500 text-sm">目前并没有回复.</p>
+                            !isLoading && <p className="text-gray-500 text-sm">目前并没有回复.</p>
                         )}
                     </div>
                 </div>

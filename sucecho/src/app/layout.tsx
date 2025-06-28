@@ -6,7 +6,6 @@ import Header from "./components/Header";
 import FramerWrapper from "./components/FramerWrapper";
 import { FingerprintProvider } from '@/context/FingerprintContext';
 import { AdminProvider } from "@/context/AdminContext";
-import AdminShield from "./components/AdminShield";
 import UserStatusBanner from "./components/UserStatusBanner";
 import OnboardingWrapper from "./components/OnboardingWrapper";
 import { SvgGlowFilter } from "./components/Icon";
@@ -42,7 +41,6 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
               <UserStatusBanner />
               <Header />
               <FramerWrapper>{children}</FramerWrapper>
-              <AdminShield />
               <FabContainer />
             </OnboardingWrapper>
           </FingerprintProvider>
