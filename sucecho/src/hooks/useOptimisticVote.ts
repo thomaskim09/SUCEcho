@@ -30,7 +30,6 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
         }
 
         const postId = post.id;
-        // Create a full deep copy of the original post for a reliable revert
         const originalPost = JSON.parse(JSON.stringify(post));
         const originalVote = userVotes[postId];
 
@@ -65,14 +64,12 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
             return newVotes;
         });
 
-        // Explicitly create the new stats object to ensure it's not null and has the correct shape
         const newStats = {
             upvotes: (post.stats?.upvotes ?? 0) + upvoteChange,
             downvotes: (post.stats?.downvotes ?? 0) + downvoteChange,
             replyCount: post.stats?.replyCount ?? 0,
         };
 
-        // Construct the final updated post object
         const updatedPost: PostWithStats = {
             ...post,
             stats: newStats,
@@ -100,7 +97,6 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                 logger.error('Reverting optimistic vote:', error);
                 alert((error as Error).message);
 
-                // Revert state using the deep-copied original post to ensure type safety
                 setUserVotes((prev) => ({ ...prev, [postId]: originalVote }));
                 updateStateCallback(originalPost);
             }

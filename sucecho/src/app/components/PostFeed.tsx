@@ -1,3 +1,4 @@
+// sucecho/src/app/components/PostFeed.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -87,9 +88,11 @@ export default function PostFeed() {
         fetchInitialPosts();
 
         const eventSource = new EventSource('/api/live');
+        logger.log("SSE Connection opened."); // Add this log
 
         const handleNewPost = (event: MessageEvent) => {
             const newPost: PostWithStats = JSON.parse(event.data);
+            logger.log("SSE event 'new_post' received:", newPost); // Add this log
             if (!newPost.parentPostId) {
                 setPosts(prevPosts => [newPost, ...prevPosts]);
             }
@@ -97,6 +100,7 @@ export default function PostFeed() {
 
         const handleVoteUpdate = (event: MessageEvent) => {
             const { postId, stats } = JSON.parse(event.data);
+            logger.log("SSE event 'update_vote' received for post:", { postId, stats }); // Add this log
             setPosts(prevPosts =>
                 prevPosts.map(post =>
                     post.id === postId ? { ...post, stats: stats } : post
@@ -106,6 +110,7 @@ export default function PostFeed() {
 
         const handleDeletePost = (event: MessageEvent) => {
             const { postId } = JSON.parse(event.data);
+            logger.log("SSE event 'delete_post' received for post:", postId); // Add this log
             setPosts(prevPosts =>
                 prevPosts.map(p =>
                     p.id === postId ? { ...p, isPurifying: true } : p
@@ -122,8 +127,9 @@ export default function PostFeed() {
             eventSource.removeEventListener('update_vote', handleVoteUpdate);
             eventSource.removeEventListener('delete_post', handleDeletePost);
             eventSource.close();
+            logger.log("SSE Connection closed."); // Add this log
         };
-    }, []);
+    }, []); // Keep the dependency array empty
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPosts(currentPosts =>

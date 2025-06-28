@@ -2,6 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { verifySession } from '@/lib/auth';
+
+interface Params {
+    fingerprint: string;
+}
 
 /**
  * Handles GET requests to fetch details for a specific user profile based on their fingerprint.
@@ -9,10 +14,15 @@ import logger from '@/lib/logger';
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: { fingerprint: string } }
+    { params }: { params: Promise<Params> }
 ) {
+    const session = request.cookies.get('session')?.value;
+    const adminUser = await verifySession(session || '');
+    if (!adminUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
-        // FIX: Await params for Next.js 15 compatibility
         const { fingerprint: userFingerprint } = await params;
 
         if (!userFingerprint) {

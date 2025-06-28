@@ -185,13 +185,9 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json(newPostWithStats, { status: 201 });
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('Error creating post:', error);
-        if (
-            error instanceof Error &&
-            'code' in error &&
-            (error as any).code === 'P2025'
-        ) {
+        if ((error as { code?: string }).code === 'P2025') {
             return NextResponse.json(
                 { error: 'The post you are replying to no longer exists.' },
                 { status: 404 }

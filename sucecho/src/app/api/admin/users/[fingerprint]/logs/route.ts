@@ -1,14 +1,26 @@
 // sucecho/src/app/api/admin/users/[fingerprint]/logs/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { verifySession } from '@/lib/auth';
+import logger from '@/lib/logger';
+
+interface Params {
+    fingerprint: string;
+}
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { fingerprint: string } }
+    { params }: { params: Promise<Params> }
 ) {
-    const { fingerprint } = await params;
-    
+    const session = request.cookies.get('session')?.value;
+    const adminUser = await verifySession(session || '');
+    if (!adminUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
+        const { fingerprint } = await params;
+
         const logs = await prisma.adminLog.findMany({
             where: {
                 targetFingerprintHash: fingerprint,
@@ -19,6 +31,10 @@ export async function GET(
         });
         return NextResponse.json(logs);
     } catch (error) {
-        return NextResponse.json({ message: "Failed to fetch logs" }, { status: 500 });
+        logger.error('Failed to fetch admin logs:', error);
+        return NextResponse.json(
+            { message: 'Failed to fetch logs' },
+            { status: 500 }
+        );
     }
 }

@@ -3,18 +3,15 @@ import logger from '@/lib/logger';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-// Define the expected shape of the params
 interface Params {
     id: string;
 }
 
-// The { params } object's type is now a Promise that resolves to Params
 export async function GET(
     request: Request,
     { params }: { params: Promise<Params> }
 ) {
     try {
-        // **CRITICAL FIX**: Await the params object before accessing its properties.
         const { id } = await params;
         const postId = parseInt(id, 10);
 

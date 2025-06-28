@@ -43,10 +43,11 @@ export async function POST(request: Request) {
         const postExists = await prisma.post.findUnique({
             where: { id: postId },
         });
+
         if (!postExists) {
             return NextResponse.json(
                 {
-                    error: 'The post you are trying to vote on has already vanished.',
+                    error: 'This echo vanished before your vote could be counted.',
                 },
                 { status: 410 }
             );
@@ -127,12 +128,8 @@ export async function POST(request: Request) {
             postId: transactionResult.postId,
             stats: transactionResult.stats,
         });
-    } catch (error) {
-        if (
-            error instanceof Error &&
-            'code' in error &&
-            (error as any).code === 'P2003'
-        ) {
+    } catch (error: unknown) {
+        if ((error as { code?: string }).code === 'P2003') {
             return NextResponse.json(
                 {
                     error: 'This echo vanished before your vote could be counted.',
@@ -150,6 +147,7 @@ export async function POST(request: Request) {
                 { status: 404 }
             );
         }
+
         logger.error(`Error processing vote for post:`, error);
         return NextResponse.json(
             { error: 'Failed to process vote' },

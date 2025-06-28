@@ -4,19 +4,23 @@ import prisma from '@/lib/prisma';
 import { verifySession } from '@/lib/auth';
 import logger from '@/lib/logger';
 
+interface RouteParams {
+    fingerprint: string;
+}
+
 export async function POST(
     request: NextRequest,
-    { params }: { params: { fingerprint: string } }
+    { params }: { params: Promise<RouteParams> }
 ) {
     const session = request.cookies.get('session')?.value;
     const adminUser = await verifySession(session || '');
 
-    // Ensure an admin is making the request
     if (!adminUser) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const { fingerprint: targetFingerprintHash } = await params;
+
     const { reason } = await request.json();
 
     if (!targetFingerprintHash) {

@@ -3,10 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifySession } from '@/lib/auth';
 
+interface RouteParams {
+    fingerprint: string;
+}
+
 // Ban a user
 export async function POST(
     request: NextRequest,
-    { params }: { params: { fingerprint: string } }
+    { params }: { params: Promise<RouteParams> }
 ) {
     const session = request.cookies.get('session')?.value;
     const adminUser = await verifySession(session || '');
@@ -14,10 +18,9 @@ export async function POST(
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
     const { fingerprint: targetFingerprintHash } = await params;
-    const { durationDays, reason } = await request.json(); // reason can now be undefined
+    const { durationDays, reason } = await request.json();
 
     if (!targetFingerprintHash) {
-        // No longer check for reason here
         return NextResponse.json(
             { message: 'User fingerprint is required' },
             { status: 400 }
@@ -46,9 +49,9 @@ export async function POST(
             }),
         ]);
         return NextResponse.json(updatedUser);
-    } catch (error) {
+    } catch {
         return NextResponse.json(
-            { message: 'Failed to ban user' },
+            { error: 'Failed to ban user' },
             { status: 500 }
         );
     }
@@ -57,7 +60,7 @@ export async function POST(
 // Unban a user
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { fingerprint: string } }
+    { params }: { params: Promise<RouteParams> }
 ) {
     const session = request.cookies.get('session')?.value;
     const adminUser = await verifySession(session || '');
@@ -65,10 +68,9 @@ export async function DELETE(
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
     const { fingerprint: targetFingerprintHash } = await params;
-    const { durationDays, reason } = await request.json(); // reason can now be undefined
+    const { reason } = await request.json();
 
     if (!targetFingerprintHash) {
-        // No longer check for reason here
         return NextResponse.json(
             { message: 'User fingerprint is required' },
             { status: 400 }
@@ -91,9 +93,9 @@ export async function DELETE(
             }),
         ]);
         return NextResponse.json(updatedUser);
-    } catch (error) {
+    } catch {
         return NextResponse.json(
-            { message: 'Failed to unban user' },
+            { error: 'Failed to unban user' },
             { status: 500 }
         );
     }

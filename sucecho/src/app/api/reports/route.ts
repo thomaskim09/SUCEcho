@@ -39,14 +39,10 @@ export async function POST(request: Request) {
             { message: 'Report submitted successfully' },
             { status: 201 }
         );
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('Error creating report:', error);
         // Handle cases where the post might have been deleted
-        if (
-            error instanceof Error &&
-            'code' in error &&
-            (error as any).code === 'P2003'
-        ) {
+        if ((error as { code?: string }).code === 'P2003') {
             return NextResponse.json(
                 { error: '无法举报，该帖子已不存在。' },
                 { status: 404 }

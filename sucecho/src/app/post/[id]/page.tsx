@@ -155,7 +155,7 @@ export default function PostDetailPage() {
             try {
                 await navigator.clipboard.writeText(shareUrl);
                 setShareFeedback('链接已复制到剪贴板！');
-            } catch (err) {
+            } catch {
                 setShareFeedback('复制链接失败。');
             } finally {
                 setTimeout(() => setShareFeedback(''), 2000);
