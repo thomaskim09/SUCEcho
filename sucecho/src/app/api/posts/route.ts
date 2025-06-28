@@ -65,8 +65,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
+        // CORRECTED: Use parentPostId to match the client request body
         const body = await request.json();
-        const { content, fingerprintHash, parentId } = body;
+        const { content, fingerprintHash, parentPostId } = body;
 
         if (!content || !fingerprintHash) {
             return NextResponse.json(
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
         });
 
         if (userProfile?.isBanned) {
+            // (Ban checking logic is correct and remains the same)
             const expires = userProfile.banExpiresAt;
             if (!expires || new Date(expires) > new Date()) {
                 const banLog = await prisma.adminLog.findFirst({
@@ -95,29 +97,41 @@ export async function POST(request: Request) {
                     },
                     orderBy: { createdAt: 'desc' },
                 });
-
                 let message = `You are currently banned.`;
-                if (expires) {
+                if (expires)
                     message += ` Your ban will expire on ${new Date(
                         expires
                     ).toLocaleString()}.`;
-                } else {
-                    message += ` This ban is permanent.`;
-                }
-                if (banLog?.reason) {
-                    message += ` Reason: ${banLog.reason}`;
-                }
-
+                else message += ` This ban is permanent.`;
+                if (banLog?.reason) message += ` Reason: ${banLog.reason}`;
                 return NextResponse.json({ error: message }, { status: 403 });
+            }
+        }
+
+        // Server-side validation to prevent replying to a reply
+        if (parentPostId) {
+            const parentPost = await prisma.post.findUnique({
+                where: { id: Number(parentPostId) },
+                select: { parentPostId: true },
+            });
+            if (!parentPost) {
+                return NextResponse.json(
+                    { error: 'The post you are replying to no longer exists.' },
+                    { status: 404 }
+                );
+            }
+            if (parentPost.parentPostId !== null) {
+                return NextResponse.json(
+                    { error: 'You cannot reply to a comment.' },
+                    { status: 400 }
+                );
             }
         }
 
         const newPostWithStats = await prisma.$transaction(async (tx) => {
             await tx.userAnonymizedProfile.upsert({
                 where: { fingerprintHash },
-                update: {
-                    lastSeenAt: new Date(),
-                },
+                update: { lastSeenAt: new Date() },
                 create: {
                     fingerprintHash,
                     codename: generateCodename(fingerprintHash),
@@ -129,18 +143,15 @@ export async function POST(request: Request) {
                 data: {
                     content,
                     fingerprintHash,
-                    parentPostId: parentId ? Number(parentId) : null,
+                    parentPostId: parentPostId ? Number(parentPostId) : null,
                 },
             });
 
-            if (parentId) {
+            if (parentPostId) {
                 await tx.postStats.upsert({
-                    where: { postId: Number(parentId) },
+                    where: { postId: Number(parentPostId) },
                     update: { replyCount: { increment: 1 } },
-                    create: {
-                        postId: Number(parentId),
-                        replyCount: 1,
-                    },
+                    create: { postId: Number(parentPostId), replyCount: 1 },
                 });
             }
 
@@ -154,13 +165,24 @@ export async function POST(request: Request) {
                 },
             });
 
-            return {
-                ...createdPost,
-                stats: createdStats,
-            };
+            return { ...createdPost, stats: createdStats };
         });
 
+        // Emit the 'new_post' event, which is used by the post detail page
         eventEmitter.emit('new_post', newPostWithStats);
+
+        // If it was a reply, emit an event to update the parent's stats on the main feed
+        if (newPostWithStats.parentPostId) {
+            const parentStats = await prisma.postStats.findUnique({
+                where: { postId: newPostWithStats.parentPostId },
+            });
+            if (parentStats) {
+                eventEmitter.emit('update_vote', {
+                    postId: newPostWithStats.parentPostId,
+                    stats: parentStats,
+                });
+            }
+        }
 
         return NextResponse.json(newPostWithStats, { status: 201 });
     } catch (error) {

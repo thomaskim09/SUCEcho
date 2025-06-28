@@ -5,7 +5,7 @@ export interface PostWithStats {
     content: string | null;
     createdAt: Date;
     fingerprintHash: string;
-    parentId?: number | null;
+    parentPostId?: number | null;
     stats: {
         upvotes: number;
         downvotes: number;

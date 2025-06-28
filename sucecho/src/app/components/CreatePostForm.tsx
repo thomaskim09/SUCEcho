@@ -7,10 +7,10 @@ import { useFingerprint } from '@/context/FingerprintContext';
 import { addMyEcho } from '@/hooks/useMyEchoes'; // Import the new hook
 
 interface CreatePostFormProps {
-    parentId?: number;
+    parentPostId?: number;
 }
 
-export default function CreatePostForm({ parentId }: CreatePostFormProps) {
+export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function CreatePostForm({ parentId }: CreatePostFormProps) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ content, fingerprintHash: fingerprint, parentId }),
+                body: JSON.stringify({ content, fingerprintHash: fingerprint, parentPostId: parentPostId }),
             });
 
             if (!response.ok) {
@@ -52,7 +52,7 @@ export default function CreatePostForm({ parentId }: CreatePostFormProps) {
             }
 
             setContent("");
-            router.push(parentId ? `/post/${parentId}` : '/');
+            router.push(parentPostId ? `/post/${parentPostId}` : '/');
 
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -73,7 +73,7 @@ export default function CreatePostForm({ parentId }: CreatePostFormProps) {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     className="w-full bg-transparent border-b border-gray-600 focus:outline-none focus:border-accent p-2"
-                    placeholder={parentId ? "写下你的回应..." : "此刻你想说什么？"}
+                    placeholder={parentPostId ? "写下你的回应..." : "此刻你想说什么？"}
                     rows={5}
                     maxLength={charLimit}
                     autoFocus
@@ -87,7 +87,7 @@ export default function CreatePostForm({ parentId }: CreatePostFormProps) {
                         className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                         disabled={!content.trim() || isSubmitting || isFingerprintLoading || !fingerprint}
                     >
-                        {isSubmitting ? "发布中..." : (parentId ? "发布回应" : "发布回音")}
+                        {isSubmitting ? "发布中..." : (parentPostId ? "发布回应" : "发布回音")}
                     </button>
                 </div>
                 {error && <p className="text-red-500 mt-2">{error}</p>}

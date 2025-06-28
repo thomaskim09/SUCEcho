@@ -61,7 +61,7 @@ export default function PostDetailPage() {
         const eventSource = new EventSource('/api/live');
         const handleNewPost = (event: MessageEvent) => {
             const newPost: PostWithStats = JSON.parse(event.data);
-            if (newPost.parentId?.toString() === id) {
+            if (newPost.parentPostId?.toString() === id) {
                 setPost(current => {
                     if (current && !current.replies.some(r => r.id === newPost.id)) {
                         return { ...current, replies: [...current.replies, newPost] };
@@ -192,7 +192,7 @@ export default function PostDetailPage() {
                     <PostCard post={post} isLink={false} onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)} userVote={userVotes[post.id]} />
                 </div>
                 <div className="my-6 text-center">
-                    <Link href={`/compose?parentId=${post.id}`} className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation">
+                    <Link href={`/compose?parentPostId=${post.id}`} className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation">
                         <Icon name="comment" /> 回复这回音
                     </Link>
                 </div>

@@ -44,41 +44,6 @@ export default function MyEchoesPage() {
         fetchMyPosts();
     }, []);
 
-    useEffect(() => {
-        const eventSource = new EventSource('/api/live');
-
-        const handleVoteUpdate = (event: MessageEvent) => {
-            const voteData = JSON.parse(event.data);
-            logger.log("SSE [update_vote] received in my-echoes:", voteData);
-
-            setMyPosts(currentPosts =>
-                currentPosts.map(post =>
-                    post.id === voteData.postId
-                        ? { ...post, stats: voteData.stats }
-                        : post
-                )
-            );
-        };
-
-        const handleDeletePost = (event: MessageEvent) => {
-            const deleteData = JSON.parse(event.data);
-            logger.log("SSE [delete_post] received in my-echoes:", deleteData);
-
-            setMyPosts(currentPosts =>
-                currentPosts.filter(p => p.id !== deleteData.postId)
-            );
-        };
-
-        eventSource.addEventListener('update_vote', handleVoteUpdate);
-        eventSource.addEventListener('delete_post', handleDeletePost);
-
-        return () => {
-            eventSource.removeEventListener('update_vote', handleVoteUpdate);
-            eventSource.removeEventListener('delete_post', handleDeletePost);
-            eventSource.close();
-        };
-    }, []);
-
     const updateMyPostsState = (updatedPost: PostWithStats) => {
         setMyPosts(currentPosts =>
             currentPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
@@ -108,14 +73,23 @@ export default function MyEchoesPage() {
         }
         return (
             <AnimatePresence>
-                {myPosts.map(post => (
-                    <PostCard
-                        key={post.id}
-                        post={post}
-                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState)}
-                        userVote={userVotes[post.id]}
-                    />
-                ))}
+                {myPosts.map(post => {
+                    const isChildEcho = !!post.parentPostId;
+                    const wrapperClass = isChildEcho
+                        ? "border-l-2 border-accent/30 pl-4 ml-4"
+                        : "";
+
+                    return (
+                        <div key={post.id} className={wrapperClass}>
+                            <PostCard
+                                post={post}
+                                isLink={!isChildEcho}
+                                onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState)}
+                                userVote={userVotes[post.id]}
+                            />
+                        </div>
+                    );
+                })}
             </AnimatePresence>
         );
     };
@@ -129,7 +103,9 @@ export default function MyEchoesPage() {
                 </Link>
             </header>
             <main className="mt-4">
-                {renderContent()}
+                <div className="flex flex-col gap-4">
+                    {renderContent()}
+                </div>
             </main>
         </div>
     );

@@ -88,15 +88,15 @@ export default function PostFeed() {
         fetchInitialPosts();
 
         const eventSource = new EventSource('/api/live');
+
         const handleNewPost = (event: MessageEvent) => {
-            logger.log("SSE [new_post]:", JSON.parse(event.data));
-            const newPost = JSON.parse(event.data);
-            if (!newPost.parentId) {
+            const newPost: PostWithStats = JSON.parse(event.data);
+            if (!newPost.parentPostId) {
                 setPosts(prevPosts => [newPost, ...prevPosts]);
             }
         };
+
         const handleVoteUpdate = (event: MessageEvent) => {
-            logger.log("SSE [update_vote]:", JSON.parse(event.data));
             const { postId, stats } = JSON.parse(event.data);
             setPosts(prevPosts =>
                 prevPosts.map(post =>
@@ -104,8 +104,8 @@ export default function PostFeed() {
                 )
             );
         };
+
         const handleDeletePost = (event: MessageEvent) => {
-            logger.log("SSE [delete_post]:", JSON.parse(event.data));
             const { postId } = JSON.parse(event.data);
             setPosts(prevPosts =>
                 prevPosts.map(p =>
@@ -113,9 +113,11 @@ export default function PostFeed() {
                 )
             );
         };
+
         eventSource.addEventListener('new_post', handleNewPost);
         eventSource.addEventListener('update_vote', handleVoteUpdate);
         eventSource.addEventListener('delete_post', handleDeletePost);
+
         return () => {
             eventSource.removeEventListener('new_post', handleNewPost);
             eventSource.removeEventListener('update_vote', handleVoteUpdate);
