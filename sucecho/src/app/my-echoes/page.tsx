@@ -43,11 +43,52 @@ export default function MyEchoesPage() {
         fetchMyPosts();
     }, []);
 
+    useEffect(() => {
+        const eventSource = new EventSource('/api/live');
+        logger.log("SSE Connection opened on My Echoes page.");
+
+        const handleVoteUpdate = (event: MessageEvent) => {
+            const { postId, stats } = JSON.parse(event.data);
+            setMyPosts(currentPosts =>
+                currentPosts.map(post =>
+                    post.id === postId ? { ...post, stats: stats } : post
+                )
+            );
+        };
+
+        const handleDeletePost = (event: MessageEvent) => {
+            const { postId } = JSON.parse(event.data);
+            // Mark the post for removal animation
+            setMyPosts(currentPosts =>
+                currentPosts.map(p =>
+                    p.id === postId ? { ...p, isPurifying: true } : p
+                )
+            );
+        };
+
+        eventSource.addEventListener('update_vote', handleVoteUpdate);
+        eventSource.addEventListener('delete_post', handleDeletePost);
+
+        return () => {
+            eventSource.removeEventListener('update_vote', handleVoteUpdate);
+            eventSource.removeEventListener('delete_post', handleDeletePost);
+            eventSource.close();
+            logger.log("SSE Connection closed on My Echoes page.");
+        };
+    }, []);
+
+
     const updateMyPostsState = (updatedPost: PostWithStats) => {
         setMyPosts(currentPosts =>
             currentPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
         );
     };
+
+    // --- START: Added handler for post removal animation ---
+    const handlePostRemoved = (postId: number) => {
+        setMyPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+    };
+    // --- END: Added handler for post removal animation ---
 
     const renderContent = () => {
         if (isLoading) {
@@ -92,6 +133,11 @@ export default function MyEchoesPage() {
                                     isLink={!isChildEcho}
                                     onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState)}
                                     userVote={userVotes[post.id]}
+                                    // --- START: Added props for removal animation ---
+                                    isPurifying={post.isPurifying}
+                                    onPurificationComplete={handlePostRemoved}
+                                    onFaded={handlePostRemoved}
+                                // --- END: Added props for removal animation ---
                                 />
                             </motion.div>
                         );

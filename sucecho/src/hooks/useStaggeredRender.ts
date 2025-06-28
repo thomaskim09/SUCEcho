@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-export function useStaggeredRender<T extends { id: any }>(
+export function useStaggeredRender<T extends { id: string | number }>(
     items: T[],
     delay = 200
 ): [T[], boolean] {
@@ -21,10 +21,13 @@ export function useStaggeredRender<T extends { id: any }>(
         }
 
         const timeouts: NodeJS.Timeout[] = [];
-        setRenderedItems([]);
+        setRenderedItems(items);
 
         const startTimeout = setTimeout(() => {
-            items.forEach((item, index) => {
+            const currentItems = items;
+            setRenderedItems([]);
+
+            currentItems.forEach((item, index) => {
                 const timeout = setTimeout(() => {
                     setRenderedItems((prevItems) => {
                         if (prevItems.some((p) => p.id === item.id)) {
@@ -38,7 +41,7 @@ export function useStaggeredRender<T extends { id: any }>(
 
             const completionTimeout = setTimeout(() => {
                 setIsComplete(true);
-            }, items.length * delay);
+            }, currentItems.length * delay);
             timeouts.push(completionTimeout);
         }, 10);
 
@@ -47,7 +50,27 @@ export function useStaggeredRender<T extends { id: any }>(
         return () => {
             timeouts.forEach(clearTimeout);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemIds, delay]);
+
+    useEffect(() => {
+        const itemMap = new Map(items.map((item) => [item.id, item]));
+
+        setRenderedItems((currentRenderedItems) => {
+            const updatedItems = currentRenderedItems.map(
+                (renderedItem) => itemMap.get(renderedItem.id) || renderedItem
+            );
+
+            if (
+                JSON.stringify(updatedItems) !==
+                JSON.stringify(currentRenderedItems)
+            ) {
+                return updatedItems as T[];
+            }
+
+            return currentRenderedItems;
+        });
+    }, [items]);
 
     return [renderedItems, isComplete];
 }
