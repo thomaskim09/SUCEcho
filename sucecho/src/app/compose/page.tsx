@@ -1,5 +1,5 @@
 // sucecho/src/app/compose/page.tsx
-"use client"; // This page now needs client-side hooks
+"use client";
 
 import CreatePostForm from "../components/CreatePostForm";
 import { useSearchParams } from 'next/navigation';

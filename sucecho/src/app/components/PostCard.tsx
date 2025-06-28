@@ -1,3 +1,4 @@
+// sucecho/src/app/components/PostCard.tsx
 "use client";
 
 import type { PostWithStats } from "@/lib/types";
@@ -6,11 +7,12 @@ import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { useAdminSession } from '@/hooks/useAdminSession';
 import { generateCodename } from '@/lib/codename';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Import useRef
 import { Icon } from './Icon';
 import { checkPurificationStatus } from "@/lib/purification";
 import { timeSince } from "@/lib/time-helpers";
 import { useCountdown } from '@/hooks/useCountdown';
+import Tooltip from './Tooltip';
 
 interface PostCardProps {
     post: PostWithStats;
@@ -30,9 +32,23 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isFadingOut, setIsFadingOut] = useState(false);
+    const [showUpvoteTooltip, setShowUpvoteTooltip] = useState(false);
+    const [showDownvoteTooltip, setShowDownvoteTooltip] = useState(false);
+
+    // NEW: Refs to hold timer IDs for auto-dismissal
+    const upvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
+    const downvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
 
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired } = useCountdown(new Date(post.createdAt));
+
+    // NEW: Effect to clear timers when the component unmounts to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current);
+            if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current);
+        };
+    }, []);
 
     useEffect(() => {
         if (isExpired && !isChildEcho) {
@@ -40,10 +56,51 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         }
     }, [isExpired, isChildEcho]);
 
+    const handleVote = (e: React.MouseEvent, voteType: 1 | -1) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isFingerprintLoading || !fingerprint) {
+            alert("无法识别您的浏览器。请稍后再试。");
+            return;
+        }
+
+        if (voteType === 1) {
+            const hasSeenUpvoteTip = localStorage.getItem('hasSeenUpvoteTip');
+            if (hasSeenUpvoteTip !== 'true') {
+                if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current);
+                setShowUpvoteTooltip(true);
+                localStorage.setItem('hasSeenUpvoteTip', 'true');
+                upvoteTooltipTimer.current = setTimeout(() => {
+                    setShowUpvoteTooltip(false);
+                }, 5000);
+            }
+        } else if (voteType === -1) {
+            const hasSeenDownvoteTip = localStorage.getItem('hasSeenDownvoteTip');
+            if (hasSeenDownvoteTip !== 'true') {
+                if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current);
+                setShowDownvoteTooltip(true);
+                localStorage.setItem('hasSeenDownvoteTip', 'true');
+                downvoteTooltipTimer.current = setTimeout(() => {
+                    setShowDownvoteTooltip(false);
+                }, 5000);
+            }
+        }
+
+        onVote(post.id, voteType);
+    };
+
+    const closeUpvoteTooltip = () => {
+        if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current);
+        setShowUpvoteTooltip(false);
+    }
+    const closeDownvoteTooltip = () => {
+        if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current);
+        setShowDownvoteTooltip(false);
+    }
+
     const handleDelete = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onDelete) onDelete(post.id); setIsMenuOpen(false); };
     const handleCommentClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); router.push(`/compose?parentPostId=${post.id}`); };
     const handleToggleMenu = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); };
-    const handleVote = (e: React.MouseEvent, voteType: 1 | -1) => { e.preventDefault(); e.stopPropagation(); if (isFingerprintLoading || !fingerprint) { alert("无法识别您的浏览器。请稍后再试。"); return; } onVote(post.id, voteType); };
     const handleViewProfile = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); router.push(`/admin/users/${post.fingerprintHash}`); setIsMenuOpen(false); };
     const handleShowDetails = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); alert(`Post ID: ${post.id}\nFingerprint Hash: ${post.fingerprintHash}`); setIsMenuOpen(false); };
     const handleReportClick = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onReport) { onReport(post.id); } setIsMenuOpen(false); };
@@ -73,6 +130,9 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     };
 
     const animationState = isFadingOut ? "fadeOut" : (isPurifying ? "purify" : "enter");
+
+    const upvoteTooltipContent = "点赞是对于内容的肯定，\n让有共鸣的声音浮现。";
+    const downvoteTooltipContent = "到赞是社区净化的力量，\n当一个回声被足够多的人反对，\n它将被永久销毁。";
 
     return (
         <motion.div
@@ -116,8 +176,14 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     {isChildEcho ? timeSince(new Date(post.createdAt)) : countdownText}
                 </span>
                 <div className="flex items-center gap-4 flex-shrink-0">
-                    <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
-                    <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
+                    <div className="relative">
+                        <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
+                        <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
+                    </div>
+                    <div className="relative">
+                        <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
+                        <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
+                    </div>
                     {!isChildEcho && (
                         <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
                             <Icon name="comment" value={post.stats?.replyCount ?? 0} />
