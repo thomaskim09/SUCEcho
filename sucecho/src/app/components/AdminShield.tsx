@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useAdmin } from "@/context/AdminContext";
 import { usePathname } from "next/navigation";
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export default function AdminShield() {
   const { isAdmin } = useAdmin();

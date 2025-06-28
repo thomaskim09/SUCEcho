@@ -1,7 +1,7 @@
 // sucecho/src/app/components/Tooltip.tsx
 "use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface TooltipProps {
     content: string;

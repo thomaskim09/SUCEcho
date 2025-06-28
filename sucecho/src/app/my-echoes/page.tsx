@@ -7,7 +7,7 @@ import { getMyEchoes } from '@/hooks/useMyEchoes';
 import PostCard from '@/app/components/PostCard';
 import PostSkeleton from '@/app/components/PostSkeleton';
 import Link from 'next/link';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 

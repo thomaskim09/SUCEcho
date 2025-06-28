@@ -1,7 +1,7 @@
 // sucecho/src/app/components/PurificationParticle.tsx
 "use client";
 
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 // A single particle that animates outwards
 export const Particle = () => {

@@ -10,6 +10,7 @@ import AdminShield from "./components/AdminShield";
 import UserStatusBanner from "./components/UserStatusBanner";
 import OnboardingWrapper from "./components/OnboardingWrapper";
 import { SvgGlowFilter } from "./components/Icon";
+import FabContainer from "./components/FabContainer";
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
               <Header />
               <FramerWrapper>{children}</FramerWrapper>
               <AdminShield />
+              <FabContainer />
             </OnboardingWrapper>
           </FingerprintProvider>
         </AdminProvider>

@@ -7,7 +7,7 @@ import type { PostWithStats } from "@/lib/types";
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
 import PostSkeleton from '@/app/components/PostSkeleton';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { Icon } from '@/app/components/Icon';
 import ReportModal from '@/app/components/ReportModal';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';

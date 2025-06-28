@@ -4,9 +4,15 @@
 import { useAdmin } from "@/context/AdminContext"
 import FloatingActionButton from "./FloatingActionButton"
 import AdminShield from "./AdminShield"
+import { usePathname } from "next/navigation"
 
 export default function FabContainer() {
     const { isAdmin } = useAdmin();
+    const pathname = usePathname();
+
+    if (pathname !== '/') {
+        return null;
+    }
 
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-4">

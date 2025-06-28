@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export const SvgGlowFilter = () => (
     <svg width="0" height="0" style={{ position: 'absolute' }}>

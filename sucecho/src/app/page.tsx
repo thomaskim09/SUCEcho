@@ -8,7 +8,6 @@ export default function Home() {
       <main className="mt-4">
         <PostFeed />
       </main>
-      <FabContainer />
     </div>
   );
 }
