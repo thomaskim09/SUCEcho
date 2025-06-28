@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth';
 import logger from '@/lib/logger';
+import { generateCodename } from '@/lib/codename';
 
 export async function GET(request: Request) {
     const session = request.headers
@@ -21,7 +22,6 @@ export async function GET(request: Request) {
                 },
             },
             include: {
-                // MODIFICATION: Add the stats relation to the query
                 stats: {
                     select: {
                         upvotes: true,
@@ -50,7 +50,15 @@ export async function GET(request: Request) {
             },
         });
 
-        return NextResponse.json(reportedPosts);
+        const postsWithReporterCodename = reportedPosts.map((post) => {
+            const reportsWithCodename = post.reports.map((report) => ({
+                ...report,
+                reporterCodename: generateCodename(report.fingerprintHash),
+            }));
+            return { ...post, reports: reportsWithCodename };
+        });
+
+        return NextResponse.json(postsWithReporterCodename);
     } catch (error) {
         logger.error('Error fetching reported posts:', error);
         return NextResponse.json(

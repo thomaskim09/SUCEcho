@@ -4,64 +4,81 @@
 import { useAdmin } from '@/context/AdminContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import Link from 'next/link'; // Import Link for navigation
+import Link from 'next/link';
 import logger from '@/lib/logger';
 
-// Define a type for our user object based on the schema
-interface UserProfile {
-    fingerprintHash: string;
-    codename: string;
-    purifiedPostCount: number;
-    isBanned: boolean;
-    banExpiresAt: Date | null;
-    firstSeenAt: string;
-    lastSeenAt: string;
+interface AdminStats {
+    totalUsers: number;
 }
 
 export default function AdminDashboardPage() {
     const { logout } = useAdmin();
     const router = useRouter();
-    const [users, setUsers] = useState<UserProfile[]>([]);
-    const [loadingUsers, setLoadingUsers] = useState(true);
-    const [errorUsers, setErrorUsers] = useState<string | null>(null);
-    const [reportCount, setReportCount] = useState(0);
+    const [stats, setStats] = useState<AdminStats | null>(null);
+    const [reportCount, setReportCount] = useState<number | null>(null); // Set initial state to null for loading
+    const [isCronRunning, setIsCronRunning] = useState(false);
+    const [isDeepCleaning, setIsDeepCleaning] = useState(false);
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            setLoadingUsers(true);
-            setErrorUsers(null);
-            // Fetch users
+        const fetchDashboardData = async () => {
             try {
-                const response = await fetch('/api/admin/users');
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                }
-                const data: UserProfile[] = await response.json();
-                setUsers(data);
-            } catch (e: unknown) {
-                if (e instanceof Error) {
-                    setErrorUsers(e.message);
+                // Fetch stats
+                const statsResponse = await fetch('/api/admin/stats');
+                if (statsResponse.ok) {
+                    setStats(await statsResponse.json());
                 } else {
-                    setErrorUsers('An unknown error occurred');
+                    logger.warn("Could not fetch admin stats");
                 }
-            } finally {
-                setLoadingUsers(false);
-            }
 
-            // Fetch report count
-            try {
+                // Fetch report count
                 const reportsResponse = await fetch('/api/admin/reports');
                 if (reportsResponse.ok) {
                     const reportsData = await reportsResponse.json();
                     setReportCount(reportsData.length);
+                } else {
+                    logger.warn("Could not fetch report count");
+                    setReportCount(0); // Set to 0 on failure
                 }
             } catch (e) {
-                logger.error("Could not fetch report count", e);
+                logger.error("Error fetching dashboard data:", e);
+                setReportCount(0); // Set to 0 on error
             }
         };
-        fetchUsers();
+        fetchDashboardData();
     }, []);
+
+    const handleRunCron = async () => {
+        if (!confirm('你确定要手动清理所有24小时前的内容吗？')) {
+            return;
+        }
+        setIsCronRunning(true);
+        try {
+            const res = await fetch('/api/admin/manual-cron', { method: 'POST' });
+            const data = await res.json();
+            alert(`清理完成！${data.message}`);
+        } catch (err) {
+            alert(`运行清理任务时出错: ${(err as Error).message}`);
+        } finally {
+            setIsCronRunning(false);
+        }
+    };
+
+    const handleDeepClean = async () => {
+        const confirmationText = "这是一个非常危险的操作，将永久删除所有超过180天的帖子、投票和举报记录。数据将无法恢复。\n\n您确定要继续吗？";
+        if (!confirm(confirmationText)) {
+            return;
+        }
+        setIsDeepCleaning(true);
+        try {
+            const res = await fetch('/api/admin/manual-deep-clean', { method: 'POST' });
+            const data = await res.json();
+            alert(`深度清理完成！${data.message}`);
+        } catch (err) {
+            alert(`运行深度清理时出错: ${(err as Error).message}`);
+        } finally {
+            setIsDeepCleaning(false);
+        }
+    };
 
     const handleLogout = async () => {
         await logout();
@@ -83,70 +100,62 @@ export default function AdminDashboardPage() {
                 </button>
             </header>
 
-            {/* NEW: High-priority reports card */}
             <section className="mt-8">
-                {reportCount > 0 ? (
-                    <Link href="/admin/reports" className="block p-6 rounded-lg hover:bg-red-800/50 transition-colors" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #ef4444' }}>
-                        <h2 className="text-2xl font-bold text-red-400">待处理举报</h2>
-                        <p className="text-5xl font-mono mt-2">{reportCount}</p>
-                        <p className="text-sm text-gray-400 mt-1">点击此处进行审查</p>
-                    </Link>
-                ) : (
-                    <div className="block p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #22c55e' }}>
-                        <h2 className="text-2xl font-bold text-green-400">举报队列清空</h2>
-                        <p className="text-5xl font-mono mt-2">{reportCount}</p>
-                        <p className="text-sm text-gray-400 mt-1">太棒了！没有待处理的举报。</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Report Card */}
+                    <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: `1px solid ${reportCount && reportCount > 0 ? '#ef4444' : '#22c55e'}` }}>
+                        <div>
+                            <h2 className={`text-2xl font-bold ${reportCount && reportCount > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                {reportCount && reportCount > 0 ? '待处理举报' : '举报队列清空'}
+                            </h2>
+                            {reportCount !== null ? (
+                                <div className="mt-2">
+                                    <p className="text-5xl font-mono mt-2">{reportCount}</p>
+                                    <p className="text-sm text-gray-400">{reportCount === 0 ? '太好了，环境不错！' : '有新的举报'}</p>
+                                </div>
+                            ) : (
+                                <p className="text-lg text-gray-500 mt-2">加载中...</p>
+                            )}
+                        </div>
+                        <Link href="/admin/reports" className="mt-4 block text-center bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                            前往处理
+                        </Link>
                     </div>
-                )}
-            </section>
 
-            <section className="mt-8">
-                <h2 className="text-2xl font-bold mb-4">用户管理</h2>
-                {loadingUsers ? (
-                    <div className="text-white text-center mt-8">正在加载用户...</div>
-                ) : errorUsers ? (
-                    <div className="text-red-500 text-center mt-8">错误: {errorUsers}</div>
-                ) : users.length === 0 ? (
-                    <p>没有用户可显示。</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
-                            <thead>
-                                <tr className="text-left text-gray-400 font-mono border-b border-gray-700">
-                                    <th className="p-4">代号</th>
-                                    <th className="p-4">状态</th>
-                                    <th className="p-4">净化帖子</th>
-                                    <th className="p-4">上次活跃</th>
-                                    <th className="p-4">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.map((user) => (
-                                    <tr key={user.fingerprintHash} className="border-b border-gray-800 hover:bg-gray-800/50">
-                                        <td className="p-4 font-mono">{user.codename}</td>
-                                        <td className="p-4">
-                                            {user.isBanned ? (
-                                                <span className="text-red-400">Banned</span>
-                                            ) : (
-                                                <span className="text-green-400">Active</span>
-                                            )}
-                                        </td>
-                                        <td className="p-4">{user.purifiedPostCount}</td>
-                                        <td className="p-4">{new Date(user.lastSeenAt).toLocaleString()}</td>
-                                        <td className="p-4">
-                                            <Link
-                                                href={`/admin/users/${user.fingerprintHash}`}
-                                                className="bg-blue-600 text-white py-1 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                                            >
-                                                View Profile
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    {/* Total Users Card */}
+                    <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #3b82f6' }}>
+                        <div>
+                            <h2 className="text-2xl font-bold text-blue-400">用户总数</h2>
+                            {stats ? (
+                                <div className="mt-2">
+                                    <p className="text-5xl font-mono">{stats.totalUsers}</p>
+                                    <p className="text-sm text-gray-400">位用户曾来过这里</p>
+                                </div>
+                            ) : (
+                                <p className="text-lg text-gray-500 mt-2">加载中...</p>
+                            )}
+                        </div>
+                        <Link href="/admin/users" className="mt-4 block text-center bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                            管理用户
+                        </Link>
                     </div>
-                )}
+
+                    {/* Cleanup Card */}
+                    <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #f97316' }}>
+                        <div>
+                            <h2 className="text-2xl font-bold text-orange-400">数据清理</h2>
+                            <p className="text-sm text-gray-400 mt-1 mb-4">手动运行日常或深度数据清理任务。</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={handleRunCron} disabled={isCronRunning} className="bg-blue-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+                                {isCronRunning ? '...' : '24小时'}
+                            </button>
+                            <button onClick={handleDeepClean} disabled={isDeepCleaning} className="bg-orange-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
+                                {isDeepCleaning ? '...' : '180天'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </section>
         </div>
     );

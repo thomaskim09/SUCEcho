@@ -5,13 +5,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { PostWithStats } from '@/lib/types';
 import PostCard from '@/app/components/PostCard';
+import logger from '@/lib/logger';
+
+interface Report {
+    fingerprintHash: string;
+    reason: string | null;
+    createdAt: string;
+    reporterCodename: string;
+}
 
 interface ReportedPost extends PostWithStats {
-    reports: {
-        fingerprintHash: string;
-        reason: string | null;
-        createdAt: string;
-    }[];
+    reports: Report[];
     _count: {
         reports: number;
     };
@@ -41,13 +45,35 @@ export default function AdminReportsPage() {
         fetchReports();
     }, []);
 
-    const handlePostDeleted = (deletedPostId: number) => {
-        // This provides an instant UI update by filtering the deleted post out of the state
+    // This function now ONLY updates the UI after a successful deletion
+    const handlePostRemovedFromUI = (deletedPostId: number) => {
         setReportedPosts(currentPosts =>
             currentPosts.filter(post => post.id !== deletedPostId)
         );
     };
 
+    // NEW: The actual delete handler that calls the API
+    const handleDeletePost = async (postId: number) => {
+        if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) {
+            return;
+        }
+        try {
+            const res = await fetch(`/api/admin/posts/${postId}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to delete post');
+            }
+            // On successful API call, remove the post from the local UI
+            handlePostRemovedFromUI(postId);
+            logger.log(`Admin successfully deleted post #${postId} from the reports page.`);
+        } catch (err) {
+            alert(`Error deleting post: ${(err as Error).message}`);
+        }
+    };
+
+    // A dummy handler since voting isn't a primary action here
     const handleDummyVote = () => { };
 
     const renderContent = () => {
@@ -62,17 +88,23 @@ export default function AdminReportsPage() {
                         <PostCard
                             post={post}
                             onVote={handleDummyVote}
-                            onDelete={handlePostDeleted}
+                            onDelete={() => handleDeletePost(post.id)} // Pass the new handler
+                            onPurificationComplete={() => handlePostRemovedFromUI(post.id)} // Also remove from UI if purified elsewhere
                             isLink={true}
                         />
                         <div className="mt-4 border-t border-red-700/50 pt-4">
-                            {/* MODIFICATION: Removed the report count from the heading */}
-                            <h4 className="font-bold text-sm mb-2 text-red-300">举报理由:</h4>
+                            <h4 className="font-bold text-sm mb-2 text-red-300">
+                                {post._count.reports} 条举报:
+                            </h4>
                             <ul className="space-y-2 text-sm text-gray-300">
                                 {post.reports.map((report, index) => (
                                     <li key={index} className="p-2 bg-gray-800/50 rounded-md">
-                                        <p>{report.reason || <i>未提供理由</i>}</p>
-                                        <p className="text-xs text-gray-500 mt-1">举报于: {new Date(report.createdAt).toLocaleString()}</p>
+                                        <p>{report.reason || <i className="opacity-60">未提供理由</i>}</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            举报来自: <span className="font-mono">{report.reporterCodename}</span>
+                                            <span className="mx-2">|</span>
+                                            {new Date(report.createdAt).toLocaleString()}
+                                        </p>
                                     </li>
                                 ))}
                             </ul>

@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import eventEmitter from '@/lib/event-emitter';
 import { checkPurificationStatus } from '@/lib/purification';
 import logger from '@/lib/logger';
+import { generateCodename } from '@/lib/codename'; // Import codename generator
 
 export async function POST(request: Request) {
     try {
@@ -17,8 +18,14 @@ export async function POST(request: Request) {
             );
         }
 
-        const userProfile = await prisma.userAnonymizedProfile.findUnique({
+        const userProfile = await prisma.userAnonymizedProfile.upsert({
             where: { fingerprintHash },
+            create: {
+                fingerprintHash,
+                codename: generateCodename(fingerprintHash),
+                lastSeenAt: new Date(),
+            },
+            update: {},
         });
 
         if (userProfile?.isBanned) {
@@ -98,12 +105,10 @@ export async function POST(request: Request) {
         });
 
         if (transactionResult.shouldPurify) {
-            // First, notify all clients to start the animation
             eventEmitter.emit('delete_post', {
                 postId: transactionResult.postId,
             });
 
-            // Then, delete the post from the database
             await prisma.post.delete({
                 where: { id: transactionResult.postId },
             });
@@ -113,7 +118,6 @@ export async function POST(request: Request) {
             });
         }
 
-        // If not purified, emit the vote update as normal
         eventEmitter.emit('update_vote', {
             postId: transactionResult.postId,
             stats: transactionResult.stats,

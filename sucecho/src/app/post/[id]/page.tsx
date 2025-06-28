@@ -12,6 +12,7 @@ import { Icon } from '@/app/components/Icon';
 import ReportModal from '@/app/components/ReportModal';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
+import { useFingerprint } from '@/context/FingerprintContext';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -27,9 +28,28 @@ export default function PostDetailPage() {
     const [shareFeedback, setShareFeedback] = useState('');
     const [reportFeedback, setReportFeedback] = useState('');
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [reportingPostId, setReportingPostId] = useState<number | null>(null);
     const dataFetched = useRef(false);
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
+    const { fingerprint } = useFingerprint();
+
+    const handleDelete = async (postId: number) => {
+        if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) return;
+        try {
+            const res = await fetch(`/api/admin/posts/${postId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to delete post');
+            }
+            // Trigger animation
+            updatePostInState({ ...post!.replies.find(p => p.id === postId)!, isPurifying: true });
+
+        } catch (err: unknown) {
+            alert(`Error: ${(err as Error).message}`);
+        }
+    };
+
 
     useEffect(() => {
         const fetchPostDetails = async () => {
@@ -88,9 +108,12 @@ export default function PostDetailPage() {
             setPost(current => {
                 if (!current) return null;
                 if (current.id === postId) {
-                    return { ...current, content: null };
+                    return { ...current, content: null, isPurifying: true };
                 }
-                return { ...current, replies: current.replies.filter(r => r.id !== postId) };
+                const updatedReplies = current.replies.map(reply =>
+                    reply.id === postId ? { ...reply, isPurifying: true } : reply
+                );
+                return { ...current, replies: updatedReplies };
             });
         };
         eventSource.addEventListener('new_post', handleNewPost);
@@ -102,15 +125,24 @@ export default function PostDetailPage() {
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {
             if (!currentThread) return null;
-            // Check if the updated post is the parent post
             if (currentThread.id === updatedPost.id) {
                 return { ...currentThread, ...updatedPost };
             }
-            // Otherwise, update the post in the replies array
             const updatedReplies = currentThread.replies.map(reply =>
                 reply.id === updatedPost.id ? updatedPost : reply
             );
             return { ...currentThread, replies: updatedReplies };
+        });
+    };
+
+    const handlePurificationComplete = (purifiedPostId: number) => {
+        setPost(current => {
+            if (!current) return null;
+            if (current.id === purifiedPostId) {
+                setError('This echo has faded into silence.');
+                return null;
+            }
+            return { ...current, replies: current.replies.filter(r => r.id !== purifiedPostId) };
         });
     };
 
@@ -131,15 +163,24 @@ export default function PostDetailPage() {
         }
     };
 
-    const handleOpenReportModal = () => setIsReportModalOpen(true);
+    const handleOpenReportModal = (postId: number) => {
+        setReportingPostId(postId);
+        setIsReportModalOpen(true);
+    };
 
     const handleReportSubmit = async (reason: string) => {
         setIsReportModalOpen(false);
+        if (!reportingPostId || !fingerprint) {
+            setReportFeedback("无法提交举报：缺少必要信息。");
+            setTimeout(() => setReportFeedback(''), 3000);
+            return;
+        }
+
         try {
             const res = await fetch('/api/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ postId: post?.id, fingerprintHash: "temp-fingerprint", reason }), // Replace with real fingerprint
+                body: JSON.stringify({ postId: reportingPostId, fingerprintHash: fingerprint, reason }),
             });
             if (!res.ok) {
                 const errorData = await res.json();
@@ -150,6 +191,7 @@ export default function PostDetailPage() {
             setReportFeedback((err as Error).message);
         } finally {
             setTimeout(() => setReportFeedback(''), 3000);
+            setReportingPostId(null);
         }
     };
 
@@ -162,7 +204,7 @@ export default function PostDetailPage() {
         );
     }
 
-    if (error || !post || post.content === null) {
+    if (error || !post) {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
                 <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← 返回回音墙</Link></header>
@@ -182,14 +224,14 @@ export default function PostDetailPage() {
                 <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
                 <div className="flex items-center gap-2">
                     <button onClick={handleShare} aria-label="Share post" className="p-2 rounded-lg transition-colors icon-base icon-share"><Icon name="share" /></button>
-                    <button onClick={handleOpenReportModal} aria-label="Report post" className="p-2 rounded-lg transition-colors icon-base icon-report-flag"><Icon name="report-flag" /></button>
+                    <button onClick={() => handleOpenReportModal(post.id)} aria-label="Report post" className="p-2 rounded-lg transition-colors icon-base icon-report-flag"><Icon name="report-flag" /></button>
                 </div>
             </header>
             {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300" >{shareFeedback}</div>}
             {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
             <main className="mt-4">
                 <div className="mb-4">
-                    <PostCard post={post} isLink={false} onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)} userVote={userVotes[post.id]} />
+                    <PostCard post={post} isLink={false} onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)} userVote={userVotes[post.id]} onPurificationComplete={handlePurificationComplete} isPurifying={post.isPurifying} onDelete={handleDelete} />
                 </div>
                 <div className="my-6 text-center">
                     <Link href={`/compose?parentPostId=${post.id}`} className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation">
@@ -202,7 +244,7 @@ export default function PostDetailPage() {
                         {post.replies.length > 0 ? (
                             <AnimatePresence>
                                 {post.replies.map(reply => (
-                                    <PostCard key={reply.id} post={reply} isLink={false} onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState)} userVote={userVotes[reply.id]} />
+                                    <PostCard key={reply.id} post={reply} isLink={false} onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState)} userVote={userVotes[reply.id]} onReport={handleOpenReportModal} onPurificationComplete={handlePurificationComplete} isPurifying={reply.isPurifying} onDelete={handleDelete} />
                                 ))}
                             </AnimatePresence>
                         ) : (

@@ -18,46 +18,41 @@ export async function GET(request: Request) {
         );
         const timeAgo = new Date(Date.now() - survivalHours * 60 * 60 * 1000);
 
-        const postsToNullify = await prisma.post.findMany({
+        // 3. Find all posts (and their replies) older than the survival time
+        const postsToDelete = await prisma.post.findMany({
             where: {
                 createdAt: {
-                    lt: timeAgo, // 'lt' means "less than"
-                },
-                content: {
-                    not: null, // Only find posts that haven't been nullified yet
+                    lt: timeAgo,
                 },
             },
             select: {
-                id: true, // We only need the IDs
+                id: true,
             },
         });
 
-        if (postsToNullify.length === 0) {
-            logger.log('CRON: No posts needed to be nullified.');
-            return NextResponse.json({ message: 'No posts to nullify.' });
+        if (postsToDelete.length === 0) {
+            logger.log('CRON: No expired posts to delete.');
+            return NextResponse.json({
+                message: 'No expired posts to delete.',
+            });
         }
 
-        const postIdsToNullify = postsToNullify.map((p) => p.id);
+        const postIdsToDelete = postsToDelete.map((p) => p.id);
 
-        // 3. Update the found posts to set their content to null
-        const result = await prisma.post.updateMany({
+        // 4. Delete the posts. Prisma's cascading delete will handle related data.
+        const result = await prisma.post.deleteMany({
             where: {
                 id: {
-                    in: postIdsToNullify,
+                    in: postIdsToDelete,
                 },
-            },
-            data: {
-                content: null, // This is the "destruction"
             },
         });
 
-        logger.log(
-            `CRON: Successfully nullified content for ${result.count} posts.`
-        );
+        const message = `CRON: Successfully deleted ${result.count} posts and their related votes, stats, and reports.`;
+        logger.log(message);
 
         return NextResponse.json({
-            message: 'Cron job completed successfully.',
-            nullifiedCount: result.count,
+            message: `Deleted ${result.count} posts.`,
         });
     } catch (error) {
         logger.error('CRON ERROR:', error);
