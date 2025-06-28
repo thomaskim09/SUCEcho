@@ -60,6 +60,24 @@ export default function PostFeed() {
         setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
     };
 
+    const handleDelete = async (postId: number) => {
+        if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) return;
+        try {
+            const res = await fetch(`/api/admin/posts/${postId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Failed to delete post');
+            }
+            setPosts(prevPosts =>
+                prevPosts.map(p =>
+                    p.id === postId ? { ...p, isPurifying: true } : p
+                )
+            );
+        } catch (err: unknown) {
+            alert(`Error: ${(err as Error).message}`);
+        }
+    };
+
     useEffect(() => {
         const fetchInitialPosts = async () => {
             setIsLoading(true);
@@ -203,24 +221,32 @@ export default function PostFeed() {
         sendVoteRequest();
     };
 
+    // Filter posts to only those within the last 24 hours
+    const now = Date.now();
+    const postsWithin24Hours = posts.filter(post => {
+        const created = new Date(post.createdAt).getTime();
+        return now - created <= 24 * 60 * 60 * 1000;
+    });
+
     if (isLoading) {
         return (<div> <PostSkeleton /> <PostSkeleton /> <PostSkeleton /> </div>);
     }
 
     return (
-        <div>
-            <AnimatePresence>
-                {posts.map((post) => (
-                    <PostCard
-                        key={post.id}
-                        post={post}
-                        onVote={handleOptimisticVote}
-                        userVote={userVotes[post.id]}
-                        isStacked={true}
-                        isPurifying={post.isPurifying}
-                        onPurificationComplete={handlePurificationComplete}
-                    />
-                ))}
+        <div className="flex flex-col gap-4">
+            <AnimatePresence initial={false}>
+                {isLoading
+                    ? Array.from({ length: POST_FEED_LIMIT }).map((_, i) => <PostSkeleton key={i} />)
+                    : postsWithin24Hours.map(post => (
+                        <PostCard
+                            key={post.id}
+                            post={post}
+                            onPurificationComplete={handlePurificationComplete}
+                            onVote={handleOptimisticVote}
+                            onDelete={handleDelete}
+                            userVote={userVotes[post.id]}
+                        />
+                    ))}
             </AnimatePresence>
 
             {nextCursor && <div ref={sentinelRef} className="h-10" />}
@@ -229,4 +255,4 @@ export default function PostFeed() {
             {!isLoading && posts.length === 0 && <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>}
         </div>
     );
-}
+} 

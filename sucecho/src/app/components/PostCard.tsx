@@ -45,19 +45,11 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, userVo
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // --- All your handler functions (handleDelete, handleVote, etc.) remain the same ---
-    const handleDelete = async (e: React.MouseEvent) => {
+    const handleDelete = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!confirm(`您确定要删除帖子 #${post.id} 吗？此操作无法撤销。`)) return;
-        try {
-            const res = await fetch(`/api/admin/posts/${post.id}`, { method: 'DELETE' });
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.message || 'Failed to delete post');
-            }
-            if (onDelete) onDelete(post.id);
-        } catch (err: unknown) {
-            alert(`Error: ${(err as Error).message}`);
+        if (onDelete) {
+            onDelete(post.id);
         }
         setIsMenuOpen(false);
     };
@@ -82,13 +74,23 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, userVo
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
 
     const cardVariants: Variants = {
-        hidden: { opacity: 0, y: 50 },
+        hidden: { opacity: 0, scale: 0.95, y: 0 },
         enter: {
             opacity: 1,
+            scale: 1,
             y: 0,
             transition: {
                 duration: 1,
                 ease: [0.25, 1, 0.5, 1]
+            }
+        },
+        exit: {
+            opacity: 0,
+            scale: 0.8,
+            y: -20,
+            transition: {
+                duration: 0.6,
+                ease: "easeOut"
             }
         },
         purify: {
@@ -108,6 +110,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, userVo
             variants={cardVariants}
             initial="hidden"
             animate={isPurifying ? "purify" : "enter"}
+            exit="exit"
             onAnimationComplete={(definition) => {
                 if (definition === "purify" && onPurificationComplete) {
                     onPurificationComplete(post.id);
