@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
-import PostSkeleton from '@/app/components/PostSkeleton';
 import { AnimatePresence } from 'motion/react';
 import { Icon } from '@/app/components/Icon';
 import ReportModal from '@/app/components/ReportModal';
@@ -197,9 +196,9 @@ export default function PostDetailPage() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto max-w-2xl p-4">
+            <div className="container mx-auto max-w-2xl p-4 text-center">
                 <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← 返回回音墙</Link></header>
-                <main className="mt-4"><PostSkeleton /></main>
+                <main className="mt-8"><p>Loading...</p></main>
             </div>
         );
     }

@@ -4,12 +4,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import PostCard from './PostCard';
-import PostSkeleton from './PostSkeleton';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+        },
+    },
+};
 
 export default function PostFeed() {
     const [posts, setPosts] = useState<PostWithStats[]>([]);
@@ -138,12 +147,17 @@ export default function PostFeed() {
     };
 
     if (isLoading) {
-        return (<div> <PostSkeleton /> <PostSkeleton /> <PostSkeleton /> </div>);
+        return (<div className="text-center text-gray-400 p-8"><p>Loading echoes...</p></div>);
     }
 
     return (
-        <div className="flex flex-col gap-4">
-            <AnimatePresence initial={false}>
+        <motion.div
+            className="flex flex-col gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
+            <AnimatePresence>
                 {posts.map(post => (
                     <PostCard
                         key={post.id}
@@ -161,6 +175,6 @@ export default function PostFeed() {
             {isFetchingMore && <p className="text-center text-gray-400 py-4">正在加载更多回音...</p>}
             {!isLoading && !isFetchingMore && !nextCursor && posts.length > 0 && <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>}
             {!isLoading && posts.length === 0 && <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>}
-        </div>
+        </motion.div>
     );
 }

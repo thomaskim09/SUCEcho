@@ -1,6 +1,5 @@
 // sucecho/src/app/page.tsx
 import PostFeed from "./components/PostFeed";
-import FabContainer from "./components/FabContainer";
 
 export default function Home() {
   return (

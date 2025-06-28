@@ -27,7 +27,7 @@ export default function HowItWorksPage() {
                 </div>
                 <div className="text-center mt-8">
                     <Link href="/" className="text-accent hover:underline">
-                        ← 返回回音墙
+                        ← 返回回音壁
                     </Link>
                 </div>
             </main>

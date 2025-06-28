@@ -72,7 +72,7 @@ export default function Header() {
     return (
         <header className="container mx-auto max-w-2xl p-4 relative">
             <div className="flex justify-between items-center py-4">
-                <Link href="/" className="hover:opacity-80 transition-opacity">
+                <Link href="/" className="hover:opacity-80 transition-opacity" onClick={() => setIsMenuOpen(false)}>
                     <Logo />
                 </Link>
 

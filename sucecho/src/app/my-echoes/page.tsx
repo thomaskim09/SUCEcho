@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import { getMyEchoes } from '@/hooks/useMyEchoes';
 import PostCard from '@/app/components/PostCard';
-import PostSkeleton from '@/app/components/PostSkeleton';
 import Link from 'next/link';
 import { AnimatePresence } from 'motion/react';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
@@ -53,9 +52,8 @@ export default function MyEchoesPage() {
     const renderContent = () => {
         if (isLoading) {
             return (
-                <div>
-                    <PostSkeleton />
-                    <PostSkeleton />
+                <div className="text-center text-gray-400 p-8">
+                    <p>Loading your echoes...</p>
                 </div>
             );
         }
