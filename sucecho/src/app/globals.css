@@ -242,6 +242,56 @@ body {
         0 0 15px var(--accent);
 }
 
+/* --- CHARGE-UP ANIMATION --- */
+.charge-up .glass-card {
+  animation: charge-up-anim 2s ease-out forwards;
+}
+
+@keyframes charge-up-anim {
+  0% {
+    box-shadow: 0 0 0 0 rgba(159, 112, 253, 0);
+  }
+  25% {
+    box-shadow: 0 0 10px 2px rgba(159, 112, 253, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 15px 4px rgba(159, 112, 253, 0.4);
+  }
+  75% {
+    box-shadow: 0 0 20px 6px rgba(159, 112, 253, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 25px 8px rgba(159, 112, 253, 0.8);
+  }
+}
+
+/* --- FADE-IN AND PULSE ANIMATIONS --- */
+.fade-in {
+  animation: fade-in-anim 1s ease-in forwards;
+}
+
+@keyframes fade-in-anim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pulse {
+  animation: pulse-anim 1s infinite;
+}
+
+@keyframes pulse-anim {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 /* --- IMPROVED VANISH AND GLITCH ANIMATIONS --- */
 .vanish-container > * {
   animation: vanish-animation 1.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
@@ -268,20 +318,44 @@ body {
   0% {
     clip-path: inset(89% 0 1% 0);
     transform: translate(-10px, -5px);
+    text-shadow: -1px -1px 0 #ff00c1, 1px 1px 0 #00ffc8;
   }
-  20% {
+  10% {
     clip-path: inset(34% 0 35% 0);
   }
-  40% {
+  20% {
     clip-path: inset(89% 0 1% 0);
+    text-shadow: 1px 1px 0 #ff00c1, -1px -1px 0 #00ffc8;
   }
-  60% {
+  30% {
     clip-path: inset(30% 0 63% 0);
     transform: translate(5px, 5px);
   }
-  80% {
+  40% {
     clip-path: inset(54% 0 7% 0);
     transform: translate(-5px, 0);
+    text-shadow: -1px 1px 0 #ff00c1, 1px -1px 0 #00ffc8;
+  }
+  50% {
+    clip-path: inset(89% 0 1% 0);
+    transform: translate(0);
+  }
+  60% {
+    clip-path: inset(34% 0 35% 0);
+    transform: translate(10px, -5px);
+    text-shadow: 1px -1px 0 #ff00c1, -1px 1px 0 #00ffc8;
+  }
+  70% {
+    clip-path: inset(89% 0 1% 0);
+  }
+  80% {
+    clip-path: inset(30% 0 63% 0);
+    transform: translate(-5px, 5px);
+  }
+  90% {
+    clip-path: inset(54% 0 7% 0);
+    transform: translate(5px, 0);
+    text-shadow: -1px -1px 0 #ff00c1, 1px 1px 0 #00ffc8;
   }
   100% {
     clip-path: inset(89% 0 1% 0);

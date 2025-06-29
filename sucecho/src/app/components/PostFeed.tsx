@@ -142,10 +142,16 @@ export default function PostFeed() {
 
     const showEndLabel = !isLoading && !isFetchingMore && !nextCursor;
 
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    const unexpiredPosts = renderedPosts.filter(post => {
+        const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
+        return postAge < twentyFourHours;
+    });
+
     return (
         <div className="flex flex-col gap-4">
             <AnimatePresence>
-                {renderedPosts.map(post => (
+                {unexpiredPosts.map(post => (
                     <motion.div
                         key={post.id}
                         initial={{ opacity: 0, y: 20 }}

@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 export const useCountdown = (createdAt: Date) => {
     const twentyFourHours = 24 * 60 * 60 * 1000;
     const expiresAt = new Date(createdAt).getTime() + twentyFourHours;
-    const vanishTime = expiresAt + 1500; // Vanish 1.5 seconds after expiration to allow for glitch effect
+    const vanishTime = expiresAt + 4500; // Vanish 4.5 seconds after expiration (3s delay + 1.5s glitch)
 
     const [timeLeft, setTimeLeft] = useState(expiresAt - new Date().getTime());
     const [isVanishing, setIsVanishing] = useState(false);
@@ -37,6 +37,8 @@ export const useCountdown = (createdAt: Date) => {
     let countdownText = '心间回音，限定消散。'; // Updated text
     let colorClass = 'expired-text-glow'; // New class for glowing text
 
+    const isCritical = !isExpired && timeLeft <= 10000; // Last 10 seconds
+
     if (!isExpired) {
         if (hours > 0) {
             countdownText = `余 ${hours} 时`;
@@ -47,18 +49,16 @@ export const useCountdown = (createdAt: Date) => {
         }
 
         // Reset colorClass if not expired
-        if (hours < 1 && minutes >= 15) {
+        if (isCritical) {
+            colorClass = 'text-countdown-critical';
+        } else if (hours < 1 && minutes >= 15) {
             colorClass = 'text-countdown-hour';
         } else if (hours < 3) {
             colorClass = 'text-countdown-soon';
         } else {
             colorClass = 'text-gray-400';
         }
-
-        if (minutes < 15 && hours < 1) {
-            colorClass = 'text-countdown-critical';
-        }
     }
 
-    return { countdownText, colorClass, isExpired, isVanishing };
+    return { countdownText, colorClass, isExpired, isVanishing, isCritical };
 };

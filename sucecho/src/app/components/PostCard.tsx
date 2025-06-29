@@ -72,7 +72,19 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const contentRef = useRef<HTMLDivElement>(null);
 
     const isChildEcho = !!post.parentPostId;
-    const { countdownText, colorClass, isExpired, isVanishing } = useCountdown(new Date(post.createdAt));
+    const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
+    const [isGlitching, setIsGlitching] = useState(false);
+    const [isCharging, setIsCharging] = useState(false);
+
+    useEffect(() => {
+        if (isExpired) {
+            setIsCharging(true);
+            const chargeTimer = setTimeout(() => {
+                setIsGlitching(true);
+            }, 3000); // 3-second charge-up
+            return () => clearTimeout(chargeTimer);
+        }
+    }, [isExpired]);
 
     useLayoutEffect(() => {
         const checkOverflow = () => {
@@ -159,35 +171,30 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const upvoteTooltipContent = "赞同这个想法，让更多人看见。";
     const downvoteTooltipContent = "反对这个内容，人越多，它消失得越快。";
 
-    const shouldVanish = isVanishing || isPurifying;
+    const shouldVanish = isVanishing || isPurifying || isGlitching;
 
     return (
         <motion.div
             ref={cardRef}
             layout
-            initial={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 1, scale: 1, y: 0 }}
             animate={{
                 opacity: shouldVanish ? 0 : 1,
+                scale: shouldVanish ? 0.8 : 1,
             }}
-            transition={{ duration: 1, delay: 0.5 }} // Delay fade-out to let inner animation play
+            transition={{ duration: 0.5, ease: "easeOut" }}
             onAnimationComplete={() => {
                 if (shouldVanish && onFaded) {
                     onFaded(post.id);
                 }
             }}
-            className={`relative ${isExpired && !shouldVanish ? 'glitch' : ''}`}
+            className={`relative ${isGlitching || isCharging ? 'charge-up' : ''} ${isGlitching ? 'glitch' : ''}`}
         >
             <div
-                className={`glass-card rounded-lg p-4 ${shouldVanish ? 'vanish-container' : ''}`}
+                className={`glass-card rounded-lg p-4`}
                 onClick={isLink && !isChildEcho ? handleCardClick : undefined}
             >
-                <div
-                    className={
-                        isVanishing || isPurifying
-                            ? 'transition-opacity duration-500 opacity-0'
-                            : 'transition-opacity duration-500 opacity-100'
-                    }
-                >
+                <div>
                     {isLink && !isChildEcho && (
                         <div className="ripple-container">
                             {ripples.map((ripple) => (
@@ -234,7 +241,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     </AnimatePresence>
 
                     <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
-                        <span className={`font-mono flex-shrink-0 ${colorClass}`}>
+                        <span className={`font-mono flex-shrink-0 ${colorClass} ${isExpired ? 'fade-in' : ''} ${isCritical ? 'pulse' : ''}`}>
                             {isChildEcho ? timeSince(new Date(post.createdAt)) : countdownText}
                         </span>
                         <div className="flex items-center gap-4 flex-shrink-0">
