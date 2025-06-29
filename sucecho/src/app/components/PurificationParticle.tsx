@@ -5,17 +5,17 @@ import { motion } from 'motion/react';
 
 // A single particle that animates outwards
 export const Particle = () => {
-    const x = (Math.random() - 0.5) * 250; // Horizontal spread
-    const y = (Math.random() - 0.5) * 250; // Vertical spread
-    const scale = Math.random() * 0.5 + 0.25;
-    const duration = 0.5 + Math.random() * 0.5;
+    const x = (Math.random() - 0.5) * 300; // Horizontal spread
+    const y = (Math.random() - 0.5) * 300; // Vertical spread
+    const scale = Math.random() * 0.7 + 0.1;
+    const duration = 0.6 + Math.random() * 0.4;
 
     return (
         <motion.div
-            className="absolute rounded-full bg-red-500"
+            className="absolute rounded-full bg-accent"
             style={{
-                width: `${Math.random() * 5 + 2}px`,
-                height: `${Math.random() * 5 + 2}px`,
+                width: `${Math.random() * 6 + 2}px`,
+                height: `${Math.random() * 6 + 2}px`,
                 top: '50%',
                 left: '50%',
             }}
@@ -35,7 +35,7 @@ export const Particle = () => {
 export const PurificationEffect = () => {
     return (
         <div className="absolute inset-0 z-10">
-            {Array.from({ length: 50 }).map((_, i) => (
+            {Array.from({ length: 70 }).map((_, i) => (
                 <Particle key={i} />
             ))}
         </div>

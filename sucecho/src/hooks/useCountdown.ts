@@ -4,23 +4,29 @@ import { useState, useEffect } from 'react';
 /**
  * A custom hook to manage a countdown timer for a post.
  * @param {Date} createdAt - The creation date of the post.
- * @returns {{countdownText: string, colorClass: string, isExpired: boolean}} - The display text, color class, and expiration status.
+ * @returns {{countdownText: string, colorClass: string, isExpired: boolean, isVanishing: boolean}} - The display text, color class, and expiration status.
  */
 export const useCountdown = (createdAt: Date) => {
     const twentyFourHours = 24 * 60 * 60 * 1000;
     const expiresAt = new Date(createdAt).getTime() + twentyFourHours;
+    const vanishTime = expiresAt + 1500; // Vanish 1.5 seconds after expiration to allow for glitch effect
 
     const [timeLeft, setTimeLeft] = useState(expiresAt - new Date().getTime());
+    const [isVanishing, setIsVanishing] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            const newTimeLeft = expiresAt - new Date().getTime();
+            const now = new Date().getTime();
+            const newTimeLeft = expiresAt - now;
             setTimeLeft(newTimeLeft);
-            // No need to clear interval here, the component will unmount
+
+            if (newTimeLeft <= 0 && now >= vanishTime) {
+                setIsVanishing(true);
+            }
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [expiresAt]);
+    }, [expiresAt, vanishTime]);
 
     const isExpired = timeLeft <= 0;
 
@@ -28,8 +34,8 @@ export const useCountdown = (createdAt: Date) => {
     const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
     const seconds = Math.floor((timeLeft / 1000) % 60);
 
-    let countdownText = '已消散';
-    let colorClass = 'text-gray-500';
+    let countdownText = '心间回音，限定消散。'; // Updated text
+    let colorClass = 'expired-text-glow'; // New class for glowing text
 
     if (!isExpired) {
         if (hours > 0) {
@@ -40,10 +46,13 @@ export const useCountdown = (createdAt: Date) => {
             countdownText = `${seconds}s`;
         }
 
+        // Reset colorClass if not expired
         if (hours < 1 && minutes >= 15) {
             colorClass = 'text-countdown-hour';
         } else if (hours < 3) {
             colorClass = 'text-countdown-soon';
+        } else {
+            colorClass = 'text-gray-400';
         }
 
         if (minutes < 15 && hours < 1) {
@@ -51,5 +60,5 @@ export const useCountdown = (createdAt: Date) => {
         }
     }
 
-    return { countdownText, colorClass, isExpired };
+    return { countdownText, colorClass, isExpired, isVanishing };
 };

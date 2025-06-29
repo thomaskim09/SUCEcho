@@ -216,8 +216,75 @@ body {
 
 /* --- UPDATE THE TRUNCATION EFFECT SECTION --- */
 .truncated-content {
-  max-height: 10rem;
-  /* MODIFICATION: Switched from a gradient overlay to a CSS mask for a flawless effect */
-  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  max-height: 10rem; /* Approx 5-6 lines */
+  position: relative;
+  overflow: hidden;
+}
+
+.truncated-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, transparent, var(--card-background));
+  pointer-events: none; /* Allows clicks to pass through */
+}
+
+
+/* --- GLOWING EXPIRED TEXT --- */
+.expired-text-glow {
+    color: white;
+    text-shadow:
+        0 0 5px var(--accent),
+        0 0 10px var(--accent),
+        0 0 15px var(--accent);
+}
+
+/* --- IMPROVED VANISH AND GLITCH ANIMATIONS --- */
+.vanish-container > * {
+  animation: vanish-animation 1.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+}
+
+@keyframes vanish-animation {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+    filter: blur(10px);
+  }
+}
+
+.glitch {
+  animation: glitch-anim 1.5s steps(2, end) infinite;
+}
+
+@keyframes glitch-anim {
+  0% {
+    clip-path: inset(89% 0 1% 0);
+    transform: translate(-10px, -5px);
+  }
+  20% {
+    clip-path: inset(34% 0 35% 0);
+  }
+  40% {
+    clip-path: inset(89% 0 1% 0);
+  }
+  60% {
+    clip-path: inset(30% 0 63% 0);
+    transform: translate(5px, 5px);
+  }
+  80% {
+    clip-path: inset(54% 0 7% 0);
+    transform: translate(-5px, 0);
+  }
+  100% {
+    clip-path: inset(89% 0 1% 0);
+    transform: translate(0);
+  }
 }
