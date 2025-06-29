@@ -11,7 +11,8 @@ interface UseOptimisticVoteReturn {
     handleOptimisticVote: (
         post: PostWithStats,
         voteType: 1 | -1,
-        updateStateCallback: (updatedPost: PostWithStats) => void
+        updateStateCallback: (updatedPost: PostWithStats) => void,
+        onPurifyCallback: (postId: number) => void
     ) => void;
 }
 
@@ -22,7 +23,8 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
     const handleOptimisticVote = (
         post: PostWithStats,
         voteType: 1 | -1,
-        updateStateCallback: (updatedPost: PostWithStats) => void
+        updateStateCallback: (updatedPost: PostWithStats) => void,
+        onPurifyCallback: (postId: number) => void
     ) => {
         if (!fingerprint) {
             alert('无法识别您的浏览器，请稍后再试。');
@@ -93,6 +95,12 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                     const errorData = await res.json();
                     throw new Error(errorData.error || 'Server vote failed');
                 }
+
+                const result = await res.json();
+                if (result.purified) {
+                    onPurifyCallback(postId);
+                }
+
             } catch (error) {
                 logger.error('Reverting optimistic vote:', error);
                 alert((error as Error).message);

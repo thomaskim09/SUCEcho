@@ -20,6 +20,14 @@ export default function PostFeed() {
     const observer = useRef<IntersectionObserver | null>(null);
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
 
+    const handlePostPurified = (postId: number) => {
+        setPosts(prevPosts =>
+            prevPosts.map(p =>
+                p.id === postId ? { ...p, isPurifying: true } : p
+            )
+        );
+    };
+
     const loadMorePosts = useCallback(async () => {
         if (isFetchingMore || !nextCursor) return;
         setIsFetchingMore(true);
@@ -98,11 +106,11 @@ export default function PostFeed() {
         };
 
         const handleVoteUpdate = (event: MessageEvent) => {
-            const { postId, stats } = JSON.parse(event.data);
-            logger.log("SSE event 'update_vote' received for post:", { postId, stats });
+            const { postId, stats, shouldPurify } = JSON.parse(event.data);
+            logger.log("SSE event 'update_vote' received for post:", { postId, stats, shouldPurify });
             setPosts(prevPosts =>
                 prevPosts.map(post =>
-                    post.id === postId ? { ...post, stats: stats } : post
+                    post.id === postId ? { ...post, stats: stats, isPurifying: shouldPurify || post.isPurifying } : post
                 )
             );
         };
@@ -164,7 +172,7 @@ export default function PostFeed() {
                             isPurifying={post.isPurifying}
                             onPurificationComplete={handlePostFaded}
                             onFaded={handlePostFaded}
-                            onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)}
+                            onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState, handlePostPurified)}
                             onDelete={handleDelete}
                             userVote={userVotes[post.id]}
                         />

@@ -92,14 +92,15 @@ export default function PostDetailPage() {
         };
 
         const handleVoteUpdate = (event: MessageEvent) => {
-            const { postId, stats } = JSON.parse(event.data);
+            const { postId, stats, shouldPurify } = JSON.parse(event.data);
+            logger.log("SSE event 'update_vote' received for post detail:", { postId, stats, shouldPurify });
             setPost(current => {
                 if (!current) return null;
                 if (current.id === postId) {
-                    return { ...current, stats };
+                    return { ...current, stats, isPurifying: shouldPurify || current.isPurifying };
                 }
                 const updatedReplies = current.replies.map(reply =>
-                    reply.id === postId ? { ...reply, stats } : reply
+                    reply.id === postId ? { ...reply, stats, isPurifying: shouldPurify || reply.isPurifying } : reply
                 );
                 return { ...current, replies: updatedReplies };
             });
@@ -240,7 +241,7 @@ export default function PostDetailPage() {
                     <PostCard
                         post={post}
                         isLink={false}
-                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState)}
+                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState, handlePurificationComplete)}
                         userVote={userVotes[post.id]}
                         onPurificationComplete={handlePurificationComplete}
                         isPurifying={post.isPurifying}
@@ -268,7 +269,7 @@ export default function PostDetailPage() {
                                         <PostCard
                                             post={reply}
                                             isLink={false}
-                                            onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState)}
+                                            onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState, handlePurificationComplete)}
                                             userVote={userVotes[reply.id]}
                                             onReport={handleOpenReportModal}
                                             onPurificationComplete={handlePurificationComplete}

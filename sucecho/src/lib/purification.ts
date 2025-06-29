@@ -5,7 +5,6 @@ interface PurificationInput {
     downvotes: number;
 }
 
-// REMOVED: `downvotesNeededText` is no longer part of the return signature.
 interface PurificationStatus {
     shouldPurify: boolean;
     showMeter: boolean;
@@ -14,6 +13,7 @@ interface PurificationStatus {
 
 /**
  * Checks if a post should be purified based on votes and calculates UI display values.
+ * This new logic is based on downvote ratios and is configurable via environment variables.
  */
 export function checkPurificationStatus(
     input: PurificationInput
@@ -21,34 +21,37 @@ export function checkPurificationStatus(
     const { upvotes, downvotes } = input;
     const totalVotes = upvotes + downvotes;
 
-    const minVotesForPurification = parseInt(
-        process.env.NEXT_PUBLIC_PURIFICATION_MIN_VOTES || '20',
-        10
-    );
-    const downvoteToUpvoteRatio = 2;
+    // Configurable values from environment variables, with sensible defaults.
+    const minVotes = parseInt(process.env.NEXT_PUBLIC_PURIFICATION_MIN_VOTES || '10', 10);
+    const purificationRatio = parseFloat(process.env.NEXT_PUBLIC_PURIFICATION_DOWNVOTE_RATIO || '0.6');
+    const meterThresholdRatio = parseFloat(process.env.NEXT_PUBLIC_PURIFICATION_METER_THRESHOLD || '0.4');
 
-    const isRatioMet = downvotes > upvotes * downvoteToUpvoteRatio;
-    const isTotalVotesMet = totalVotes >= minVotesForPurification;
-    const shouldPurify = isRatioMet && isTotalVotesMet;
+    const currentDownvoteRatio = totalVotes > 0 ? downvotes / totalVotes : 0;
 
-    const showMeter = downvotes > upvotes && !shouldPurify && isTotalVotesMet;
+    // A post must meet the minimum vote count AND the downvote ratio to be purified.
+    const shouldPurify = totalVotes >= minVotes && currentDownvoteRatio >= purificationRatio;
+
+    // The meter should appear if the minimum vote count is met and the downvote ratio exceeds the meter threshold.
+    // The UI component will decide whether to show the meter or trigger purification animation based on `shouldPurify` flag.
+    const showMeter = totalVotes >= minVotes && currentDownvoteRatio >= meterThresholdRatio;
 
     let meterFillPercentage = 0;
-
     if (showMeter) {
-        const progressToMinVotes = (totalVotes / minVotesForPurification) * 100;
-        const targetDownvotesForRatio =
-            Math.floor(upvotes * downvoteToUpvoteRatio) + 1;
-        const currentDownvotesProgress = Math.max(0, downvotes - upvotes);
-        const requiredDownvoteRange = targetDownvotesForRatio - upvotes;
+        // Calculate how "full" the meter should be. It represents the progress
+        // from the meter's appearance threshold to the final purification threshold.
+        const range = purificationRatio - meterThresholdRatio;
+        const progress = currentDownvoteRatio - meterThresholdRatio;
 
-        const progressToRatio =
-            requiredDownvoteRange > 0
-                ? (currentDownvotesProgress / requiredDownvoteRange) * 100
-                : 100;
-
-        meterFillPercentage = Math.min(progressToMinVotes, progressToRatio);
+        if (range > 0) {
+            meterFillPercentage = (progress / range) * 100;
+        } else if (currentDownvoteRatio >= purificationRatio) {
+            // If threshold is gte purification ratio, fill meter completely if it's past the mark.
+            meterFillPercentage = 100;
+        }
     }
+    
+    // Ensure percentage is within bounds.
+    meterFillPercentage = Math.min(100, Math.max(0, meterFillPercentage));
 
     return {
         shouldPurify,

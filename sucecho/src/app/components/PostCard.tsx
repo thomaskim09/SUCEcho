@@ -75,6 +75,17 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
     const [isGlitching, setIsGlitching] = useState(false);
     const [isCharging, setIsCharging] = useState(false);
+    const [isPurifyGlow, setIsPurifyGlow] = useState(false);
+
+    useEffect(() => {
+        if (isPurifying) {
+            setIsPurifyGlow(true);
+            const purifyTimer = setTimeout(() => {
+                setIsGlitching(true);
+            }, 3000); // 3-second glow
+            return () => clearTimeout(purifyTimer);
+        }
+    }, [isPurifying]);
 
     useEffect(() => {
         if (isExpired) {
@@ -168,10 +179,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const hasDownvotes = (post.stats?.downvotes ?? 0) > 0;
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
 
-    const upvoteTooltipContent = "赞同这个想法，让更多人看见。";
-    const downvoteTooltipContent = "反对这个内容，人越多，它消失得越快。";
+    const upvoteTooltipContent = "点赞是对于内容的肯定，\n让有共鸣的声音浮现。";
+    const downvoteTooltipContent = "到赞是社区净化的力量，\n当一个回声被足够多的人反对，\n它将被永久销毁。";
 
-    const shouldVanish = isVanishing || isPurifying || isGlitching;
+
+    const shouldVanish = isVanishing || isGlitching;
+    const shouldPurifyAnimate = isPurifying;
 
     return (
         <motion.div
@@ -179,16 +192,19 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             layout
             initial={{ opacity: 1, scale: 1, y: 0 }}
             animate={{
-                opacity: shouldVanish ? 0 : 1,
-                scale: shouldVanish ? 0.8 : 1,
+                opacity: shouldPurifyAnimate ? 0 : (shouldVanish ? 0 : 1),
+                scale: shouldPurifyAnimate ? 1.2 : (shouldVanish ? 0.8 : 1),
+                filter: shouldPurifyAnimate ? 'blur(20px)' : 'blur(0px)',
             }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: shouldPurifyAnimate ? 1.0 : 0.5, ease: "easeOut" }}
             onAnimationComplete={() => {
-                if (shouldVanish && onFaded) {
+                if (shouldPurifyAnimate && onPurificationComplete) {
+                    onPurificationComplete(post.id);
+                } else if (shouldVanish && onFaded) {
                     onFaded(post.id);
                 }
             }}
-            className={`relative ${isGlitching || isCharging ? 'charge-up' : ''} ${isGlitching ? 'glitch' : ''}`}
+            className={`relative ${isGlitching || isCharging ? 'charge-up' : ''} ${isGlitching ? 'glitch' : ''} ${isPurifyGlow ? 'purify-glow' : ''}`}
         >
             <div
                 className={`glass-card rounded-lg p-4`}
@@ -241,9 +257,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     </AnimatePresence>
 
                     <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
-                        <span className={`font-mono flex-shrink-0 ${colorClass} ${isExpired ? 'fade-in' : ''} ${isCritical ? 'pulse' : ''}`}>
-                            {isChildEcho ? timeSince(new Date(post.createdAt)) : countdownText}
-                        </span>
+                        {isPurifying ? (
+                            <span className="font-mono flex-shrink-0 text-red-400 fade-in">社区自治，自主净化</span>
+                        ) : (
+                            <span className={`font-mono flex-shrink-0 ${colorClass} ${isExpired ? 'fade-in' : ''} ${isCritical ? 'pulse' : ''}`}>
+                                {isChildEcho ? timeSince(new Date(post.createdAt)) : countdownText}
+                            </span>
+                        )}
                         <div className="flex items-center gap-4 flex-shrink-0">
                             <div className="relative">
                                 <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>

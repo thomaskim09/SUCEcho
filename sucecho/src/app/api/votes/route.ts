@@ -106,27 +106,32 @@ export async function POST(request: Request) {
         });
 
         if (transactionResult.shouldPurify) {
-            eventEmitter.emit('delete_post', {
-                postId: transactionResult.postId,
-            });
-
             await prisma.post.delete({
                 where: { id: transactionResult.postId },
             });
-
-            return NextResponse.json({
-                message: `Post ${transactionResult.postId} purified.`,
+            eventEmitter.emit('update_vote', {
+                postId: transactionResult.postId,
+                stats: transactionResult.stats,
+                shouldPurify: true,
             });
+            logger.log(`[SSE] Emitting update_vote for purified post:`, {
+                postId: transactionResult.postId,
+                stats: transactionResult.stats,
+                shouldPurify: true,
+            });
+            return NextResponse.json({ purified: true });
         }
 
         eventEmitter.emit('update_vote', {
             postId: transactionResult.postId,
             stats: transactionResult.stats,
+            shouldPurify: transactionResult.shouldPurify,
         });
 
         return NextResponse.json({
             postId: transactionResult.postId,
             stats: transactionResult.stats,
+            shouldPurify: transactionResult.shouldPurify,
         });
     } catch (error: unknown) {
         if ((error as { code?: string }).code === 'P2003') {
