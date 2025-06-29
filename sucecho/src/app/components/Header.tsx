@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Icon } from './Icon';
+import { Logo } from './Logo';
 
 const LiveIndicator = () => (
     <div className="flex items-center gap-2 font-mono text-sm text-red-500">
@@ -52,13 +53,15 @@ export default function Header() {
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-    const Logo = () => (
+    const LogoDisplay = () => (
         <div className="flex items-center gap-3">
-            <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M50 10C27.9086 10 10 27.9086 10 50C10 72.0914 27.9086 90 50 90" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" />
-                <path d="M50 25C36.1929 25 25 36.1929 25 50C25 63.8071 36.1929 75 50 75" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" strokeDasharray="5 15" />
-                <path d="M50 40C44.4772 40 40 44.4772 40 50C40 55.5228 44.4772 60 50 60" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" strokeDasharray="1 10" />
-            </svg>
+            <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 120, ease: "linear", repeat: Infinity }}
+                className="w-8 h-8"
+            >
+                <Logo className="w-8 h-8" />
+            </motion.div>
             <span className="text-xl font-bold text-gray-200">南方回音壁</span>
         </div>
     );
@@ -73,7 +76,7 @@ export default function Header() {
         <header className="container mx-auto max-w-2xl p-4 relative">
             <div className="flex justify-between items-center py-4">
                 <Link href="/" className="hover:opacity-80 transition-opacity" onClick={() => setIsMenuOpen(false)}>
-                    <Logo />
+                    <LogoDisplay />
                 </Link>
 
                 <div className="hidden md:flex items-center gap-6">

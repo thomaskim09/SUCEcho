@@ -84,11 +84,17 @@ export default function MyEchoesPage() {
         );
     };
 
-    // --- START: Added handler for post removal animation ---
     const handlePostRemoved = (postId: number) => {
         setMyPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
     };
-    // --- END: Added handler for post removal animation ---
+
+    const handlePostPurified = (postId: number) => {
+        setMyPosts(prevPosts =>
+            prevPosts.map(p =>
+                p.id === postId ? { ...p, isPurifying: true } : p
+            )
+        );
+    };
 
     const renderContent = () => {
         if (isLoading) {
@@ -131,7 +137,7 @@ export default function MyEchoesPage() {
                                 <PostCard
                                     post={post}
                                     isLink={!isChildEcho}
-                                    onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState)}
+                                    onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState, handlePostPurified)}
                                     userVote={userVotes[post.id]}
                                     // --- START: Added props for removal animation ---
                                     isPurifying={post.isPurifying}

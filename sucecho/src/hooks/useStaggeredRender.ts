@@ -1,7 +1,7 @@
 // sucecho/src/hooks/useStaggeredRender.ts
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 export function useStaggeredRender<T extends { id: string | number }>(
     items: T[],
@@ -10,6 +10,7 @@ export function useStaggeredRender<T extends { id: string | number }>(
     const [renderedItems, setRenderedItems] = useState<T[]>([]);
     const [isComplete, setIsComplete] = useState(false);
     const hasAnimated = useRef(false);
+    const itemsKey = useMemo(() => items.map((i) => i.id).join(','), [items]);
 
     useEffect(() => {
         if (hasAnimated.current || items.length === 0) {
@@ -44,7 +45,7 @@ export function useStaggeredRender<T extends { id: string | number }>(
         return () => {
             timeouts.forEach(clearTimeout);
         };
-    }, [items, delay]);
+    }, [itemsKey, delay]);
 
     return [renderedItems, isComplete];
 }

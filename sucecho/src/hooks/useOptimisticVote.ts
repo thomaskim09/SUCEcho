@@ -100,7 +100,6 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                 if (result.purified) {
                     onPurifyCallback(postId);
                 }
-
             } catch (error) {
                 logger.error('Reverting optimistic vote:', error);
                 alert((error as Error).message);

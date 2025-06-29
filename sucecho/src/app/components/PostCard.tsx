@@ -298,9 +298,11 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                 <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
                             </div>
                             {!isChildEcho && (
-                                <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                                    <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                                </button>
+                                <div onClick={e => e.stopPropagation()}>
+                                    <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                                        <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>

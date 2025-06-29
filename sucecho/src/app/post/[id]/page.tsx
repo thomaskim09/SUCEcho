@@ -206,7 +206,7 @@ export default function PostDetailPage() {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
                 <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← 返回回音墙</Link></header>
-                <main className="mt-8"><p>Loading...</p></main>
+                <main className="mt-8"><p>加载回音...</p></main>
             </div>
         );
     }

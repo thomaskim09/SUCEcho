@@ -102,7 +102,7 @@ export async function POST(request: Request) {
                             { status: 400 }
                         );
                     }
-                } catch (error) {
+                } catch {
                     // Ignore invalid URLs
                 }
             }

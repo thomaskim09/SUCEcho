@@ -22,7 +22,7 @@ export default function HowItWorksPage() {
                 <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
                     <h2 className="text-2xl font-bold mb-2">社区主权</h2>
                     <p className="text-lg">
-                        你决定什么内容被保留。喜欢的内容请点赞，不喜欢的请点倒赞。当一条回音的倒赞比例过高时，系统会自动“净化”并移除该内容，由社区而非管理员决定内容去留。
+                        你决定什么内容被保留。喜欢的内容请点赞，不喜欢的请点倒赞。当一条回音的倒赞比例过高时，系统会自动“净化”并移除该内容，由社区优先而非管理员决定内容去留。
                     </p>
                 </div>
                 <div className="text-center mt-8">
