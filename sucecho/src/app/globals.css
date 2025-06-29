@@ -379,3 +379,11 @@ body {
     transform: translate(0);
   }
 }
+
+.purify-text-glow-red {
+    color: #dc2d2d;
+    text-shadow:
+        0 0 5px #dc2d2d,
+        0 0 10px #dc2d2d,
+        0 0 15px #dc2d2d;
+}

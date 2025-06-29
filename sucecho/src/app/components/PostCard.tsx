@@ -70,21 +70,38 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const downvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
     const [isOverflowing, setIsOverflowing] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
-
-    const isChildEcho = !!post.parentPostId;
-    const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
+    const [showPurifyText, setShowPurifyText] = useState(false);
+    const [shouldPurifyVanish, setShouldPurifyVanish] = useState(false);
     const [isGlitching, setIsGlitching] = useState(false);
     const [isCharging, setIsCharging] = useState(false);
     const [isPurifyGlow, setIsPurifyGlow] = useState(false);
 
+    const isChildEcho = !!post.parentPostId;
+    const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
+
     useEffect(() => {
+        let vanishTimeout: NodeJS.Timeout | null = null;
+        let textTimeout: NodeJS.Timeout | null = null;
         if (isPurifying) {
+            setShowPurifyText(true);
             setIsPurifyGlow(true);
-            const purifyTimer = setTimeout(() => {
-                setIsGlitching(true);
-            }, 3000); // 3-second glow
-            return () => clearTimeout(purifyTimer);
+            textTimeout = setTimeout(() => {
+                setIsPurifyGlow(false);
+                setShouldPurifyVanish(true);
+                // Keep the text visible during vanish, hide after vanish duration (1.5s)
+                vanishTimeout = setTimeout(() => {
+                    setShowPurifyText(false);
+                }, 1500);
+            }, 3000); // 3 seconds for text and glow
+        } else {
+            setShowPurifyText(false);
+            setIsPurifyGlow(false);
+            setShouldPurifyVanish(false);
         }
+        return () => {
+            if (textTimeout) clearTimeout(textTimeout);
+            if (vanishTimeout) clearTimeout(vanishTimeout);
+        };
     }, [isPurifying]);
 
     useEffect(() => {
@@ -182,29 +199,25 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const upvoteTooltipContent = "点赞是对于内容的肯定，\n让有共鸣的声音浮现。";
     const downvoteTooltipContent = "到赞是社区净化的力量，\n当一个回声被足够多的人反对，\n它将被永久销毁。";
 
-
-    const shouldVanish = isVanishing || isGlitching;
-    const shouldPurifyAnimate = isPurifying;
-
     return (
         <motion.div
             ref={cardRef}
             layout
             initial={{ opacity: 1, scale: 1, y: 0 }}
             animate={{
-                opacity: shouldPurifyAnimate ? 0 : (shouldVanish ? 0 : 1),
-                scale: shouldPurifyAnimate ? 1.2 : (shouldVanish ? 0.8 : 1),
-                filter: shouldPurifyAnimate ? 'blur(20px)' : 'blur(0px)',
+                opacity: shouldPurifyVanish ? 0 : (isVanishing || isGlitching ? 0 : 1),
+                scale: shouldPurifyVanish ? 1.5 : (isVanishing || isGlitching ? 0.8 : 1),
+                filter: shouldPurifyVanish ? 'blur(10px)' : (isVanishing || isGlitching ? 'blur(20px)' : 'blur(0px)'),
             }}
-            transition={{ duration: shouldPurifyAnimate ? 1.0 : 0.5, ease: "easeOut" }}
+            transition={{ duration: shouldPurifyVanish ? 1.5 : (isVanishing || isGlitching ? 1.0 : 0.5), ease: "easeOut" }}
             onAnimationComplete={() => {
-                if (shouldPurifyAnimate && onPurificationComplete) {
+                if (shouldPurifyVanish && onPurificationComplete) {
                     onPurificationComplete(post.id);
-                } else if (shouldVanish && onFaded) {
+                } else if ((isVanishing || isGlitching) && onFaded) {
                     onFaded(post.id);
                 }
             }}
-            className={`relative ${isGlitching || isCharging ? 'charge-up' : ''} ${isGlitching ? 'glitch' : ''} ${isPurifyGlow ? 'purify-glow' : ''}`}
+            className={`relative ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''}`}
         >
             <div
                 className={`glass-card rounded-lg p-4`}
@@ -230,7 +243,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                             </button>
                         </div>
                     )}
-                    <div className="flex items-center justify-between text-sm text-gray-400 mb-2">{isAdmin ? (<span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>) : (<span></span>)}</div>
+                    <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                        {isAdmin ? (
+                            <span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>
+                        ) : (
+                            <span></span>
+                        )}
+                    </div>
 
                     <div
                         ref={contentRef}
@@ -257,13 +276,18 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     </AnimatePresence>
 
                     <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
-                        {isPurifying ? (
-                            <span className="font-mono flex-shrink-0 text-red-400 fade-in">社区自治，自主净化</span>
-                        ) : (
-                            <span className={`font-mono flex-shrink-0 ${colorClass} ${isExpired ? 'fade-in' : ''} ${isCritical ? 'pulse' : ''}`}>
-                                {isChildEcho ? timeSince(new Date(post.createdAt)) : countdownText}
-                            </span>
-                        )}
+                        <span
+                            className={`font-mono flex-shrink-0 ${isPurifying && showPurifyText
+                                ? 'purify-text-glow-red fade-in'
+                                : colorClass + (isExpired ? ' fade-in' : '') + (isCritical ? ' pulse' : '')
+                                }`}
+                        >
+                            {isPurifying && showPurifyText
+                                ? '社区自治，自主净化'
+                                : isChildEcho
+                                    ? timeSince(new Date(post.createdAt))
+                                    : countdownText}
+                        </span>
                         <div className="flex items-center gap-4 flex-shrink-0">
                             <div className="relative">
                                 <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
