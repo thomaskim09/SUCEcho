@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { useAdminSession } from '@/hooks/useAdminSession';
 import { generateCodename } from '@/lib/codename';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, MouseEvent, useLayoutEffect } from 'react';
 import { Icon } from './Icon';
 import { checkPurificationStatus } from "@/lib/purification";
 import { timeSince } from "@/lib/time-helpers";
@@ -34,16 +34,19 @@ const cardVariants: Variants = {
     fadeOut: { opacity: 0, y: -20, transition: { duration: 0.5 } }
 };
 
+interface Ripple {
+    key: number;
+    x: number;
+    y: number;
+    size: number;
+}
+
 const renderContentWithLinks = (content: string) => {
     const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-    // Split the content by the url regex
     const parts = content.split(urlRegex);
 
     return parts.map((part, index) => {
-        // The regex will cause undefined/empty parts, so we filter them out
         if (!part) return null;
-
-        // Check if the part is a URL
         if (part.match(urlRegex)) {
             return (
                 <a
@@ -52,17 +55,15 @@ const renderContentWithLinks = (content: string) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-accent hover:underline"
-                    onClick={(e) => e.stopPropagation()} // Important to prevent card click
+                    onClick={(e) => e.stopPropagation()}
                 >
                     {part}
                 </a>
             );
         }
-        // Otherwise, it's just plain text
         return part;
     });
 };
-
 
 export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onFaded }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
@@ -72,12 +73,27 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isFadingOut, setIsFadingOut] = useState(false);
     const [showUpvoteTooltip, setShowUpvoteTooltip] = useState(false);
     const [showDownvoteTooltip, setShowDownvoteTooltip] = useState(false);
-
+    const [ripples, setRipples] = useState<Ripple[]>([]);
+    const cardRef = useRef<HTMLDivElement>(null);
     const upvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
     const downvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
+    const [isOverflowing, setIsOverflowing] = useState(false);
+    const contentRef = useRef<HTMLDivElement>(null);
 
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired } = useCountdown(new Date(post.createdAt));
+
+    useLayoutEffect(() => {
+        const checkOverflow = () => {
+            if (contentRef.current) {
+                const { scrollHeight, clientHeight } = contentRef.current;
+                setIsOverflowing(scrollHeight > clientHeight);
+            }
+        };
+        checkOverflow();
+        window.addEventListener('resize', checkOverflow);
+        return () => window.removeEventListener('resize', checkOverflow);
+    }, [post.content]);
 
     useEffect(() => {
         return () => {
@@ -106,9 +122,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current);
                 setShowUpvoteTooltip(true);
                 localStorage.setItem('hasSeenUpvoteTip', 'true');
-                upvoteTooltipTimer.current = setTimeout(() => {
-                    setShowUpvoteTooltip(false);
-                }, 5000);
+                upvoteTooltipTimer.current = setTimeout(() => setShowUpvoteTooltip(false), 5000);
             }
         } else if (voteType === -1) {
             const hasSeenDownvoteTip = localStorage.getItem('hasSeenDownvoteTip');
@@ -116,23 +130,14 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current);
                 setShowDownvoteTooltip(true);
                 localStorage.setItem('hasSeenDownvoteTip', 'true');
-                downvoteTooltipTimer.current = setTimeout(() => {
-                    setShowDownvoteTooltip(false);
-                }, 5000);
+                downvoteTooltipTimer.current = setTimeout(() => setShowDownvoteTooltip(false), 5000);
             }
         }
-
         onVote(post.id, voteType);
     };
 
-    const closeUpvoteTooltip = () => {
-        if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current);
-        setShowUpvoteTooltip(false);
-    }
-    const closeDownvoteTooltip = () => {
-        if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current);
-        setShowDownvoteTooltip(false);
-    }
+    const closeUpvoteTooltip = () => { if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current); setShowUpvoteTooltip(false); }
+    const closeDownvoteTooltip = () => { if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current); setShowDownvoteTooltip(false); }
 
     const handleDelete = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onDelete) onDelete(post.id); setIsMenuOpen(false); };
     const handleCommentClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); router.push(`/compose?parentPostId=${post.id}`); };
@@ -140,10 +145,21 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const handleViewProfile = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); router.push(`/admin/users/${post.fingerprintHash}`); setIsMenuOpen(false); };
     const handleShowDetails = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); alert(`帖子ID: ${post.id}\n指纹哈希: ${post.fingerprintHash}`); setIsMenuOpen(false); };
     const handleReportClick = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onReport) { onReport(post.id); } setIsMenuOpen(false); };
-    const handleCardClick = () => {
-        if (isLink && !isChildEcho) {
-            router.push(`/post/${post.id}`);
+
+    const handleCardClick = (e: MouseEvent<HTMLDivElement>) => {
+        if (!isLink || isChildEcho) return;
+
+        const card = cardRef.current;
+        if (card) {
+            const rect = card.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+
+            const newRipple: Ripple = { key: Date.now(), x, y, size };
+            setRipples(prev => [...prev, newRipple]);
         }
+        router.push(`/post/${post.id}`);
     };
 
     const { showMeter: showPurificationMeter, meterFillPercentage } = checkPurificationStatus({
@@ -158,29 +174,41 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
 
     const specialAnimation = isFadingOut ? "fadeOut" : (isPurifying ? "purify" : undefined);
-
     const upvoteTooltipContent = "赞同这个想法，让更多人看见。";
     const downvoteTooltipContent = "反对这个内容，人越多，它消失得越快。";
 
     return (
         <motion.div
+            ref={cardRef}
             variants={cardVariants}
             animate={specialAnimation}
             exit="exit"
             layout
             onAnimationComplete={(definition) => {
-                if (definition === "purify" && onPurificationComplete) {
-                    onPurificationComplete(post.id);
-                }
-                if (definition === "fadeOut" && onFaded) {
-                    onFaded(post.id);
-                }
+                if (definition === "purify" && onPurificationComplete) onPurificationComplete(post.id);
+                if (definition === "fadeOut" && onFaded) onFaded(post.id);
             }}
             onClick={handleCardClick}
-            className={`p-4 rounded-lg my-2 glass-card relative ${isPurifying || isFadingOut ? 'pointer-events-none' : ''} ${isLink && !isChildEcho ? 'cursor-pointer' : ''}`}
+            className={`p-4 rounded-lg my-2 glass-card relative 
+                ${isPurifying || isFadingOut ? 'pointer-events-none' : ''} 
+                ${isLink && !isChildEcho ? 'cursor-pointer' : ''}`
+            }
         >
+            {isLink && (
+                <div className="ripple-container">
+                    {ripples.map(ripple => (
+                        <span
+                            key={ripple.key}
+                            className="ripple"
+                            style={{ top: ripple.y, left: ripple.x, width: ripple.size, height: ripple.size }}
+                            onAnimationEnd={() => setRipples(prev => prev.filter(r => r.key !== ripple.key))}
+                        />
+                    ))}
+                </div>
+            )}
+
             {(isAdmin || isChildEcho) && (
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 z-10">
                     <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">
                         <Icon name="menu" className="w-4 h-4" />
                     </button>
@@ -188,7 +216,15 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             )}
 
             <div className="flex items-center justify-between text-sm text-gray-400 mb-2">{isAdmin ? (<span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>) : (<span></span>)}</div>
-            <p className="text-white whitespace-pre-wrap break-words">{post.content && renderContentWithLinks(post.content)}</p>
+
+            <div ref={contentRef} className={isLink ? "truncated-content" : ""}>
+                <p className="text-white whitespace-pre-wrap break-words">{post.content && renderContentWithLinks(post.content)}</p>
+            </div>
+            {isLink && isOverflowing && (
+                <div className="mt-2 text-sm font-bold text-accent hover:underline">
+                    ...[阅读全文]
+                </div>
+            )}
 
             <AnimatePresence>
                 {showPurificationMeter && (

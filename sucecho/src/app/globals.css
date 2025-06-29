@@ -185,3 +185,39 @@ body {
     fill: rgba(220, 45, 45, 0.25);
     transform: scale(1.1);
 }
+
+/* --- THE RIPPLE EFFECT SECTION --- */
+.ripple-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  border-radius: inherit; 
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2); 
+  transform: scale(0);
+  animation: ripple-animation 800ms linear; 
+  pointer-events: none;
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+
+/* --- UPDATE THE TRUNCATION EFFECT SECTION --- */
+.truncated-content {
+  max-height: 10rem;
+  /* MODIFICATION: Switched from a gradient overlay to a CSS mask for a flawless effect */
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}

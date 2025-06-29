@@ -1,3 +1,4 @@
+// sucecho/src/app/components/PostFeed.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -5,7 +6,7 @@ import type { PostWithStats } from '@/lib/types';
 import PostCard from './PostCard';
 import { AnimatePresence, motion } from 'motion/react';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
-import { useStaggeredRender } from '@/hooks/useStaggeredRender'; // No change to import
+import { useStaggeredRender } from '@/hooks/useStaggeredRender';
 import logger from '@/lib/logger';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
@@ -36,7 +37,7 @@ export default function PostFeed() {
     }, [nextCursor, isFetchingMore]);
 
     const sentinelRef = useCallback((node: HTMLDivElement | null) => {
-        if (isLoading) return;
+        if (isLoading || !isStaggeringComplete) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting && nextCursor) {
@@ -44,7 +45,8 @@ export default function PostFeed() {
             }
         });
         if (node) observer.current.observe(node);
-    }, [isLoading, loadMorePosts, nextCursor]);
+    }, [isLoading, isStaggeringComplete, loadMorePosts, nextCursor]);
+
 
     const handlePostFaded = (postId: number) => {
         setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
@@ -134,10 +136,11 @@ export default function PostFeed() {
         );
     };
 
-
     if (isLoading) {
         return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
     }
+
+    const showEndLabel = !isLoading && !isFetchingMore && !nextCursor;
 
     return (
         <div className="flex flex-col gap-4">
@@ -162,13 +165,17 @@ export default function PostFeed() {
                     </motion.div>
                 ))}
             </AnimatePresence>
+
             {nextCursor && <div ref={sentinelRef} className="h-10" />}
             {isFetchingMore && <p className="text-center text-gray-400 py-4">正在加载更多回音...</p>}
-            {!isLoading && !isFetchingMore && !nextCursor && posts.length > 0 && isStaggeringComplete && (
+
+            {showEndLabel && posts.length > 0 && (
                 <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>
             )}
 
-            {!isLoading && posts.length === 0 && <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>}
+            {!isLoading && posts.length === 0 && (
+                <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>
+            )}
         </div>
     );
 }
