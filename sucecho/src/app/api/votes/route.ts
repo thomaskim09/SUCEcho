@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import eventEmitter from '@/lib/event-emitter';
 import { checkPurificationStatus } from '@/lib/purification';
 import logger from '@/lib/logger';
-import { generateCodename } from '@/lib/codename'; // Import codename generator
+import { generateCodename } from '@/lib/codename';
 
 export async function POST(request: Request) {
     try {

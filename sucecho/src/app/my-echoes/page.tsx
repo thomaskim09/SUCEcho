@@ -1,3 +1,4 @@
+// sucecho/src/app/my-echoes/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,10 +9,12 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import { useStaggeredRender } from '@/hooks/useStaggeredRender';
+import { useLivePostUpdates } from '@/hooks/useLivePostUpdates';
 import logger from '@/lib/logger';
 
 export default function MyEchoesPage() {
-    const [myPosts, setMyPosts] = useState<PostWithStats[]>([]);
+    const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
+    const [myPosts, setMyPosts] = useLivePostUpdates(initialPosts);
     const [isLoading, setIsLoading] = useState(true);
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const [renderedPosts] = useStaggeredRender(myPosts);
@@ -29,11 +32,9 @@ export default function MyEchoesPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ postIds }),
                 });
-                if (!res.ok) {
-                    throw new Error('Failed to fetch your echoes');
-                }
+                if (!res.ok) throw new Error('Failed to fetch your echoes');
                 const posts = await res.json();
-                setMyPosts(posts);
+                setInitialPosts(posts);
             } catch (error) {
                 logger.error(error);
             } finally {
@@ -42,41 +43,6 @@ export default function MyEchoesPage() {
         };
         fetchMyPosts();
     }, []);
-
-    useEffect(() => {
-        const eventSource = new EventSource('/api/live');
-        logger.log("SSE Connection opened on My Echoes page.");
-
-        const handleVoteUpdate = (event: MessageEvent) => {
-            const { postId, stats } = JSON.parse(event.data);
-            setMyPosts(currentPosts =>
-                currentPosts.map(post =>
-                    post.id === postId ? { ...post, stats: stats } : post
-                )
-            );
-        };
-
-        const handleDeletePost = (event: MessageEvent) => {
-            const { postId } = JSON.parse(event.data);
-            // Mark the post for removal animation
-            setMyPosts(currentPosts =>
-                currentPosts.map(p =>
-                    p.id === postId ? { ...p, isPurifying: true } : p
-                )
-            );
-        };
-
-        eventSource.addEventListener('update_vote', handleVoteUpdate);
-        eventSource.addEventListener('delete_post', handleDeletePost);
-
-        return () => {
-            eventSource.removeEventListener('update_vote', handleVoteUpdate);
-            eventSource.removeEventListener('delete_post', handleDeletePost);
-            eventSource.close();
-            logger.log("SSE Connection closed on My Echoes page.");
-        };
-    }, []);
-
 
     const updateMyPostsState = (updatedPost: PostWithStats) => {
         setMyPosts(currentPosts =>
@@ -98,11 +64,7 @@ export default function MyEchoesPage() {
 
     const renderContent = () => {
         if (isLoading) {
-            return (
-                <div className="text-center text-gray-400 p-8">
-                    <p>Loading your echoes...</p>
-                </div>
-            );
+            return <div className="text-center text-gray-400 p-8"><p>Loading your echoes...</p></div>;
         }
         if (myPosts.length === 0) {
             return (
@@ -121,29 +83,25 @@ export default function MyEchoesPage() {
                 <AnimatePresence>
                     {renderedPosts.map(post => {
                         const isChildEcho = !!post.parentPostId;
-                        const wrapperClass = isChildEcho
-                            ? "border-l-2 border-accent/30 pl-4 ml-4"
-                            : "";
+                        const wrapperClass = isChildEcho ? "border-l-2 border-accent/30 pl-4 ml-4" : "";
 
                         return (
                             <motion.div
                                 key={post.id}
                                 className={wrapperClass}
+                                layout
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.8 } }}
                                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                                layout
                             >
                                 <PostCard
                                     post={post}
                                     isLink={!isChildEcho}
                                     onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState, handlePostPurified)}
                                     userVote={userVotes[post.id]}
-                                    // --- START: Added props for removal animation ---
                                     isPurifying={post.isPurifying}
                                     onPurificationComplete={handlePostRemoved}
                                     onFaded={handlePostRemoved}
-                                // --- END: Added props for removal animation ---
                                 />
                             </motion.div>
                         );

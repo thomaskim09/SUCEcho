@@ -1,8 +1,10 @@
+// sucecho/src/app/post/[id]/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
+import { useLivePostThreadUpdates } from '@/hooks/useLivePostThreadUpdates';
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
@@ -21,7 +23,9 @@ export default function PostDetailPage() {
     const params = useParams();
     const id = params.id as string;
 
-    const [post, setPost] = useState<PostThread | null>(null);
+    const [initialPost, setInitialPost] = useState<PostThread | null>(null);
+    const [post, setPost] = useLivePostThreadUpdates(initialPost);
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [shareFeedback, setShareFeedback] = useState('');
@@ -32,7 +36,6 @@ export default function PostDetailPage() {
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
-
     const [renderedReplies] = useStaggeredRender(post?.replies || []);
 
     const handleDelete = async (postId: number) => {
@@ -43,7 +46,14 @@ export default function PostDetailPage() {
                 const errorData = await res.json();
                 throw new Error(errorData.message || 'Failed to delete post');
             }
-            updatePostInState({ ...post!.replies.find(p => p.id === postId)!, isPurifying: true });
+            // Optimistically update the UI to show the post is being purified
+            setPost(current => {
+                if (!current) return null;
+                const updatedReplies = current.replies.map(p =>
+                    p.id === postId ? { ...p, isPurifying: true } : p
+                );
+                return { ...current, replies: updatedReplies };
+            });
         } catch (err: unknown) {
             alert(`Error: ${(err as Error).message}`);
         }
@@ -51,6 +61,8 @@ export default function PostDetailPage() {
 
     useEffect(() => {
         const fetchPostDetails = async () => {
+            if (!id || dataFetched.current) return;
+            dataFetched.current = true;
             setIsLoading(true);
             setError(null);
             try {
@@ -60,81 +72,23 @@ export default function PostDetailPage() {
                     throw new Error(errorData.error || 'Failed to fetch post');
                 }
                 const data: PostThread = await res.json();
-                setPost(data);
+                setInitialPost(data);
             } catch (err) {
                 setError((err as Error).message);
-                setPost(null);
+                setInitialPost(null);
             } finally {
                 setIsLoading(false);
             }
         };
-        if (id && !dataFetched.current) {
-            fetchPostDetails();
-            dataFetched.current = true;
-        }
-    }, [id]);
-
-    useEffect(() => {
-        if (!id) return;
-
-        const eventSource = new EventSource('/api/live');
-
-        const handleNewPost = (event: MessageEvent) => {
-            const newPost: PostWithStats = JSON.parse(event.data);
-            if (newPost.parentPostId?.toString() === id) {
-                setPost(current => {
-                    if (current && !current.replies.some(r => r.id === newPost.id)) {
-                        return { ...current, replies: [...current.replies, newPost] };
-                    }
-                    return current;
-                });
-            }
-        };
-
-        const handleVoteUpdate = (event: MessageEvent) => {
-            const { postId, stats, shouldPurify } = JSON.parse(event.data);
-            logger.log("SSE event 'update_vote' received for post detail:", { postId, stats, shouldPurify });
-            setPost(current => {
-                if (!current) return null;
-                if (current.id === postId) {
-                    return { ...current, stats, isPurifying: shouldPurify || current.isPurifying };
-                }
-                const updatedReplies = current.replies.map(reply =>
-                    reply.id === postId ? { ...reply, stats, isPurifying: shouldPurify || reply.isPurifying } : reply
-                );
-                return { ...current, replies: updatedReplies };
-            });
-        };
-
-        const handleDeletePost = (event: MessageEvent) => {
-            const { postId } = JSON.parse(event.data);
-            setPost(current => {
-                if (!current) return null;
-                if (current.id === postId) {
-                    return { ...current, content: null, isPurifying: true };
-                }
-                const updatedReplies = current.replies.map(reply =>
-                    reply.id === postId ? { ...reply, isPurifying: true } : reply
-                );
-                return { ...current, replies: updatedReplies };
-            });
-        };
-
-        eventSource.addEventListener('new_post', handleNewPost);
-        eventSource.addEventListener('update_vote', handleVoteUpdate);
-        eventSource.addEventListener('delete_post', handleDeletePost);
-
-        return () => eventSource.close();
+        fetchPostDetails();
     }, [id]);
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {
             if (!currentThread) return null;
-
             if (currentThread.id === updatedPost.id) {
                 return { ...currentThread, ...updatedPost };
             }
-
             const updatedReplies = currentThread.replies.map(reply =>
                 reply.id === updatedPost.id ? updatedPost : reply
             );
@@ -157,7 +111,11 @@ export default function PostDetailPage() {
         const shareUrl = window.location.href;
         const shareTitle = "在SUC回音壁上查看此回音！";
         if (navigator.share) {
-            await navigator.share({ title: shareTitle, url: shareUrl }).catch(err => logger.error('Share failed:', err));
+            try {
+                await navigator.share({ title: shareTitle, url: shareUrl });
+            } catch (err) {
+                logger.error('Share failed:', err);
+            }
         } else {
             try {
                 await navigator.clipboard.writeText(shareUrl);
@@ -205,8 +163,12 @@ export default function PostDetailPage() {
     if (isLoading) {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
-                <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← 返回回音墙</Link></header>
-                <main className="mt-8"><p>加载回音...</p></main>
+                <header className="py-4 flex items-center">
+                    <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
+                </header>
+                <main className="mt-8">
+                    <p>加载回音...</p>
+                </main>
             </div>
         );
     }
@@ -214,8 +176,12 @@ export default function PostDetailPage() {
     if (error || !post) {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
-                <header className="py-4 flex items-center"><Link href="/" className="text-accent hover:underline">← 返回回音墙</Link></header>
-                <main className="mt-8"><p className="text-red-400">{error || 'This echo has faded into silence.'}</p></main>
+                <header className="py-4 flex items-center">
+                    <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
+                </header>
+                <main className="mt-8">
+                    <p className="text-red-400">{error || 'This echo has faded into silence.'}</p>
+                </main>
             </div>
         );
     }
@@ -230,11 +196,15 @@ export default function PostDetailPage() {
             <header className="py-4 flex justify-between items-center">
                 <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
                 <div className="flex items-center gap-2">
-                    <button onClick={handleShare} aria-label="Share post" className="p-2 rounded-lg transition-colors icon-base icon-share"><Icon name="share" /></button>
-                    <button onClick={() => handleOpenReportModal(post.id)} aria-label="Report post" className="p-2 rounded-lg transition-colors icon-base icon-report-flag"><Icon name="report-flag" /></button>
+                    <button onClick={handleShare} aria-label="Share post" className="p-2 rounded-lg transition-colors icon-base icon-share">
+                        <Icon name="share" />
+                    </button>
+                    <button onClick={() => handleOpenReportModal(post.id)} aria-label="Report post" className="p-2 rounded-lg transition-colors icon-base icon-report-flag">
+                        <Icon name="report-flag" />
+                    </button>
                 </div>
             </header>
-            {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300" >{shareFeedback}</div>}
+            {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300">{shareFeedback}</div>}
             {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
             <main className="mt-4">
                 <div className="mb-4">
@@ -261,10 +231,10 @@ export default function PostDetailPage() {
                                 {renderedReplies.map(reply => (
                                     <motion.div
                                         key={reply.id}
+                                        layout
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.8 } }}
                                         exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                                        layout
                                     >
                                         <PostCard
                                             post={reply}

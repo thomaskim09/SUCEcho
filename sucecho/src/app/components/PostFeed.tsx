@@ -7,12 +7,15 @@ import PostCard from './PostCard';
 import { AnimatePresence, motion } from 'motion/react';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import { useStaggeredRender } from '@/hooks/useStaggeredRender';
+import { useLivePostUpdates } from '@/hooks/useLivePostUpdates'; // Import the new hook
 import logger from '@/lib/logger';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
 export default function PostFeed() {
-    const [posts, setPosts] = useState<PostWithStats[]>([]);
+    const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
+    const [posts, setPosts] = useLivePostUpdates(initialPosts); // Use the new hook
+
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<number | null>(null);
@@ -35,6 +38,7 @@ export default function PostFeed() {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
+            // Append new posts to the existing state in the hook
             setPosts(prev => [...prev, ...newPosts]);
             setNextCursor(newNextCursor);
         } catch (error) {
@@ -42,7 +46,7 @@ export default function PostFeed() {
         } finally {
             setIsFetchingMore(false);
         }
-    }, [nextCursor, isFetchingMore]);
+    }, [nextCursor, isFetchingMore, setPosts]);
 
     const sentinelRef = useCallback((node: HTMLDivElement | null) => {
         if (isLoading || !isStaggeringComplete) return;
@@ -83,8 +87,8 @@ export default function PostFeed() {
             try {
                 const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
                 if (!res.ok) throw new Error('Failed to fetch posts');
-                const { posts: initialPosts, nextCursor: initialNextCursor } = await res.json();
-                setPosts(initialPosts);
+                const { posts: fetchedPosts, nextCursor: initialNextCursor } = await res.json();
+                setInitialPosts(fetchedPosts); // Set the initial posts for the hook
                 setNextCursor(initialNextCursor);
             } catch (error) {
                 logger.error("Error fetching initial posts:", error);
@@ -93,49 +97,6 @@ export default function PostFeed() {
             }
         };
         fetchInitialPosts();
-
-        const eventSource = new EventSource('/api/live');
-        logger.log("SSE Connection opened.");
-
-        const handleNewPost = (event: MessageEvent) => {
-            const newPost: PostWithStats = JSON.parse(event.data);
-            logger.log("SSE event 'new_post' received:", newPost);
-            if (!newPost.parentPostId) {
-                setPosts(prevPosts => [newPost, ...prevPosts]);
-            }
-        };
-
-        const handleVoteUpdate = (event: MessageEvent) => {
-            const { postId, stats, shouldPurify } = JSON.parse(event.data);
-            logger.log("SSE event 'update_vote' received for post:", { postId, stats, shouldPurify });
-            setPosts(prevPosts =>
-                prevPosts.map(post =>
-                    post.id === postId ? { ...post, stats: stats, isPurifying: shouldPurify || post.isPurifying } : post
-                )
-            );
-        };
-
-        const handleDeletePost = (event: MessageEvent) => {
-            const { postId } = JSON.parse(event.data);
-            logger.log("SSE event 'delete_post' received for post:", postId);
-            setPosts(prevPosts =>
-                prevPosts.map(p =>
-                    p.id === postId ? { ...p, isPurifying: true } : p
-                )
-            );
-        };
-
-        eventSource.addEventListener('new_post', handleNewPost);
-        eventSource.addEventListener('update_vote', handleVoteUpdate);
-        eventSource.addEventListener('delete_post', handleDeletePost);
-
-        return () => {
-            eventSource.removeEventListener('new_post', handleNewPost);
-            eventSource.removeEventListener('update_vote', handleVoteUpdate);
-            eventSource.removeEventListener('delete_post', handleDeletePost);
-            eventSource.close();
-            logger.log("SSE Connection closed.");
-        };
     }, []);
 
     const updatePostInState = (updatedPost: PostWithStats) => {
