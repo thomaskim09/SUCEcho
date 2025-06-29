@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     try {
         const maxLifetimeDays = parseInt(
-            process.env.POST_MAX_LIFETIME_DAYS || '180',
+            process.env.NEXT_PUBLIC_POST_MAX_LIFETIME_DAYS || '180',
             10
         );
         const timeAgo = new Date();
@@ -34,9 +34,13 @@ export async function POST(request: Request) {
         });
 
         if (postsToDelete.length === 0) {
-            const message = 'No posts older than 180 days found to delete.';
+            const message = `没有发现超过 ${maxLifetimeDays} 天的帖子可供深度清理。`;
             logger.log(`MANUAL DEEP CLEAN: ${message}`);
-            return NextResponse.json({ message });
+            return NextResponse.json({
+                message,
+                deletedCount: 0,
+                maxLifetimeDays,
+            });
         }
 
         const result = await prisma.post.deleteMany({
@@ -47,10 +51,13 @@ export async function POST(request: Request) {
             },
         });
 
-        const message = `Successfully performed deep clean, deleting ${result.count} posts (and all related data) older than ${maxLifetimeDays} days.`;
+        const message = `成功深度清理，删除了 ${result.count} 个发布于 ${maxLifetimeDays} 天前的帖子。`;
         logger.log(`MANUAL DEEP CLEAN: ${message}`);
-
-        return NextResponse.json({ message });
+        return NextResponse.json({
+            message,
+            deletedCount: result.count,
+            maxLifetimeDays,
+        });
     } catch (error) {
         logger.error('MANUAL DEEP CLEAN ERROR:', error);
         return NextResponse.json(

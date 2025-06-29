@@ -6,7 +6,6 @@ import logger from '@/lib/logger';
 import { verifySession } from '@/lib/auth';
 
 export async function POST(request: Request) {
-    // 1. Authenticate the request to ensure only an admin can run this
     const session = request.headers
         .get('cookie')
         ?.match(/session=([^;]+)/)?.[1];
@@ -17,15 +16,12 @@ export async function POST(request: Request) {
     }
 
     try {
-        // 2. Get survival time from environment variable, defaulting to 24 hours
         const survivalHours = parseInt(
-            process.env.POST_SURVIVAL_HOURS || '24',
+            process.env.NEXT_PUBLIC_POST_SURVIVAL_HOURS || '24',
             10
         );
         const timeAgo = new Date(Date.now() - survivalHours * 60 * 60 * 1000);
 
-        // 3. Find all posts older than the survival time.
-        // We only need their IDs for the deletion query.
         const postsToDelete = await prisma.post.findMany({
             where: {
                 createdAt: {
@@ -38,16 +34,17 @@ export async function POST(request: Request) {
         });
 
         if (postsToDelete.length === 0) {
-            const message = 'No posts older than 24 hours found to delete.';
+            const message = `没有发现超过 ${survivalHours} 小时的过期帖子。`;
             logger.log(`MANUAL CRON: ${message}`);
-            return NextResponse.json({ message });
+            return NextResponse.json({
+                message,
+                deletedCount: 0,
+                survivalHours,
+            });
         }
 
         const postIdsToDelete = postsToDelete.map((p) => p.id);
 
-        // 4. Delete the found posts. Because of the `onDelete: Cascade` in your
-        // Prisma schema, this will automatically delete all related votes,
-        // stats, and reports associated with these posts.
         const result = await prisma.post.deleteMany({
             where: {
                 id: {
@@ -56,10 +53,13 @@ export async function POST(request: Request) {
             },
         });
 
-        const message = `Successfully deleted ${result.count} posts (and their related data) older than 24 hours.`;
+        const message = `成功删除了 ${result.count} 个发布于 ${survivalHours} 小时前的帖子。`;
         logger.log(`MANUAL CRON: ${message}`);
-
-        return NextResponse.json({ message });
+        return NextResponse.json({
+            message,
+            deletedCount: result.count,
+            survivalHours,
+        });
     } catch (error) {
         logger.error('MANUAL CRON ERROR:', error);
         return NextResponse.json(

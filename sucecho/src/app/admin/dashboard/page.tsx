@@ -9,54 +9,60 @@ import logger from '@/lib/logger';
 
 interface AdminStats {
     totalUsers: number;
-    expiredPostsCount: number; // Add this to the interface
+    totalPosts: number;
+    postsWithin24h: number;
+    expiredPostsCount: number;
 }
 
 export default function AdminDashboardPage() {
     const { logout } = useAdmin();
     const router = useRouter();
     const [stats, setStats] = useState<AdminStats | null>(null);
-    const [reportCount, setReportCount] = useState<number | null>(null); // Set initial state to null for loading
+    const [reportCount, setReportCount] = useState<number | null>(null);
     const [isCronRunning, setIsCronRunning] = useState(false);
     const [isDeepCleaning, setIsDeepCleaning] = useState(false);
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                // Fetch stats, which now includes the expired posts count
-                const statsResponse = await fetch('/api/admin/stats');
-                if (statsResponse.ok) {
-                    setStats(await statsResponse.json());
-                } else {
-                    logger.warn("Could not fetch admin stats");
-                }
+    const fetchDashboardData = async () => {
+        try {
+            const statsResponse = await fetch('/api/admin/stats');
+            if (statsResponse.ok) {
+                setStats(await statsResponse.json());
+            } else {
+                logger.warn("Could not fetch admin stats");
+                setStats(null);
+            }
 
-                // Fetch report count
-                const reportsResponse = await fetch('/api/admin/reports');
-                if (reportsResponse.ok) {
-                    const reportsData = await reportsResponse.json();
-                    setReportCount(reportsData.length);
-                } else {
-                    logger.warn("Could not fetch report count");
-                    setReportCount(0);
-                }
-            } catch (e) {
-                logger.error("Error fetching dashboard data:", e);
+            const reportsResponse = await fetch('/api/admin/reports');
+            if (reportsResponse.ok) {
+                const reportsData = await reportsResponse.json();
+                setReportCount(reportsData.length);
+            } else {
+                logger.warn("Could not fetch report count");
                 setReportCount(0);
             }
-        };
+        } catch (e) {
+            logger.error("Error fetching dashboard data:", e);
+            setReportCount(0);
+            setStats(null);
+        }
+    };
+
+    useEffect(() => {
         fetchDashboardData();
     }, []);
 
     const handleRunCron = async () => {
-        if (!confirm('你确定要手动清理所有24小时前的内容吗？')) {
+        const survivalHours = process.env.NEXT_PUBLIC_POST_SURVIVAL_HOURS || 24;
+        if (!confirm(`你确定要手动清理所有 ${survivalHours} 小时前的内容吗？`)) {
             return;
         }
+
         setIsCronRunning(true);
         try {
             const res = await fetch('/api/admin/manual-cron', { method: 'POST' });
             const data = await res.json();
-            alert(`清理完成！${data.message}`);
+            alert(data.message);
+            await fetchDashboardData();
         } catch (err) {
             alert(`运行清理任务时出错: ${(err as Error).message}`);
         } finally {
@@ -65,7 +71,9 @@ export default function AdminDashboardPage() {
     };
 
     const handleDeepClean = async () => {
-        const confirmationText = "这是一个非常危险的操作，将永久删除所有超过180天的帖子、投票和举报记录。数据将无法恢复。\n\n您确定要继续吗？";
+        const maxLifetimeDays = process.env.NEXT_PUBLIC_POST_MAX_LIFETIME_DAYS || 180;
+        const confirmationText = `这是一个非常危险的操作，将永久删除所有超过 ${maxLifetimeDays} 天的帖子、投票和举报记录。数据将无法恢复。\n\n您确定要继续吗？`;
+
         if (!confirm(confirmationText)) {
             return;
         }
@@ -73,7 +81,8 @@ export default function AdminDashboardPage() {
         try {
             const res = await fetch('/api/admin/manual-deep-clean', { method: 'POST' });
             const data = await res.json();
-            alert(`深度清理完成！${data.message}`);
+            alert(data.message);
+            await fetchDashboardData();
         } catch (err) {
             alert(`运行深度清理时出错: ${(err as Error).message}`);
         } finally {
@@ -141,25 +150,27 @@ export default function AdminDashboardPage() {
                         </Link>
                     </div>
 
-                    {/* Cleanup Card */}
+                    {/* Echo Management Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #f97316' }}>
                         <div>
-                            <h2 className="text-2xl font-bold text-orange-400">数据清理</h2>
+                            <h2 className="text-2xl font-bold text-orange-400">回音管理</h2>
                             <p className="text-sm text-gray-400 mt-1 mb-4">手动运行日常或深度数据清理任务。</p>
                             {stats ? (
-                                <p className="text-lg font-mono">
-                                    <span className="font-bold text-xl text-yellow-400">{stats.expiredPostsCount}</span> 篇回音已过期
-                                </p>
+                                <div className="space-y-2 font-mono">
+                                    <p>总数: <span className="font-bold text-xl text-white">{stats.totalPosts}</span></p>
+                                    <p>24小时内: <span className="font-bold text-xl text-green-400">{stats.postsWithin24h}</span></p>
+                                    <p>已过期: <span className="font-bold text-xl text-yellow-400">{stats.expiredPostsCount}</span></p>
+                                </div>
                             ) : (
                                 <p className="text-lg text-gray-500 mt-2">加载中...</p>
                             )}
                         </div>
                         <div className="flex gap-2 mt-4">
                             <button onClick={handleRunCron} disabled={isCronRunning} className="bg-blue-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
-                                {isCronRunning ? '...' : '清理24小时前'}
+                                {isCronRunning ? '...' : '清理过期'}
                             </button>
                             <button onClick={handleDeepClean} disabled={isDeepCleaning} className="bg-orange-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
-                                {isDeepCleaning ? '...' : '清理180天前'}
+                                {isDeepCleaning ? '...' : '深度清理'}
                             </button>
                         </div>
                     </div>
