@@ -26,7 +26,6 @@ interface PostCardProps {
     onFaded?: (postId: number) => void;
 }
 
-// Define the variants for the card. These are the "animation states" it can be in.
 const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.8 } },
@@ -34,6 +33,36 @@ const cardVariants: Variants = {
     purify: { opacity: 0, scale: 0.8, transition: { duration: 0.6, ease: "easeOut" } },
     fadeOut: { opacity: 0, y: -20, transition: { duration: 0.5 } }
 };
+
+const renderContentWithLinks = (content: string) => {
+    const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+    // Split the content by the url regex
+    const parts = content.split(urlRegex);
+
+    return parts.map((part, index) => {
+        // The regex will cause undefined/empty parts, so we filter them out
+        if (!part) return null;
+
+        // Check if the part is a URL
+        if (part.match(urlRegex)) {
+            return (
+                <a
+                    key={index}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                    onClick={(e) => e.stopPropagation()} // Important to prevent card click
+                >
+                    {part}
+                </a>
+            );
+        }
+        // Otherwise, it's just plain text
+        return part;
+    });
+};
+
 
 export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onFaded }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
@@ -67,7 +96,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         e.preventDefault();
         e.stopPropagation();
         if (isFingerprintLoading || !fingerprint) {
-            alert("无法识别您的浏览器。请稍后再试。");
+            alert("我们正在努力识别你的设备，请稍后再试。");
             return;
         }
 
@@ -109,7 +138,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const handleCommentClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); router.push(`/compose?parentPostId=${post.id}`); };
     const handleToggleMenu = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); };
     const handleViewProfile = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); router.push(`/admin/users/${post.fingerprintHash}`); setIsMenuOpen(false); };
-    const handleShowDetails = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); alert(`Post ID: ${post.id}\nFingerprint Hash: ${post.fingerprintHash}`); setIsMenuOpen(false); };
+    const handleShowDetails = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); alert(`帖子ID: ${post.id}\n指纹哈希: ${post.fingerprintHash}`); setIsMenuOpen(false); };
     const handleReportClick = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onReport) { onReport(post.id); } setIsMenuOpen(false); };
     const handleCardClick = () => {
         if (isLink && !isChildEcho) {
@@ -130,8 +159,8 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
     const specialAnimation = isFadingOut ? "fadeOut" : (isPurifying ? "purify" : undefined);
 
-    const upvoteTooltipContent = "点赞是对于内容的肯定，\n让有共鸣的声音浮现。";
-    const downvoteTooltipContent = "到赞是社区净化的力量，\n当一个回声被足够多的人反对，\n它将被永久销毁。";
+    const upvoteTooltipContent = "赞同这个想法，让更多人看见。";
+    const downvoteTooltipContent = "反对这个内容，人越多，它消失得越快。";
 
     return (
         <motion.div
@@ -158,13 +187,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 </div>
             )}
 
-            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">{isAdmin ? (<span className="font-mono text-xs opacity-50">发布人: {generateCodename(post.fingerprintHash)}</span>) : (<span></span>)}</div>
-            <p className="text-white whitespace-pre-wrap break-words">{post.content}</p>
+            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">{isAdmin ? (<span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>) : (<span></span>)}</div>
+            <p className="text-white whitespace-pre-wrap break-words">{post.content && renderContentWithLinks(post.content)}</p>
 
             <AnimatePresence>
                 {showPurificationMeter && (
                     <motion.div className="mt-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                        <div className="flex items-center gap-2"><span className="text-red-400 font-mono text-xs flex-shrink-0">净化投票</span><div className="w-full bg-gray-700 rounded-full h-1.5"><motion.div className="bg-gradient-to-r from-yellow-500 to-red-600 h-1.5 rounded-full" style={{ width: `${meterFillPercentage}%` }} /></div></div>
+                        <div className="flex items-center gap-2"><span className="text-red-400 font-mono text-xs flex-shrink-0">净化进度</span><div className="w-full bg-gray-700 rounded-full h-1.5"><motion.div className="bg-gradient-to-r from-yellow-500 to-red-600 h-1.5 rounded-full" style={{ width: `${meterFillPercentage}%` }} /></div></div>
                     </motion.div>
                 )}
             </AnimatePresence>

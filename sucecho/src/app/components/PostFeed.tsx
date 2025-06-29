@@ -136,7 +136,7 @@ export default function PostFeed() {
 
 
     if (isLoading) {
-        return <div className="text-center text-gray-400 p-8"><p>Loading echoes...</p></div>;
+        return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
     }
 
     return (
