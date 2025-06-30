@@ -4,6 +4,7 @@
 import { useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
 import type { PostWithStats } from '@/lib/types';
+import { useTabLeader } from '@/lib/tabLeader';
 
 const CHANNEL_NAME = 'SUCECHO_REALTIME_CHANNEL';
 
@@ -26,10 +27,9 @@ interface SSECallbacks {
 }
 
 let eventSource: EventSource | null = null;
-let isLeader = false;
 
 export const useRealtime = (callbacks: SSECallbacks) => {
-    const isTabLeader = useRef(false);
+    const isTabLeader = useTabLeader();
 
     const memoizedCallbacks = useRef(callbacks);
     useEffect(() => {
@@ -37,109 +37,39 @@ export const useRealtime = (callbacks: SSECallbacks) => {
     }, [callbacks.onNewPost, callbacks.onUpdateVote, callbacks.onDeletePost]);
 
     useEffect(() => {
-        if (typeof BroadcastChannel === 'undefined') {
-            isTabLeader.current = true;
-            setupSSE();
+        if (!isTabLeader) {
             return;
         }
-
-        const channel = new BroadcastChannel(CHANNEL_NAME);
-        const tabId = Math.random();
-
-        function setupSSE() {
-            if (eventSource) return;
-
-            logger.log('Leader tab establishing SSE connection.');
-            eventSource = new EventSource('/api/live');
-
-            eventSource.onopen = () =>
-                logger.log(
-                    'SSE Connection successfully established by leader.'
-                );
-            eventSource.onerror = (err) => {
-                logger.error('SSE Error:', err);
-                eventSource?.close();
-                eventSource = null;
-            };
-
-            const addListener = (
-                eventName: string,
-                handler?: (data: any) => void
-            ) => {
-                if (!handler) return;
-                eventSource?.addEventListener(
-                    eventName,
-                    (event: MessageEvent) => {
-                        const data = JSON.parse(event.data);
-                        handler(data);
-                        channel.postMessage({
-                            type: 'broadcast',
-                            payload: { event: eventName, data },
-                        });
-                    }
-                );
-            };
-
-            addListener('new_post', memoizedCallbacks.current.onNewPost);
-            addListener('update_vote', memoizedCallbacks.current.onUpdateVote);
-            addListener('delete_post', memoizedCallbacks.current.onDeletePost);
-        }
-
-        function electLeader() {
-            isLeader = true;
-            isTabLeader.current = true;
-            logger.log(`Tab ${tabId.toFixed(2)} elected as leader.`);
-            channel.postMessage({ type: 'leader_elected' });
-            setupSSE();
-        }
-
-        const onMessage = (event: MessageEvent) => {
-            const { type, payload } = event.data;
-
-            if (type === 'request_leader_status' && isLeader) {
-                channel.postMessage({ type: 'leader_elected' });
-            } else if (type === 'leader_closing') {
-                isLeader = false;
-                setTimeout(electLeader, 100);
-            } else if (type === 'broadcast' && !isTabLeader.current) {
-                const handler =
-                    memoizedCallbacks.current[
-                        payload.event as keyof SSECallbacks
-                    ];
-                if (handler) {
-                    logger.log(
-                        `Follower tab received event '${payload.event}' via BroadcastChannel`,
-                        payload.data
-                    );
-                    (handler as Function)(payload.data);
-                }
-            }
+        // Only the leader tab should set up SSE
+        if (eventSource) return;
+        logger.log('Leader tab establishing SSE connection.');
+        eventSource = new EventSource('/api/live');
+        eventSource.onopen = () =>
+            logger.log('SSE Connection successfully established by leader.');
+        eventSource.onerror = (err) => {
+            logger.error('SSE Error:', err);
+            eventSource?.close();
+            eventSource = null;
         };
-
-        channel.addEventListener('message', onMessage);
-
-        const electionTimeout = setTimeout(electLeader, 250);
-        channel.postMessage({ type: 'request_leader_status' });
-
-        const handleBeforeUnload = () => {
-            if (isTabLeader.current) {
-                channel.postMessage({ type: 'leader_closing' });
-            }
+        const addListener = (
+            eventName: string,
+            handler?: (data: any) => void
+        ) => {
+            if (!handler) return;
+            eventSource?.addEventListener(eventName, (event: MessageEvent) => {
+                const data = JSON.parse(event.data);
+                handler(data);
+            });
         };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-
+        addListener('new_post', memoizedCallbacks.current.onNewPost);
+        addListener('update_vote', memoizedCallbacks.current.onUpdateVote);
+        addListener('delete_post', memoizedCallbacks.current.onDeletePost);
         return () => {
-            clearTimeout(electionTimeout);
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            channel.removeEventListener('message', onMessage);
-            if (isTabLeader.current && eventSource) {
+            if (eventSource) {
                 logger.log('Leader tab closing SSE connection on unmount.');
                 eventSource.close();
                 eventSource = null;
-                isLeader = false;
             }
-            channel.close();
         };
-    }, []);
+    }, [isTabLeader]);
 };
