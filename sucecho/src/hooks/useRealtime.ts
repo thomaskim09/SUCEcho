@@ -41,12 +41,12 @@ export const useRealtime = (callbacks: SSECallbacks) => {
         }
         // Only the leader tab should set up SSE
         if (eventSource) return;
-        logger.log('Leader tab establishing SSE connection.');
+        logger.log('Leader tab establishing LIVE connection.');
         eventSource = new EventSource('/api/live');
         eventSource.onopen = () =>
-            logger.log('SSE Connection successfully established by leader.');
+            logger.log('LIVE Connection successfully established by leader.');
         eventSource.onerror = (err) => {
-            logger.error('SSE Error:', err);
+            logger.error('LIVE Error:', err);
             eventSource?.close();
             eventSource = null;
         };
@@ -65,7 +65,7 @@ export const useRealtime = (callbacks: SSECallbacks) => {
         addListener('delete_post', memoizedCallbacks.current.onDeletePost);
         return () => {
             if (eventSource) {
-                logger.log('Leader tab closing SSE connection on unmount.');
+                logger.log('Leader tab closing LIVE connection on unmount.');
                 eventSource.close();
                 eventSource = null;
             }

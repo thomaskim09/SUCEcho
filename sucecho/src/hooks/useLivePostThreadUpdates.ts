@@ -31,7 +31,10 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         ) {
             return;
         }
-        logger.log("SSE 'new_post' is a reply to the current thread:", newPost);
+        logger.log(
+            "LIVE 'new_post' is a reply to the current thread:",
+            newPost
+        );
         setPostThread((prevThread) => {
             if (
                 !prevThread ||
@@ -50,7 +53,7 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
             shouldPurify?: boolean;
         }) => {
             const { postId, stats, shouldPurify } = data;
-            logger.log("SSE 'update_vote' received for post detail page:", {
+            logger.log("LIVE 'update_vote' received for post detail page:", {
                 postId,
                 stats,
                 shouldPurify,
@@ -82,18 +85,15 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
     const handleDeletePost = useCallback((data: { postId: number }) => {
         const { postId } = data;
         logger.log(
-            "SSE 'delete_post' received for post detail page (admin deletion):",
+            "LIVE 'delete_post' received for post detail page (admin deletion):",
             postId
         );
         setPostThread((currentThread) => {
             if (!currentThread) return null;
 
-            // --- FIX ---
             if (currentThread.id === postId) {
-                // If the main post is deleted
                 return { ...currentThread, isDeleting: true };
             }
-            // If a reply is deleted
             const updatedReplies = currentThread.replies.map((reply) =>
                 reply.id === postId ? { ...reply, isDeleting: true } : reply
             );

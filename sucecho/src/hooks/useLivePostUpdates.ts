@@ -14,7 +14,7 @@ export function useLivePostUpdates(initialPosts: PostWithStats[] = []) {
     }, [initialPosts]);
 
     const handleNewPost = useCallback((newPost: PostWithStats) => {
-        logger.log("SSE event 'new_post' received:", newPost);
+        logger.log("LIVE event 'new_post' received:", newPost);
         if (!newPost.parentPostId) {
             setPosts((prevPosts) => [newPost, ...prevPosts]);
         }
@@ -27,7 +27,7 @@ export function useLivePostUpdates(initialPosts: PostWithStats[] = []) {
             shouldPurify?: boolean;
         }) => {
             const { postId, stats, shouldPurify } = data;
-            logger.log("SSE event 'update_vote' received:", {
+            logger.log("LIVE event 'update_vote' received:", {
                 postId,
                 stats,
                 shouldPurify,
@@ -50,7 +50,7 @@ export function useLivePostUpdates(initialPosts: PostWithStats[] = []) {
     const handleDeletePost = useCallback((data: { postId: number }) => {
         const { postId } = data;
         logger.log(
-            "SSE event 'delete_post' received for admin deletion:",
+            "LIVE event 'delete_post' received for admin deletion:",
             postId
         );
         setPosts((prevPosts) =>

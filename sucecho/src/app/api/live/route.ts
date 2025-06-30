@@ -1,85 +1,59 @@
 // sucecho/src/app/api/live/route.ts
 import supabase from '@/lib/supabase-realtime';
 import logger from '@/lib/logger';
-import { v4 as uuidv4 } from 'uuid'; // Import a function to generate unique IDs
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+        start(controller) {
+            const channel = supabase.channel('posts');
 
-    let streamClosed = false;
-
-    const channel = supabase.channel('posts');
-
-    const writeSseMessage = (event: string, data: unknown) => {
-        if (streamClosed) return;
-        try {
-            writer.write(encoder.encode(`event: ${event}\n`));
-            writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-        } catch {
-            logger.warn('Write to SSE failed, client likely disconnected.');
-        }
-    };
-
-    // Generate a unique ID for this specific client connection
-    const connectionId = uuidv4();
-
-    channel
-        .on('broadcast', { event: '*' }, ({ event, payload }) => {
-            logger.log(`Received broadcast event: ${event}`, payload);
-            if (event) {
-                writeSseMessage(event, payload);
-            }
-        })
-        // --- NEW: Add Presence event listeners for debugging ---
-        .on('presence', { event: 'sync' }, () => {
-            const presenceState = channel.presenceState();
-            logger.log('Presence state synced', presenceState);
-        })
-        .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                logger.log(
-                    `Successfully subscribed to Supabase channel 'posts'.`
-                );
-                // --- NEW: Track this connection using the Presence feature ---
-                const trackStatus = await channel.track({
-                    connection_id: connectionId,
-                    online_at: new Date().toISOString(),
-                });
-                if (trackStatus === 'ok') {
-                    logger.log(
-                        'Successfully tracking presence for this connection.'
-                    );
-                } else {
-                    logger.error(
-                        'Failed to track presence for this connection.'
-                    );
+            const handleBroadcast = (payload: {
+                event: string;
+                payload: unknown;
+            }) => {
+                if (req.signal.aborted) {
+                    return;
                 }
-            }
-        });
+                try {
+                    const message = `event: ${
+                        payload.event
+                    }\ndata: ${JSON.stringify(payload.payload)}\n\n`;
+                    controller.enqueue(new TextEncoder().encode(message));
+                } catch (e) {
+                    logger.error(`Live Route: Failed to send event`, e);
+                    try {
+                        controller.close();
+                    } catch {}
+                }
+            };
 
-    // The keep-alive interval is no longer needed as the Supabase SDK handles it.
+            channel
+                .on('broadcast', { event: '*' }, handleBroadcast)
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        logger.log(
+                            `Live Route: Client successfully subscribed to Supabase channel 'posts'.`
+                        );
+                    }
+                });
 
-    req.signal.addEventListener(
-        'abort',
-        async () => {
-            logger.log(
-                'Client disconnected, unsubscribing from channel and cleaning up.'
-            );
-            streamClosed = true;
-            await channel.untrack();
-            await supabase.removeChannel(channel);
-            writer.close();
+            req.signal.onabort = async () => {
+                logger.log(
+                    `Live Route: Client disconnected. Unsubscribing from 'posts' channel.`
+                );
+                await supabase.removeChannel(channel);
+            };
         },
-        { once: true }
-    );
+    });
 
-    return new Response(readable, {
+    return new Response(stream, {
         headers: {
             'Content-Type': 'text/event-stream',
             Connection: 'keep-alive',
             'Cache-Control': 'no-cache, no-transform',
+            'X-Accel-Buffering': 'no',
         },
     });
 }
