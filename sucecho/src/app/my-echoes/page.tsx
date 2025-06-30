@@ -12,7 +12,7 @@ import logger from '@/lib/logger';
 
 export default function MyEchoesPage() {
     const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
-    const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded } = usePostListManager(initialPosts);
+    const { posts, userVotes, handleVote, handlePostFaded } = usePostListManager(initialPosts);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {

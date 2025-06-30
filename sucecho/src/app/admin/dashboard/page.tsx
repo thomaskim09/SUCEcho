@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import logger from '@/lib/logger';
-import { timeSince } from '@/lib/time-helpers';
 
 interface AdminStats {
     totalUsers: number;
@@ -20,16 +19,14 @@ export default function AdminDashboardPage() {
     const router = useRouter();
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [reportCount, setReportCount] = useState<number | null>(null);
-    const [realtimeConnections, setRealtimeConnections] = useState<number | null>(null);
     const [isCronRunning, setIsCronRunning] = useState(false);
     const [isDeepCleaning, setIsDeepCleaning] = useState(false);
 
     const fetchDashboardData = async () => {
         try {
-            const [statsResponse, reportsResponse, realtimeResponse] = await Promise.all([
+            const [statsResponse, reportsResponse] = await Promise.all([
                 fetch('/api/admin/stats'),
                 fetch('/api/admin/reports'),
-                fetch('/api/admin/realtime-stats')
             ]);
 
             if (statsResponse.ok) {
@@ -46,19 +43,10 @@ export default function AdminDashboardPage() {
                 logger.warn("Could not fetch report count");
                 setReportCount(0);
             }
-
-            if (realtimeResponse.ok) {
-                const data = await realtimeResponse.json();
-                setRealtimeConnections(data.connectionCount);
-            } else {
-                logger.warn("Could not fetch realtime connection count");
-                setRealtimeConnections(null);
-            }
         } catch (e) {
             logger.error("Error fetching dashboard data:", e);
             setReportCount(0);
             setStats(null);
-            setRealtimeConnections(null);
         }
     };
 
@@ -128,24 +116,8 @@ export default function AdminDashboardPage() {
             </header>
 
             <section className="mt-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Realtime Connections Card */}
-                    <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: `1px solid #38bdf8` }}>
-                        <div>
-                            <h2 className="text-2xl font-bold text-cyan-400">
-                                实时连接数
-                            </h2>
-                            {realtimeConnections !== null ? (
-                                <div className="mt-2">
-                                    <p className="text-5xl font-mono mt-2">{realtimeConnections}</p>
-                                    <p className="text-sm text-gray-400">个活跃连接</p>
-                                </div>
-                            ) : (
-                                <p className="text-lg text-gray-500 mt-2">加载中...</p>
-                            )}
-                        </div>
-                    </div>
-
+                {/* Adjusted grid for 3 items */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Report Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: `1px solid ${reportCount && reportCount > 0 ? '#ef4444' : '#22c55e'}` }}>
                         <div>

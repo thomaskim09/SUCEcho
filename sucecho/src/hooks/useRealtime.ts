@@ -34,7 +34,7 @@ export const useRealtime = (callbacks: SSECallbacks) => {
     const memoizedCallbacks = useRef(callbacks);
     useEffect(() => {
         memoizedCallbacks.current = callbacks;
-    }, [callbacks.onNewPost, callbacks.onUpdateVote, callbacks.onDeletePost]);
+    }, [callbacks]);
 
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') {
@@ -62,15 +62,15 @@ export const useRealtime = (callbacks: SSECallbacks) => {
                 eventSource = null;
             };
 
-            const addListener = (
-                eventName: string,
-                handler?: (data: any) => void
+            const addListener = <K extends keyof SSEEventData>(
+                eventName: K,
+                handler?: (data: SSEEventData[K]) => void
             ) => {
                 if (!handler) return;
                 eventSource?.addEventListener(
                     eventName,
                     (event: MessageEvent) => {
-                        const data = JSON.parse(event.data);
+                        const data = JSON.parse(event.data) as SSEEventData[K];
                         handler(data);
                         channel.postMessage({
                             type: 'broadcast',
@@ -111,7 +111,7 @@ export const useRealtime = (callbacks: SSECallbacks) => {
                         `Follower tab received event '${payload.event}' via BroadcastChannel`,
                         payload.data
                     );
-                    (handler as Function)(payload.data);
+                    (handler as (data: unknown) => void)(payload.data);
                 }
             }
         };
@@ -132,12 +132,12 @@ export const useRealtime = (callbacks: SSECallbacks) => {
         return () => {
             clearTimeout(electionTimeout);
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            channel.removeEventListener('message', onMessage); // --- FIX: Close EventSource if this tab is the leader ---
+            channel.removeEventListener('message', onMessage);
             if (isTabLeader.current && eventSource) {
                 logger.log('Leader tab closing SSE connection on unmount.');
                 eventSource.close();
                 eventSource = null;
-                isLeader = false; // Explicitly relinquish leadership
+                isLeader = false;
             }
             channel.close();
         };

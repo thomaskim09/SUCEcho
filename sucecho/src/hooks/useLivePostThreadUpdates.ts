@@ -44,7 +44,11 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
     }, []);
 
     const handleVoteUpdate = useCallback(
-        (data: { postId: number; stats: any; shouldPurify?: boolean }) => {
+        (data: {
+            postId: number;
+            stats: PostWithStats['stats'];
+            shouldPurify?: boolean;
+        }) => {
             const { postId, stats, shouldPurify } = data;
             logger.log("SSE 'update_vote' received for post detail page:", {
                 postId,

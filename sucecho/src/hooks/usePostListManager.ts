@@ -1,11 +1,9 @@
 // sucecho/src/hooks/usePostListManager.ts
 'use client';
 
-import { useState } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import { useLivePostUpdates } from './useLivePostUpdates';
 import { useOptimisticVote } from './useOptimisticVote';
-import logger from '@/lib/logger';
 
 /**
  * A centralized hook to manage a list of posts, including live updates,

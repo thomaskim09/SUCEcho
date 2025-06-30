@@ -8,13 +8,16 @@ export async function GET(req: Request) {
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
 
+    let streamClosed = false;
+
     const channel = supabase.channel('posts');
 
-    const writeSseMessage = (event: string, data: any) => {
+    const writeSseMessage = (event: string, data: unknown) => {
+        if (streamClosed) return;
         try {
             writer.write(encoder.encode(`event: ${event}\n`));
             writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-        } catch (e) {
+        } catch {
             logger.warn('Write to SSE failed, client likely disconnected.');
         }
     };
@@ -64,7 +67,7 @@ export async function GET(req: Request) {
             logger.log(
                 'Client disconnected, unsubscribing from channel and cleaning up.'
             );
-            // --- NEW: Untrack the user when they disconnect ---
+            streamClosed = true;
             await channel.untrack();
             await supabase.removeChannel(channel);
             writer.close();
