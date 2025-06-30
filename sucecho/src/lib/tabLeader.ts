@@ -2,22 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import logger from './logger';
 
 const CHANNEL_NAME = 'SUCECHO_REALTIME_CHANNEL';
-const ALLOW_MULTI_TAB =
-    typeof window !== 'undefined' &&
-    process.env.NEXT_PUBLIC_ALLOW_MULTI_TAB === 'true';
 
 export function useTabLeader(): boolean {
-    // If multi-tab is allowed, every tab is a leader
-    if (ALLOW_MULTI_TAB) {
-        return true;
-    }
-
-    // Otherwise, run leader election
+    const allowMultiTab =
+        typeof window !== 'undefined' &&
+        process.env.NEXT_PUBLIC_ALLOW_MULTI_TAB === 'true';
+    // Always call hooks at the top level
     const [isLeader, setIsLeader] = useState(false);
     const isTabLeader = useRef(false);
 
     useEffect(() => {
-        if (ALLOW_MULTI_TAB) {
+        if (allowMultiTab) {
             setIsLeader(true);
             isTabLeader.current = true;
             return;
@@ -30,7 +25,6 @@ export function useTabLeader(): boolean {
         const channel = new BroadcastChannel(CHANNEL_NAME);
         const tabId = Math.random();
         let electionTimeout: NodeJS.Timeout | null = null;
-        let closed = false;
 
         function electLeader() {
             setIsLeader(true);
@@ -68,13 +62,13 @@ export function useTabLeader(): boolean {
         window.addEventListener('beforeunload', handleBeforeUnload);
 
         return () => {
-            closed = true;
             if (electionTimeout) clearTimeout(electionTimeout);
             window.removeEventListener('beforeunload', handleBeforeUnload);
             channel.removeEventListener('message', onMessage);
             channel.close();
         };
-    }, []);
+    }, [allowMultiTab]);
 
+    if (allowMultiTab) return true;
     return isLeader;
 }

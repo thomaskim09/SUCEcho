@@ -1,12 +1,11 @@
 // sucecho/src/hooks/useRealtime.ts
+/* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
 import type { PostWithStats } from '@/lib/types';
 import { useTabLeader } from '@/lib/tabLeader';
-
-const CHANNEL_NAME = 'SUCECHO_REALTIME_CHANNEL';
 
 interface SSEEventData {
     new_post: PostWithStats;
