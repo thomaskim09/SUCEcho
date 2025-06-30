@@ -6,8 +6,18 @@ import logger from '@/lib/logger';
 import { useTabLeader } from '@/lib/tabLeader';
 import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
 import type { PostWithStats } from '@/lib/types';
+import { usePageVisibility } from './usePageVisibility';
+import { useIdle } from './useIdle';
+import { usePathname } from 'next/navigation';
 
-// The callback interfaces remain the same
+function isLivePage(pathname: string): boolean {
+    return (
+        pathname === '/' ||
+        pathname.startsWith('/my-echoes') ||
+        pathname.startsWith('/post/')
+    );
+}
+
 interface LiveEventData {
     new_post: PostWithStats;
     update_vote: {
@@ -28,6 +38,9 @@ interface LiveCallbacks {
 
 export const useRealtime = (callbacks: LiveCallbacks) => {
     const isTabLeader = useTabLeader();
+    const isVisible = usePageVisibility();
+    const isIdle = useIdle();
+    const pathname = usePathname();
 
     const memoizedCallbacks = useRef(callbacks);
     useEffect(() => {
@@ -35,13 +48,14 @@ export const useRealtime = (callbacks: LiveCallbacks) => {
     }, [callbacks]);
 
     useEffect(() => {
-        if (!isTabLeader) {
+        if (!isTabLeader || !isVisible || isIdle || !isLivePage(pathname)) {
             return;
         }
 
-        logger.log('Leader tab: Subscribing to Supabase channel.');
+        logger.log(
+            `Leader tab is active on a live page (${pathname}): Subscribing.`
+        );
 
-        // Subscribe directly to the channel using the Supabase client
         const channel = supabase
             .channel(SUPABASE_CHANNEL_NAME)
             .on('broadcast', { event: 'new_post' }, (payload) => {
@@ -64,11 +78,9 @@ export const useRealtime = (callbacks: LiveCallbacks) => {
                 }
             });
 
-        // The cleanup function is crucial to remove the subscription
-        // when the component unmounts.
         return () => {
             logger.log('Leader tab: Unsubscribing from Supabase channel.');
             supabase.removeChannel(channel);
         };
-    }, [isTabLeader]);
+    }, [isTabLeader, isVisible, isIdle, pathname]);
 };

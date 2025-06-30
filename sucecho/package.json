@@ -11,7 +11,7 @@
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.6.2",
     "@prisma/client": "^6.10.1",
-    "@supabase/supabase-js": "^2.50.1",
+    "@supabase/supabase-js": "^2.50.2",
     "@svgr/webpack": "^8.1.0",
     "motion": "^12.19.2",
     "next": "15.3.4",
