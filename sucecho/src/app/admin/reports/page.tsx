@@ -8,6 +8,7 @@ import PostCard from '@/app/components/PostCard';
 import logger from '@/lib/logger';
 
 interface Report {
+    id: number;
     fingerprintHash: string;
     reason: string | null;
     createdAt: string;
@@ -45,14 +46,12 @@ export default function AdminReportsPage() {
         fetchReports();
     }, []);
 
-    // This function now ONLY updates the UI after a successful deletion
     const handlePostRemovedFromUI = (deletedPostId: number) => {
         setReportedPosts(currentPosts =>
             currentPosts.filter(post => post.id !== deletedPostId)
         );
     };
 
-    // NEW: The actual delete handler that calls the API
     const handleDeletePost = async (postId: number) => {
         if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) {
             return;
@@ -65,7 +64,6 @@ export default function AdminReportsPage() {
                 const errorData = await res.json();
                 throw new Error(errorData.message || 'Failed to delete post');
             }
-            // On successful API call, remove the post from the local UI
             handlePostRemovedFromUI(postId);
             logger.log(`Admin successfully deleted post #${postId} from the reports page.`);
         } catch (err) {
@@ -73,7 +71,25 @@ export default function AdminReportsPage() {
         }
     };
 
-    // A dummy handler since voting isn't a primary action here
+    const handleDismissReport = async (reportId: number) => {
+        if (!confirm(`您确定要移除这条举报吗？`)) {
+            return;
+        }
+        try {
+            const res = await fetch(`/api/admin/reports/${reportId}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to dismiss report');
+            }
+            // Re-fetch reports to update the UI
+            fetchReports();
+        } catch (err) {
+            alert(`Error dismissing report: ${(err as Error).message}`);
+        }
+    };
+
     const handleDummyVote = () => { };
 
     const renderContent = () => {
@@ -88,8 +104,8 @@ export default function AdminReportsPage() {
                         <PostCard
                             post={post}
                             onVote={handleDummyVote}
-                            onDelete={() => handleDeletePost(post.id)} // Pass the new handler
-                            onPurificationComplete={() => handlePostRemovedFromUI(post.id)} // Also remove from UI if purified elsewhere
+                            onDelete={() => handleDeletePost(post.id)}
+                            onPurificationComplete={() => handlePostRemovedFromUI(post.id)}
                             isLink={true}
                         />
                         <div className="mt-4 border-t border-red-700/50 pt-4">
@@ -97,14 +113,19 @@ export default function AdminReportsPage() {
                                 {post._count.reports} 条举报:
                             </h4>
                             <ul className="space-y-2 text-sm text-gray-300">
-                                {post.reports.map((report, index) => (
-                                    <li key={index} className="p-2 bg-gray-800/50 rounded-md">
-                                        <p>{report.reason || <i className="opacity-60">未提供理由</i>}</p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            举报来自: <span className="font-mono">{report.reporterCodename}</span>
-                                            <span className="mx-2">|</span>
-                                            {new Date(report.createdAt).toLocaleString()}
-                                        </p>
+                                {post.reports.map((report) => (
+                                    <li key={report.id} className="flex justify-between items-center p-2 bg-gray-800/50 rounded-md">
+                                        <div>
+                                            <p>{report.reason || <i className="opacity-60">未提供理由</i>}</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                举报来自: <span className="font-mono">{report.reporterCodename}</span>
+                                                <span className="mx-2">|</span>
+                                                {new Date(report.createdAt).toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => handleDismissReport(report.id)} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-2 rounded-lg text-xs">
+                                            跳过
+                                        </button>
                                     </li>
                                 ))}
                             </ul>

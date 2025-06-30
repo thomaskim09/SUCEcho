@@ -60,9 +60,7 @@ export default function UserProfilePage() {
         fetchAllData();
     }, [fingerprint]);
 
-    // Consolidated handler for all admin actions
     const handleAdminAction = async (action: 'BAN' | 'UNBAN' | 'WARN', durationDays: number | null = null) => {
-        // For warns and bans, a reason is highly recommended but can be optional
         const reason = prompt(`可选：为此${action}操作提供一个理由。`);
 
         if (action !== 'UNBAN' && !confirm(`您确定要${action === 'BAN' ? '封禁' : '警告'}此用户吗？`)) return;
@@ -203,9 +201,14 @@ export default function UserProfilePage() {
     return (
         <div className="container mx-auto max-w-4xl p-4 text-white">
             <header className="py-4">
-                <Link href="/admin/dashboard" className="text-accent hover:underline mb-4 block">
-                    &larr; 回到主控室
-                </Link>
+                <div className="flex justify-between items-center mb-4">
+                    <Link href="/" className="text-accent hover:underline">
+                        &larr; 回到主页
+                    </Link>
+                    <Link href="/admin/users" className="text-accent hover:underline">
+                        回到用户管理 &rarr;
+                    </Link>
+                </div>
                 <h1 className="text-2xl font-bold font-mono text-accent mb-2">用户匿名个资</h1>
                 <p className="font-mono text-sm opacity-70 break-all">指纹: {fingerprint}</p>
             </header>

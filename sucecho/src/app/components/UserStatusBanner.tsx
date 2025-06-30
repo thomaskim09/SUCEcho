@@ -68,7 +68,7 @@ export default function UserStatusBanner() {
                 className="absolute top-1/2 right-4 -translate-y-1/2 bg-yellow-700 hover:bg-yellow-800 rounded-full p-2 text-xs"
                 aria-label="解除警告"
             >
-                解除
+                关闭
             </button>
         </div>
     );

@@ -324,9 +324,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                 <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
                                 <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</button></li>
                                 <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ 帖子详情</button></li>
-                                {!isChildEcho && (
-                                    <li><button className="w-full text-left p-2 rounded text-gray-500 cursor-not-allowed" disabled>📌 置顶24小时</button></li>
-                                )}
                             </ul>
                         ) : (
                             isChildEcho && (

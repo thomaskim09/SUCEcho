@@ -42,7 +42,7 @@ export default function MyEchoesPage() {
 
     const renderContent = () => {
         if (isLoading) {
-            return <div className="text-center text-gray-400 p-8"><p>Loading your echoes...</p></div>;
+            return <div className="text-center text-gray-400 p-8"><p>正在加载你的回音...</p></div>;
         }
         if (posts.length === 0) {
             return (
@@ -95,7 +95,7 @@ export default function MyEchoesPage() {
             <header className="py-4 flex justify-between items-center">
                 <h1 className="text-2xl font-bold font-mono">我的回音</h1>
                 <Link href="/" className="text-accent hover:underline">
-                    ← 返回回音墙
+                    ← 返回回音壁
                 </Link>
             </header>
             <main className="mt-4">

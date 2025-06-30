@@ -162,7 +162,7 @@ export default function PostDetailPage() {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
                 <header className="py-4 flex items-center">
-                    <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
+                    <Link href="/" className="text-accent hover:underline">← 返回回音壁</Link>
                 </header>
                 <main className="mt-8">
                     <p>加载回音...</p>
@@ -175,7 +175,7 @@ export default function PostDetailPage() {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
                 <header className="py-4 flex items-center">
-                    <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
+                    <Link href="/" className="text-accent hover:underline">← 返回回音壁</Link>
                 </header>
                 <main className="mt-8">
                     <p className="text-red-400">{error || 'This echo has faded into silence.'}</p>
@@ -192,7 +192,7 @@ export default function PostDetailPage() {
                 onSubmit={handleReportSubmit}
             />
             <header className="py-4 flex justify-between items-center">
-                <Link href="/" className="text-accent hover:underline">← 返回回音墙</Link>
+                <Link href="/" className="text-accent hover:underline">← 返回回音壁</Link>
                 <div className="flex items-center gap-2">
                     <button onClick={handleShare} aria-label="Share post" className="p-2 rounded-lg transition-colors icon-base icon-share">
                         <Icon name="share" />

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
         if (!postId || !fingerprintHash || ![-1, 1].includes(voteType)) {
             return NextResponse.json(
-                { error: 'Invalid request parameters' },
+                { error: '请求参数无效' },
                 { status: 400 }
             );
         }
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
                 new Date(userProfile.banExpiresAt) > new Date()
             ) {
                 return NextResponse.json(
-                    { error: 'You are currently banned and cannot vote.' },
+                    { error: '你已被封禁，无法进行投票。' },
                     { status: 403 }
                 );
             }
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         if (!postExists) {
             return NextResponse.json(
                 {
-                    error: 'This echo vanished before your vote could be counted.',
+                    error: '该回音已消失，未能计入你的投票。',
                 },
                 { status: 410 }
             );
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
         if ((error as { code?: string }).code === 'P2003') {
             return NextResponse.json(
                 {
-                    error: 'This echo vanished before your vote could be counted.',
+                    error: '该回音已消失，未能计入你的投票。',
                 },
                 { status: 410 }
             );
@@ -153,15 +153,12 @@ export async function POST(request: Request) {
             (error as Record<string, unknown>).code === 'P2025'
         ) {
             return NextResponse.json(
-                { error: 'Post not found during update.' },
+                { error: '更新时未找到该回音。' },
                 { status: 404 }
             );
         }
 
         logger.error(`Error processing vote for post:`, error);
-        return NextResponse.json(
-            { error: 'Failed to process vote' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: '投票处理失败' }, { status: 500 });
     }
 }

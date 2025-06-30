@@ -17,7 +17,7 @@ export async function GET(
 
         if (isNaN(postId)) {
             return NextResponse.json(
-                { error: 'Invalid post ID' },
+                { error: '无效的回音ID' },
                 { status: 400 }
             );
         }
@@ -59,14 +59,14 @@ export async function GET(
 
         if (!post) {
             return NextResponse.json(
-                { error: 'Post not found' },
+                { error: '未找到该回音' },
                 { status: 404 }
             );
         }
 
         if (post.content === null) {
             return NextResponse.json(
-                { error: 'This echo has faded into silence.' },
+                { error: '该回音已消失于寂静之中。' },
                 { status: 410 }
             );
         }
@@ -74,9 +74,6 @@ export async function GET(
         return NextResponse.json(post);
     } catch (error) {
         logger.error(`Error fetching post:`, error);
-        return NextResponse.json(
-            { error: 'Failed to fetch post' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: '获取回音失败' }, { status: 500 });
     }
 }

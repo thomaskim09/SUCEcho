@@ -15,10 +15,16 @@ export async function GET(request: Request) {
     }
 
     try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
         const reportedPosts = await prisma.post.findMany({
             where: {
                 reports: {
-                    some: {},
+                    some: {
+                        createdAt: {
+                            gte: twentyFourHoursAgo,
+                        },
+                    },
                 },
             },
             include: {
@@ -34,6 +40,7 @@ export async function GET(request: Request) {
                 },
                 reports: {
                     select: {
+                        id: true, // Add id to be able to delete it
                         fingerprintHash: true,
                         reason: true,
                         createdAt: true,
