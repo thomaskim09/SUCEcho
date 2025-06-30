@@ -1,7 +1,7 @@
 // sucecho/src/app/api/posts/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabase-realtime';
+import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
 import { generateCodename } from '@/lib/codename';
 import logger from '@/lib/logger';
 import { findBestMatch } from 'string-similarity';
@@ -287,7 +287,7 @@ export async function POST(request: Request) {
             postCooldown.set(fingerprintHash, now + postCooldownTime);
         }
 
-        const channel = supabase.channel('posts');
+        const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
         await channel.send({
             type: 'broadcast',
             event: 'new_post',

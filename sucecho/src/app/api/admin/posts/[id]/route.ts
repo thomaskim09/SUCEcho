@@ -1,7 +1,7 @@
 // sucecho/src/app/api/admin/posts/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import supabase from '@/lib/supabase-realtime';
+import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
 import logger from '@/lib/logger';
 import { verifySession } from '@/lib/auth';
 
@@ -52,7 +52,7 @@ export async function DELETE(
             where: { id: numericPostId },
         });
 
-        const channel = supabase.channel('posts');
+        const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
         await channel.send({
             type: 'broadcast',
             event: 'delete_post',

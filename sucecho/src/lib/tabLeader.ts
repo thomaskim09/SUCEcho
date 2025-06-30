@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import logger from './logger';
 
-const CHANNEL_NAME = 'SUCECHO_REALTIME_CHANNEL';
+const CHANNEL_NAME = 'multitab_leader_room';
 
 export function useTabLeader(): boolean {
     const allowMultiTab =
         typeof window !== 'undefined' &&
         process.env.NEXT_PUBLIC_ALLOW_MULTI_TAB === 'true';
-    // Always call hooks at the top level
     const [isLeader, setIsLeader] = useState(false);
     const isTabLeader = useRef(false);
 

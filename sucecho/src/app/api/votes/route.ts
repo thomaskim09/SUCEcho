@@ -1,7 +1,7 @@
 // sucecho/src/app/api/votes/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabase-realtime';
+import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
 import { checkPurificationStatus } from '@/lib/purification';
 import logger from '@/lib/logger';
 import { generateCodename } from '@/lib/codename';
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
             return { shouldPurify: false, postId, stats: updatedStats };
         });
 
-        const channel = supabase.channel('posts');
+        const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
 
         if (transactionResult.shouldPurify) {
             await prisma.post.delete({

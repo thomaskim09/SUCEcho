@@ -1,13 +1,14 @@
 // sucecho/src/hooks/useRealtime.ts
-/* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
-import type { PostWithStats } from '@/lib/types';
 import { useTabLeader } from '@/lib/tabLeader';
+import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
+import type { PostWithStats } from '@/lib/types';
 
-interface SSEEventData {
+// The callback interfaces remain the same
+interface LiveEventData {
     new_post: PostWithStats;
     update_vote: {
         postId: number;
@@ -19,56 +20,55 @@ interface SSEEventData {
     };
 }
 
-interface SSECallbacks {
-    onNewPost?: (data: SSEEventData['new_post']) => void;
-    onUpdateVote?: (data: SSEEventData['update_vote']) => void;
-    onDeletePost?: (data: SSEEventData['delete_post']) => void;
+interface LiveCallbacks {
+    onNewPost?: (data: LiveEventData['new_post']) => void;
+    onUpdateVote?: (data: LiveEventData['update_vote']) => void;
+    onDeletePost?: (data: LiveEventData['delete_post']) => void;
 }
 
-let eventSource: EventSource | null = null;
-
-export const useRealtime = (callbacks: SSECallbacks) => {
+export const useRealtime = (callbacks: LiveCallbacks) => {
     const isTabLeader = useTabLeader();
 
     const memoizedCallbacks = useRef(callbacks);
     useEffect(() => {
         memoizedCallbacks.current = callbacks;
-    }, [callbacks.onNewPost, callbacks.onUpdateVote, callbacks.onDeletePost]);
+    }, [callbacks]);
 
     useEffect(() => {
         if (!isTabLeader) {
             return;
         }
-        // Only the leader tab should set up SSE
-        if (eventSource) return;
-        logger.log('Leader tab establishing LIVE connection.');
-        eventSource = new EventSource('/api/live');
-        eventSource.onopen = () =>
-            logger.log('LIVE Connection successfully established by leader.');
-        eventSource.onerror = (err) => {
-            logger.error('LIVE Error:', err);
-            eventSource?.close();
-            eventSource = null;
-        };
-        const addListener = (
-            eventName: string,
-            handler?: (data: any) => void
-        ) => {
-            if (!handler) return;
-            eventSource?.addEventListener(eventName, (event: MessageEvent) => {
-                const data = JSON.parse(event.data);
-                handler(data);
+
+        logger.log('Leader tab: Subscribing to Supabase channel.');
+
+        // Subscribe directly to the channel using the Supabase client
+        const channel = supabase
+            .channel(SUPABASE_CHANNEL_NAME)
+            .on('broadcast', { event: 'new_post' }, (payload) => {
+                memoizedCallbacks.current.onNewPost?.(payload.payload);
+            })
+            .on('broadcast', { event: 'update_vote' }, (payload) => {
+                memoizedCallbacks.current.onUpdateVote?.(payload.payload);
+            })
+            .on('broadcast', { event: 'delete_post' }, (payload) => {
+                memoizedCallbacks.current.onDeletePost?.(payload.payload);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    logger.log(
+                        'Leader tab: Successfully subscribed to Supabase channel.'
+                    );
+                }
+                if (status === 'CHANNEL_ERROR') {
+                    logger.error('Leader tab: Supabase channel error.');
+                }
             });
-        };
-        addListener('new_post', memoizedCallbacks.current.onNewPost);
-        addListener('update_vote', memoizedCallbacks.current.onUpdateVote);
-        addListener('delete_post', memoizedCallbacks.current.onDeletePost);
+
+        // The cleanup function is crucial to remove the subscription
+        // when the component unmounts.
         return () => {
-            if (eventSource) {
-                logger.log('Leader tab closing LIVE connection on unmount.');
-                eventSource.close();
-                eventSource = null;
-            }
+            logger.log('Leader tab: Unsubscribing from Supabase channel.');
+            supabase.removeChannel(channel);
         };
     }, [isTabLeader]);
 };
