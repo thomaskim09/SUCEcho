@@ -13,7 +13,6 @@ import ReportModal from '@/app/components/ReportModal';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
-import { useStaggeredRender } from '@/hooks/useStaggeredRender';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -36,7 +35,6 @@ export default function PostDetailPage() {
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
-    const [renderedReplies] = useStaggeredRender(post?.replies || []);
 
     const handleDelete = async (postId: number) => {
         if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) return;
@@ -228,7 +226,7 @@ export default function PostDetailPage() {
                     <div className="space-y-2 border-l-2 border-accent/30 pl-4 ml-4">
                         {post.replies.length > 0 ? (
                             <AnimatePresence>
-                                {renderedReplies.map(reply => (
+                                {post.replies.map(reply => (
                                     <motion.div
                                         key={reply.id}
                                         layout

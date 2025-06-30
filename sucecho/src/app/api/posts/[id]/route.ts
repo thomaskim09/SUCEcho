@@ -1,81 +1,72 @@
-// sucecho/src/app/api/posts/[id]/route.ts
-import logger from '@/lib/logger';
+// sucecho/src/app/api/admin/posts/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import supabase from '@/lib/supabase-realtime';
+import logger from '@/lib/logger';
+import { verifySession } from '@/lib/auth';
 
 interface Params {
     id: string;
 }
 
-export async function GET(
-    request: Request,
+export async function DELETE(
+    request: NextRequest,
     { params }: { params: Promise<Params> }
 ) {
-    try {
-        const { id } = await params;
-        const postId = parseInt(id, 10);
+    const session = request.cookies.get('session')?.value;
+    const adminUser = await verifySession(session || '');
+    if (!adminUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
 
-        if (isNaN(postId)) {
+    try {
+        const { id: postId } = await params;
+
+        if (!postId) {
             return NextResponse.json(
-                { error: 'Invalid post ID' },
+                { message: 'Post ID is required' },
                 { status: 400 }
             );
         }
 
-        const post = await prisma.post.findUnique({
-            where: { id: postId },
-            select: {
-                id: true,
-                content: true,
-                createdAt: true,
-                parentPostId: true,
-                fingerprintHash: true,
-                stats: {
-                    select: {
-                        upvotes: true,
-                        downvotes: true,
-                        replyCount: true,
-                    },
-                },
-                replies: {
-                    orderBy: { createdAt: 'asc' },
-                    select: {
-                        id: true,
-                        content: true,
-                        createdAt: true,
-                        parentPostId: true,
-                        fingerprintHash: true,
-                        stats: {
-                            select: {
-                                upvotes: true,
-                                downvotes: true,
-                                replyCount: true,
-                            },
-                        },
-                    },
-                },
-            },
+        const numericPostId = Number(postId);
+        if (isNaN(numericPostId)) {
+            return NextResponse.json(
+                { message: 'Invalid Post ID' },
+                { status: 400 }
+            );
+        }
+
+        const existingPost = await prisma.post.findUnique({
+            where: { id: numericPostId },
         });
 
-        if (!post) {
+        if (!existingPost) {
             return NextResponse.json(
-                { error: 'Post not found' },
+                { message: 'Post not found' },
                 { status: 404 }
             );
         }
 
-        if (post.content === null) {
-            return NextResponse.json(
-                { error: 'This echo has faded into silence.' },
-                { status: 410 }
-            );
-        }
+        await prisma.post.delete({
+            where: { id: numericPostId },
+        });
 
-        return NextResponse.json(post);
-    } catch (error) {
-        logger.error(`Error fetching post:`, error);
+        const channel = supabase.channel('posts');
+        await channel.send({
+            type: 'broadcast',
+            event: 'delete_post',
+            payload: { postId: numericPostId },
+        });
+
         return NextResponse.json(
-            { error: 'Failed to fetch post' },
+            { message: 'Post deleted successfully' },
+            { status: 200 }
+        );
+    } catch (error) {
+        logger.error('Error deleting post:', error);
+        return NextResponse.json(
+            { message: 'Internal server error' },
             { status: 500 }
         );
     }

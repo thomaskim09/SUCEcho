@@ -5,30 +5,34 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import PostCard from './PostCard';
 import { AnimatePresence, motion } from 'motion/react';
-import { useOptimisticVote } from '@/hooks/useOptimisticVote';
-import { useStaggeredRender } from '@/hooks/useStaggeredRender';
-import { useLivePostUpdates } from '@/hooks/useLivePostUpdates'; // Import the new hook
+import { usePostListManager } from '@/hooks/usePostListManager';
 import logger from '@/lib/logger';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
 export default function PostFeed() {
     const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
-    const [posts, setPosts] = useLivePostUpdates(initialPosts); // Use the new hook
+    const [initialPostIds, setInitialPostIds] = useState<Set<number>>(new Set());
+
+    const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded } = usePostListManager(initialPosts);
 
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<number | null>(null);
-    const [renderedPosts, isStaggeringComplete] = useStaggeredRender(posts);
     const observer = useRef<IntersectionObserver | null>(null);
-    const { userVotes, handleOptimisticVote } = useOptimisticVote();
 
-    const handlePostPurified = (postId: number) => {
-        setPosts(prevPosts =>
-            prevPosts.map(p =>
-                p.id === postId ? { ...p, isPurifying: true } : p
-            )
-        );
+    const postVariants = {
+        initial: (isNew: boolean) => ({
+            opacity: 0,
+            x: isNew ? -100 : 0,
+            y: isNew ? 0 : 20,
+        }),
+        animate: {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            transition: { ease: "easeOut" as const, duration: 0.6 }
+        },
     };
 
     const loadMorePosts = useCallback(async () => {
@@ -38,7 +42,6 @@ export default function PostFeed() {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
-            // Append new posts to the existing state in the hook
             setPosts(prev => [...prev, ...newPosts]);
             setNextCursor(newNextCursor);
         } catch (error) {
@@ -49,7 +52,7 @@ export default function PostFeed() {
     }, [nextCursor, isFetchingMore, setPosts]);
 
     const sentinelRef = useCallback((node: HTMLDivElement | null) => {
-        if (isLoading || !isStaggeringComplete) return;
+        if (isLoading) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting && nextCursor) {
@@ -57,30 +60,7 @@ export default function PostFeed() {
             }
         });
         if (node) observer.current.observe(node);
-    }, [isLoading, isStaggeringComplete, loadMorePosts, nextCursor]);
-
-
-    const handlePostFaded = (postId: number) => {
-        setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
-    };
-
-    const handleDelete = async (postId: number) => {
-        if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) return;
-        try {
-            const res = await fetch(`/api/admin/posts/${postId}`, { method: 'DELETE' });
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.message || 'Failed to delete post');
-            }
-            setPosts(prevPosts =>
-                prevPosts.map(p =>
-                    p.id === postId ? { ...p, isPurifying: true } : p
-                )
-            );
-        } catch (err: unknown) {
-            alert(`Error: ${(err as Error).message}`);
-        }
-    };
+    }, [isLoading, loadMorePosts, nextCursor]);
 
     useEffect(() => {
         const fetchInitialPosts = async () => {
@@ -88,7 +68,8 @@ export default function PostFeed() {
                 const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
                 if (!res.ok) throw new Error('Failed to fetch posts');
                 const { posts: fetchedPosts, nextCursor: initialNextCursor } = await res.json();
-                setInitialPosts(fetchedPosts); // Set the initial posts for the hook
+                setInitialPosts(fetchedPosts);
+                setInitialPostIds(new Set(fetchedPosts.map((p: PostWithStats) => p.id)));
                 setNextCursor(initialNextCursor);
             } catch (error) {
                 logger.error("Error fetching initial posts:", error);
@@ -99,12 +80,6 @@ export default function PostFeed() {
         fetchInitialPosts();
     }, []);
 
-    const updatePostInState = (updatedPost: PostWithStats) => {
-        setPosts(currentPosts =>
-            currentPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
-        );
-    };
-
     if (isLoading) {
         return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
     }
@@ -112,7 +87,7 @@ export default function PostFeed() {
     const showEndLabel = !isLoading && !isFetchingMore && !nextCursor;
 
     const twentyFourHours = 24 * 60 * 60 * 1000;
-    const unexpiredPosts = renderedPosts.filter(post => {
+    const unexpiredPosts = posts.filter(post => {
         const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
         return postAge < twentyFourHours;
     });
@@ -120,25 +95,30 @@ export default function PostFeed() {
     return (
         <div className="flex flex-col gap-4">
             <AnimatePresence>
-                {unexpiredPosts.map(post => (
-                    <motion.div
-                        key={post.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.8 } }}
-                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                        layout
-                    >
-                        <PostCard
-                            post={post}
-                            isPurifying={post.isPurifying}
-                            onPurificationComplete={handlePostFaded}
-                            onFaded={handlePostFaded}
-                            onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState, handlePostPurified)}
-                            onDelete={handleDelete}
-                            userVote={userVotes[post.id]}
-                        />
-                    </motion.div>
-                ))}
+                {unexpiredPosts.map(post => {
+                    const isNew = !initialPostIds.has(post.id);
+                    return (
+                        <motion.div
+                            key={post.id}
+                            custom={isNew}
+                            variants={postVariants}
+                            initial="initial"
+                            animate="animate"
+                            layout
+                        >
+                            <PostCard
+                                post={post}
+                                isPurifying={post.isPurifying}
+                                onPurificationComplete={handlePostFaded}
+                                onDeletionComplete={handlePostFaded}
+                                onFaded={handlePostFaded}
+                                onVote={(_, voteType) => handleVote(post, voteType)}
+                                onDelete={handleDelete}
+                                userVote={userVotes[post.id]}
+                            />
+                        </motion.div>
+                    );
+                })}
             </AnimatePresence>
 
             {nextCursor && <div ref={sentinelRef} className="h-10" />}

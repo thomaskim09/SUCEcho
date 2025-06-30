@@ -23,6 +23,7 @@ interface PostCardProps {
     userVote?: 1 | -1;
     isPurifying?: boolean;
     onPurificationComplete?: (postId: number) => void;
+    onDeletionComplete?: (postId: number) => void;
     onFaded?: (postId: number) => void;
 }
 
@@ -57,7 +58,7 @@ const renderContentWithLinks = (content: string) => {
     });
 };
 
-export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onFaded }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
     const router = useRouter();
@@ -79,6 +80,22 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
 
+    // Define animation variants for clarity and type safety
+    const cardVariants = {
+        visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.5 } },
+        deleting: { opacity: 0, scale: 0.8, transition: { duration: 0.4 } },
+        purifyVanish: { opacity: 0, scale: 1.5, filter: 'blur(10px)', transition: { duration: 1.5, ease: "easeOut" as const } },
+        glitching: { opacity: 0, scale: 0.8, filter: 'blur(20px)', transition: { duration: 1.0, ease: "easeOut" as const } }
+    };
+
+    // Function to determine the current animation state as a string
+    const getAnimationState = (): keyof typeof cardVariants => {
+        if (post.isDeleting) return 'deleting';
+        if (shouldPurifyVanish) return 'purifyVanish';
+        if (isVanishing || isGlitching) return 'glitching';
+        return 'visible';
+    };
+
     useEffect(() => {
         let vanishTimeout: NodeJS.Timeout | null = null;
         let textTimeout: NodeJS.Timeout | null = null;
@@ -88,11 +105,10 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             textTimeout = setTimeout(() => {
                 setIsPurifyGlow(false);
                 setShouldPurifyVanish(true);
-                // Keep the text visible during vanish, hide after vanish duration (1.5s)
                 vanishTimeout = setTimeout(() => {
                     setShowPurifyText(false);
                 }, 1500);
-            }, 3000); // 3 seconds for text and glow
+            }, 3000);
         } else {
             setShowPurifyText(false);
             setIsPurifyGlow(false);
@@ -109,7 +125,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             setIsCharging(true);
             const chargeTimer = setTimeout(() => {
                 setIsGlitching(true);
-            }, 3000); // 3-second charge-up
+            }, 3000);
             return () => clearTimeout(chargeTimer);
         }
     }, [isExpired]);
@@ -117,7 +133,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     useLayoutEffect(() => {
         const checkOverflow = () => {
             if (contentRef.current) {
-                const maxHeight = 125; // px, must match the class below
+                const maxHeight = 125;
                 setIsOverflowing(contentRef.current.scrollHeight > maxHeight);
             }
         };
@@ -203,19 +219,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         <motion.div
             ref={cardRef}
             layout
-            initial={{ opacity: 1, scale: 1, y: 0 }}
-            animate={{
-                opacity: shouldPurifyVanish ? 0 : (isVanishing || isGlitching ? 0 : 1),
-                scale: shouldPurifyVanish ? 1.5 : (isVanishing || isGlitching ? 0.8 : 1),
-                filter: shouldPurifyVanish ? 'blur(10px)' : (isVanishing || isGlitching ? 'blur(20px)' : 'blur(0px)'),
-            }}
-            transition={{ duration: shouldPurifyVanish ? 1.5 : (isVanishing || isGlitching ? 1.0 : 0.5), ease: "easeOut" }}
-            onAnimationComplete={() => {
-                if (shouldPurifyVanish && onPurificationComplete) {
-                    onPurificationComplete(post.id);
-                } else if ((isVanishing || isGlitching) && onFaded) {
-                    onFaded(post.id);
-                }
+            variants={cardVariants}
+            initial="visible"
+            animate={getAnimationState()}
+            onAnimationComplete={(variant) => {
+                if (variant === 'deleting' && onDeletionComplete) onDeletionComplete(post.id);
+                if (variant === 'purifyVanish' && onPurificationComplete) onPurificationComplete(post.id);
+                if (variant === 'glitching' && onFaded) onFaded(post.id);
             }}
             className={`relative ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''}`}
         >

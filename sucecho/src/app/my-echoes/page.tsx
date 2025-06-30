@@ -7,17 +7,13 @@ import { getMyEchoes } from '@/hooks/useMyEchoes';
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
-import { useOptimisticVote } from '@/hooks/useOptimisticVote';
-import { useStaggeredRender } from '@/hooks/useStaggeredRender';
-import { useLivePostUpdates } from '@/hooks/useLivePostUpdates';
+import { usePostListManager } from '@/hooks/usePostListManager';
 import logger from '@/lib/logger';
 
 export default function MyEchoesPage() {
     const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
-    const [myPosts, setMyPosts] = useLivePostUpdates(initialPosts);
+    const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded } = usePostListManager(initialPosts);
     const [isLoading, setIsLoading] = useState(true);
-    const { userVotes, handleOptimisticVote } = useOptimisticVote();
-    const [renderedPosts] = useStaggeredRender(myPosts);
 
     useEffect(() => {
         const fetchMyPosts = async () => {
@@ -33,8 +29,8 @@ export default function MyEchoesPage() {
                     body: JSON.stringify({ postIds }),
                 });
                 if (!res.ok) throw new Error('Failed to fetch your echoes');
-                const posts = await res.json();
-                setInitialPosts(posts);
+                const fetchedPosts = await res.json();
+                setInitialPosts(fetchedPosts);
             } catch (error) {
                 logger.error(error);
             } finally {
@@ -44,29 +40,11 @@ export default function MyEchoesPage() {
         fetchMyPosts();
     }, []);
 
-    const updateMyPostsState = (updatedPost: PostWithStats) => {
-        setMyPosts(currentPosts =>
-            currentPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
-        );
-    };
-
-    const handlePostRemoved = (postId: number) => {
-        setMyPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
-    };
-
-    const handlePostPurified = (postId: number) => {
-        setMyPosts(prevPosts =>
-            prevPosts.map(p =>
-                p.id === postId ? { ...p, isPurifying: true } : p
-            )
-        );
-    };
-
     const renderContent = () => {
         if (isLoading) {
             return <div className="text-center text-gray-400 p-8"><p>Loading your echoes...</p></div>;
         }
-        if (myPosts.length === 0) {
+        if (posts.length === 0) {
             return (
                 <div className="text-center text-gray-400 p-8 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
                     <p className="text-2xl mb-4">✍️</p>
@@ -81,7 +59,7 @@ export default function MyEchoesPage() {
         return (
             <div className="flex flex-col gap-4">
                 <AnimatePresence>
-                    {renderedPosts.map(post => {
+                    {posts.map(post => {
                         const isChildEcho = !!post.parentPostId;
                         const wrapperClass = isChildEcho ? "border-l-2 border-accent/30 pl-4 ml-4" : "";
 
@@ -97,11 +75,12 @@ export default function MyEchoesPage() {
                                 <PostCard
                                     post={post}
                                     isLink={!isChildEcho}
-                                    onVote={(_, voteType) => handleOptimisticVote(post, voteType, updateMyPostsState, handlePostPurified)}
+                                    onVote={(_, voteType) => handleVote(post, voteType)}
                                     userVote={userVotes[post.id]}
                                     isPurifying={post.isPurifying}
-                                    onPurificationComplete={handlePostRemoved}
-                                    onFaded={handlePostRemoved}
+                                    onPurificationComplete={handlePostFaded}
+                                    onDeletionComplete={handlePostFaded}
+                                    onFaded={handlePostFaded}
                                 />
                             </motion.div>
                         );

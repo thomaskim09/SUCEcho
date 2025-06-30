@@ -1,7 +1,7 @@
 // sucecho/src/app/api/posts/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import eventEmitter from '@/lib/event-emitter';
+import supabase from '@/lib/supabase-realtime';
 import { generateCodename } from '@/lib/codename';
 import logger from '@/lib/logger';
 import { findBestMatch } from 'string-similarity';
@@ -15,9 +15,6 @@ const replyCounts = new Map<string, Map<number, number>>();
 const whitelistedDomains = (process.env.WHITELISTED_DOMAINS || '').split(',');
 const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-/**
- * Handles GET requests to fetch the main feed of posts with pagination.
- */
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -27,7 +24,7 @@ export async function GET(request: Request) {
         const posts = await prisma.post.findMany({
             take: limit,
             ...(cursor && {
-                skip: 1, // Skip the cursor itself
+                skip: 1,
                 cursor: {
                     id: parseInt(cursor, 10),
                 },
@@ -118,7 +115,6 @@ export async function POST(request: Request) {
         const replyLimit = parseInt(process.env.REPLY_LIMIT_PER_POST || '5');
 
         if (parentPostId) {
-            // Comment Rate Limiting
             const userCommentCooldown = commentCooldown.get(fingerprintHash);
             if (userCommentCooldown && now < userCommentCooldown) {
                 const timeLeft = Math.ceil((userCommentCooldown - now) / 1000);
@@ -130,7 +126,6 @@ export async function POST(request: Request) {
                 );
             }
 
-            // Reply Cooldown
             const userReplyCooldowns = replyCooldown.get(fingerprintHash);
             if (
                 userReplyCooldowns &&
@@ -148,7 +143,6 @@ export async function POST(request: Request) {
                 );
             }
 
-            // Reply Limit
             const userReplyCounts = replyCounts.get(fingerprintHash);
             if (
                 userReplyCounts &&
@@ -160,7 +154,6 @@ export async function POST(request: Request) {
                 );
             }
         } else {
-            // Post Rate Limiting
             const userPostCooldown = postCooldown.get(fingerprintHash);
             if (userPostCooldown && now < userPostCooldown) {
                 const timeLeft = Math.ceil(
@@ -174,7 +167,6 @@ export async function POST(request: Request) {
                 );
             }
 
-            // Content Similarity Check
             if (process.env.SIMILARITY_CHECK_ENABLED === 'true') {
                 const similarityThreshold = parseFloat(
                     process.env.SIMILARITY_THRESHOLD || '0.85'
@@ -274,17 +266,14 @@ export async function POST(request: Request) {
             return { ...createdPost, stats: createdStats };
         });
 
-        // Update Rate Limiting Maps
         if (parentPostId) {
             commentCooldown.set(fingerprintHash, now + commentCooldownTime);
-
             let userReplyCooldowns = replyCooldown.get(fingerprintHash);
             if (!userReplyCooldowns) {
                 userReplyCooldowns = new Map();
                 replyCooldown.set(fingerprintHash, userReplyCooldowns);
             }
             userReplyCooldowns.set(parentPostId, now + replyCooldownTime);
-
             let userReplyCounts = replyCounts.get(fingerprintHash);
             if (!userReplyCounts) {
                 userReplyCounts = new Map();
@@ -298,19 +287,12 @@ export async function POST(request: Request) {
             postCooldown.set(fingerprintHash, now + postCooldownTime);
         }
 
-        eventEmitter.emit('new_post', newPostWithStats);
-
-        if (newPostWithStats.parentPostId) {
-            const parentStats = await prisma.postStats.findUnique({
-                where: { postId: newPostWithStats.parentPostId },
-            });
-            if (parentStats) {
-                eventEmitter.emit('update_vote', {
-                    postId: newPostWithStats.parentPostId,
-                    stats: parentStats,
-                });
-            }
-        }
+        const channel = supabase.channel('posts');
+        await channel.send({
+            type: 'broadcast',
+            event: 'new_post',
+            payload: newPostWithStats,
+        });
 
         return NextResponse.json(newPostWithStats, { status: 201 });
     } catch (error: unknown) {

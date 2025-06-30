@@ -12,4 +12,5 @@ export interface PostWithStats {
         replyCount: number;
     } | null;
     isPurifying?: boolean;
+    isDeleting?: boolean;
 }

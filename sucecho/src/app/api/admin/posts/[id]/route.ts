@@ -1,7 +1,7 @@
 // sucecho/src/app/api/admin/posts/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import eventEmitter from '@/lib/event-emitter';
+import supabase from '@/lib/supabase-realtime'; // Use Supabase client
 import logger from '@/lib/logger';
 import { verifySession } from '@/lib/auth';
 
@@ -52,7 +52,13 @@ export async function DELETE(
             where: { id: numericPostId },
         });
 
-        eventEmitter.emit('delete_post', { postId: numericPostId });
+        // Broadcast the 'delete_post' event through Supabase
+        const channel = supabase.channel('posts');
+        await channel.send({
+            type: 'broadcast',
+            event: 'delete_post',
+            payload: { postId: numericPostId },
+        });
 
         return NextResponse.json(
             { message: 'Post deleted successfully' },
