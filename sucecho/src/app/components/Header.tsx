@@ -43,6 +43,10 @@ const LiveIndicator = () => (
     </div>
 );
 
+const isLivePage = (pathname: string) => {
+    return pathname === '/' || pathname.startsWith('/my-echoes') || pathname.startsWith('/post/');
+};
+
 export default function Header() {
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -80,7 +84,7 @@ export default function Header() {
                 </Link>
 
                 <div className="hidden md:flex items-center gap-6">
-                    {pathname === '/' && <LiveIndicator />}
+                    {isLivePage(pathname) && <LiveIndicator />}
                     <nav className="flex items-center gap-6 font-mono text-lg">
                         {navLinks.map(link => (
                             <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors">
@@ -91,7 +95,7 @@ export default function Header() {
                 </div>
 
                 <div className="flex items-center gap-4 md:hidden">
-                    {pathname === '/' && <LiveIndicator />}
+                    {isLivePage(pathname) && <LiveIndicator />}
                     <button onClick={toggleMenu} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
                         <Icon name="menu" />
                     </button>

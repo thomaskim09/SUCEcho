@@ -34,7 +34,7 @@ export const useRealtime = (callbacks: SSECallbacks) => {
     const memoizedCallbacks = useRef(callbacks);
     useEffect(() => {
         memoizedCallbacks.current = callbacks;
-    }, [callbacks]);
+    }, [callbacks.onNewPost, callbacks.onUpdateVote, callbacks.onDeletePost]);
 
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') {
@@ -62,15 +62,15 @@ export const useRealtime = (callbacks: SSECallbacks) => {
                 eventSource = null;
             };
 
-            const addListener = <K extends keyof SSEEventData>(
-                eventName: K,
-                handler?: (data: SSEEventData[K]) => void
+            const addListener = (
+                eventName: string,
+                handler?: (data: any) => void
             ) => {
                 if (!handler) return;
                 eventSource?.addEventListener(
                     eventName,
                     (event: MessageEvent) => {
-                        const data = JSON.parse(event.data) as SSEEventData[K];
+                        const data = JSON.parse(event.data);
                         handler(data);
                         channel.postMessage({
                             type: 'broadcast',
@@ -111,7 +111,7 @@ export const useRealtime = (callbacks: SSECallbacks) => {
                         `Follower tab received event '${payload.event}' via BroadcastChannel`,
                         payload.data
                     );
-                    (handler as (data: unknown) => void)(payload.data);
+                    (handler as Function)(payload.data);
                 }
             }
         };
@@ -141,5 +141,5 @@ export const useRealtime = (callbacks: SSECallbacks) => {
             }
             channel.close();
         };
-    }, []); // This effect correctly runs only once per component mount
+    }, []);
 };
