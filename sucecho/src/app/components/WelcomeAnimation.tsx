@@ -8,6 +8,7 @@ import { Logo } from './Logo';
 export default function WelcomeAnimation({ onComplete }: { onComplete: () => void }) {
     const [step, setStep] = useState(0);
     const [fadeOut, setFadeOut] = useState(false);
+    const [lineFadeOut, setLineFadeOut] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,10 +31,21 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
     }, []);
 
     useEffect(() => {
+        if (step === 4) {
+            const timer = setTimeout(() => {
+                setLineFadeOut(true);
+            }, 300);
+            return () => clearTimeout(timer);
+        } else {
+            setLineFadeOut(false);
+        }
+    }, [step]);
+
+    useEffect(() => {
         if (fadeOut) {
             const timer = setTimeout(() => {
                 onComplete();
-            }, 700); // match fade duration
+            }, 700);
             return () => clearTimeout(timer);
         }
     }, [fadeOut, onComplete]);
@@ -46,8 +58,19 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
                 南方回音壁
             </h2>
             <div className="mt-6 text-center font-mono text-xl text-gray-200 h-12">
-                {step === 2 && <h1>完全匿名，自由发声。</h1>}
-                {step === 3 && <h1>声音只存在一天。</h1>}
+                <AnimatePresence mode="wait">
+                    {step >= 3 && (
+                        <motion.h1
+                            key="line2-splash"
+                            initial={{ opacity: 1 }}
+                            animate={{ opacity: lineFadeOut ? 0 : 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 1.5 }}
+                        >
+                            声音只存在一天。
+                        </motion.h1>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

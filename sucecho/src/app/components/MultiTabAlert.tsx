@@ -1,6 +1,7 @@
 import { Logo } from './Logo';
 
-export default function MultiTabAlert() {
+export default function MultiTabAlert({ visible = false }: { visible?: boolean }) {
+    if (!visible) return null;
     return (
         <div style={{
             position: 'fixed',

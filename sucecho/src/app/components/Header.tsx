@@ -54,6 +54,10 @@ export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isTabLeader, multiTabAllowed, tabLeaderChecked } = useTabLeaderContext();
 
+    if (!tabLeaderChecked) {
+        return null;
+    }
+
     if (pathname === '/compose' || pathname.startsWith('/admin-login')) {
         return null;
     }
@@ -69,9 +73,9 @@ export default function Header() {
 
     return (
         <>
-            {showMultitabAlert && <MultiTabAlert />}
-            <header className="container mx-auto max-w-2xl p-4 relative">
-                <div className="flex justify-between items-center py-4">
+            {tabLeaderChecked && <MultiTabAlert visible={showMultitabAlert} />}
+            <header className="container mx-auto max-w-2xl py-2 px-4 relative">
+                <div className="flex justify-between items-center py-2">
                     <Link href="/" className="hover:opacity-80 transition-opacity" onClick={() => setIsMenuOpen(false)}>
                         <div className="flex items-center gap-3">
                             <motion.div
