@@ -46,7 +46,6 @@ export const useRealtime = (callbacks: SSECallbacks) => {
         const channel = new BroadcastChannel(CHANNEL_NAME);
         const tabId = Math.random();
 
-        // --- FIX: Use hoisted function declarations ---
         function setupSSE() {
             if (eventSource) return;
 
@@ -91,7 +90,7 @@ export const useRealtime = (callbacks: SSECallbacks) => {
             isTabLeader.current = true;
             logger.log(`Tab ${tabId.toFixed(2)} elected as leader.`);
             channel.postMessage({ type: 'leader_elected' });
-            setupSSE(); // Now this is safe to call
+            setupSSE();
         }
 
         const onMessage = (event: MessageEvent) => {
@@ -133,7 +132,13 @@ export const useRealtime = (callbacks: SSECallbacks) => {
         return () => {
             clearTimeout(electionTimeout);
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            channel.removeEventListener('message', onMessage);
+            channel.removeEventListener('message', onMessage); // --- FIX: Close EventSource if this tab is the leader ---
+            if (isTabLeader.current && eventSource) {
+                logger.log('Leader tab closing SSE connection on unmount.');
+                eventSource.close();
+                eventSource = null;
+                isLeader = false; // Explicitly relinquish leadership
+            }
             channel.close();
         };
     }, []); // This effect correctly runs only once per component mount
