@@ -13,7 +13,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const SUPABASE_CHANNEL_NAME =
-    process.env.NEXT_PUBLIC_SUPABASE_CHANNEL_NAME || 'post';
+    process.env.NEXT_PUBLIC_SUPABASE_CHANNEL_NAME || 'post_room';
 
 export default supabase;
 export { SUPABASE_CHANNEL_NAME };
