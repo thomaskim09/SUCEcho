@@ -7,11 +7,17 @@ const ALLOW_MULTI_TAB =
     process.env.NEXT_PUBLIC_ALLOW_MULTI_TAB === 'true';
 
 export function useTabLeader(): boolean {
-    const [isLeader, setIsLeader] = useState(!ALLOW_MULTI_TAB);
-    const isTabLeader = useRef(!ALLOW_MULTI_TAB);
+    // If multi-tab is allowed, every tab is a leader
+    if (ALLOW_MULTI_TAB) {
+        return true;
+    }
+
+    // Otherwise, run leader election
+    const [isLeader, setIsLeader] = useState(true);
+    const isTabLeader = useRef(true);
 
     useEffect(() => {
-        if (!ALLOW_MULTI_TAB) {
+        if (ALLOW_MULTI_TAB) {
             setIsLeader(true);
             isTabLeader.current = true;
             return;
