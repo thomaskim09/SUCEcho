@@ -13,8 +13,8 @@ export function useTabLeader(): boolean {
     }
 
     // Otherwise, run leader election
-    const [isLeader, setIsLeader] = useState(true);
-    const isTabLeader = useRef(true);
+    const [isLeader, setIsLeader] = useState(false);
+    const isTabLeader = useRef(false);
 
     useEffect(() => {
         if (ALLOW_MULTI_TAB) {

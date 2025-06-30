@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Icon } from './Icon';
 import { Logo } from './Logo';
+import { useTabLeaderContext } from './TabLeaderProvider';
+import MultiTabAlert from './MultiTabAlert';
 
 const LiveIndicator = () => (
     <div className="flex items-center gap-2 font-mono text-sm text-red-500">
@@ -43,32 +45,21 @@ const LiveIndicator = () => (
     </div>
 );
 
-const isLivePage = (pathname: string) => {
+function isLivePage(pathname: string) {
     return pathname === '/' || pathname.startsWith('/my-echoes') || pathname.startsWith('/post/');
-};
+}
 
 export default function Header() {
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { isTabLeader, multiTabAllowed, tabLeaderChecked } = useTabLeaderContext();
 
     if (pathname === '/compose' || pathname.startsWith('/admin-login')) {
         return null;
     }
 
-    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
-    const LogoDisplay = () => (
-        <div className="flex items-center gap-3">
-            <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 120, ease: "linear", repeat: Infinity }}
-                className="w-8 h-8"
-            >
-                <Logo className="w-8 h-8" />
-            </motion.div>
-            <span className="text-xl font-bold text-gray-200">南方回音壁</span>
-        </div>
-    );
+    // Only show the overlay if multiTabAllowed is false and this tab is NOT the leader
+    const showMultitabAlert = tabLeaderChecked && !multiTabAllowed && !isTabLeader;
 
     const navLinks = [
         { href: "/how-it-works", label: "运作方式", iconName: "info" as const },
@@ -77,51 +68,63 @@ export default function Header() {
     ];
 
     return (
-        <header className="container mx-auto max-w-2xl p-4 relative">
-            <div className="flex justify-between items-center py-4">
-                <Link href="/" className="hover:opacity-80 transition-opacity" onClick={() => setIsMenuOpen(false)}>
-                    <LogoDisplay />
-                </Link>
+        <>
+            {showMultitabAlert && <MultiTabAlert />}
+            <header className="container mx-auto max-w-2xl p-4 relative">
+                <div className="flex justify-between items-center py-4">
+                    <Link href="/" className="hover:opacity-80 transition-opacity" onClick={() => setIsMenuOpen(false)}>
+                        <div className="flex items-center gap-3">
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 120, ease: "linear", repeat: Infinity }}
+                                className="w-8 h-8"
+                            >
+                                <Logo className="w-8 h-8" />
+                            </motion.div>
+                            <span className="text-xl font-bold text-gray-200">南方回音壁</span>
+                        </div>
+                    </Link>
 
-                <div className="hidden md:flex items-center gap-6">
-                    {isLivePage(pathname) && <LiveIndicator />}
-                    <nav className="flex items-center gap-6 font-mono text-lg">
-                        {navLinks.map(link => (
-                            <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors">
-                                {link.label}
-                            </Link>
-                        ))}
-                    </nav>
-                </div>
-
-                <div className="flex items-center gap-4 md:hidden">
-                    {isLivePage(pathname) && <LiveIndicator />}
-                    <button onClick={toggleMenu} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
-                        <Icon name="menu" />
-                    </button>
-                </div>
-            </div>
-
-            <AnimatePresence>
-                {isMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.2 }}
-                        className="md:hidden absolute top-full left-0 right-0 p-4 z-20 rounded-b-lg glass-card"
-                    >
-                        <nav className="flex flex-col items-center gap-4 font-mono text-xl">
+                    <div className="hidden md:flex items-center gap-6">
+                        {multiTabAllowed && isLivePage(pathname) && <LiveIndicator />}
+                        <nav className="flex items-center gap-6 font-mono text-lg">
                             {navLinks.map(link => (
-                                <Link key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)} className="text-gray-200 hover:text-accent transition-colors w-full text-center py-2 flex items-center justify-center gap-3">
-                                    <Icon name={link.iconName} />
+                                <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors">
                                     {link.label}
                                 </Link>
                             ))}
                         </nav>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </header>
+                    </div>
+
+                    <div className="flex items-center gap-4 md:hidden">
+                        {multiTabAllowed && isLivePage(pathname) && <LiveIndicator />}
+                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
+                            <Icon name="menu" />
+                        </button>
+                    </div>
+                </div>
+
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.2 }}
+                            className="md:hidden absolute top-full left-0 right-0 p-4 z-20 rounded-b-lg glass-card"
+                        >
+                            <nav className="flex flex-col items-center gap-4 font-mono text-xl">
+                                {navLinks.map(link => (
+                                    <Link key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)} className="text-gray-200 hover:text-accent transition-colors w-full text-center py-2 flex items-center justify-center gap-3">
+                                        <Icon name={link.iconName} />
+                                        {link.label}
+                                    </Link>
+                                ))}
+                            </nav>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </header>
+        </>
     );
 }

@@ -7,6 +7,7 @@ import PostCard from './PostCard';
 import { AnimatePresence, motion } from 'motion/react';
 import { usePostListManager } from '@/hooks/usePostListManager';
 import logger from '@/lib/logger';
+import { useTabLeaderContext } from './TabLeaderProvider';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
@@ -20,6 +21,8 @@ export default function PostFeed() {
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<number | null>(null);
     const observer = useRef<IntersectionObserver | null>(null);
+
+    const { isTabLeader, multiTabAllowed, tabLeaderChecked } = useTabLeaderContext();
 
     const postVariants = {
         initial: (isNew: boolean) => ({
@@ -37,6 +40,7 @@ export default function PostFeed() {
 
     const loadMorePosts = useCallback(async () => {
         if (isFetchingMore || !nextCursor) return;
+        if (tabLeaderChecked && !multiTabAllowed && !isTabLeader) return;
         setIsFetchingMore(true);
         try {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
@@ -49,7 +53,7 @@ export default function PostFeed() {
         } finally {
             setIsFetchingMore(false);
         }
-    }, [nextCursor, isFetchingMore, setPosts]);
+    }, [nextCursor, isFetchingMore, setPosts, tabLeaderChecked, multiTabAllowed, isTabLeader]);
 
     const sentinelRef = useCallback((node: HTMLDivElement | null) => {
         if (isLoading) return;
@@ -63,6 +67,9 @@ export default function PostFeed() {
     }, [isLoading, loadMorePosts, nextCursor]);
 
     useEffect(() => {
+        // Only run fetch if tabLeaderChecked is true and (multiTabAllowed or isTabLeader)
+        if (!tabLeaderChecked) return;
+        if (!multiTabAllowed && !isTabLeader) return;
         const fetchInitialPosts = async () => {
             try {
                 const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
@@ -78,7 +85,14 @@ export default function PostFeed() {
             }
         };
         fetchInitialPosts();
-    }, []);
+    }, [tabLeaderChecked, multiTabAllowed, isTabLeader]);
+
+    if (!tabLeaderChecked) {
+        return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
+    }
+    if (!multiTabAllowed && !isTabLeader) {
+        return <div className="text-center text-gray-400 p-8"><p>请关闭其他标签页并刷新本页以查看回音。</p></div>;
+    }
 
     if (isLoading) {
         return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
