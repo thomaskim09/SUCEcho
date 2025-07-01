@@ -12,8 +12,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const SUPABASE_CHANNEL_NAME =
+export const MAIN_CHANNEL =
     process.env.NEXT_PUBLIC_SUPABASE_CHANNEL_NAME || 'post_room';
 
+/**
+ * Generates the channel name for a specific post thread.
+ * @param postId The ID of the parent post.
+ * @returns The Supabase channel name for that post's room.
+ */
+export const getPostRoomChannelName = (postId: number | string): string => {
+    return `post-${postId}`;
+};
+
 export default supabase;
-export { SUPABASE_CHANNEL_NAME };

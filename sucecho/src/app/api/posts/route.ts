@@ -1,7 +1,10 @@
 // sucecho/src/app/api/posts/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
+import supabase, {
+    MAIN_CHANNEL,
+    getPostRoomChannelName,
+} from '@/lib/supabase-realtime';
 import { generateCodename } from '@/lib/codename';
 import logger from '@/lib/logger';
 import { findBestMatch } from 'string-similarity';
@@ -289,12 +292,34 @@ export async function POST(request: Request) {
             postCooldown.set(fingerprintHash, now + postCooldownTime);
         }
 
-        const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
-        await channel.send({
-            type: 'broadcast',
-            event: 'new_post',
-            payload: newPostWithStats,
-        });
+        const isGranularEnabled =
+            process.env.NEXT_PUBLIC_GRANULAR_REALTIME_ENABLED === 'true';
+        const areRepliesEnabled =
+            process.env.REALTIME_REPLIES_ENABLED === 'true';
+
+        let channelName: string | null = null;
+
+        if (parentPostId) {
+            // This is a reply
+            if (areRepliesEnabled) {
+                channelName = isGranularEnabled
+                    ? getPostRoomChannelName(parentPostId) // Granular channel for the parent post
+                    : MAIN_CHANNEL; // Main channel if granular is off
+            }
+        } else {
+            // This is a new top-level post, always broadcast on the main channel
+            channelName = MAIN_CHANNEL;
+        }
+
+        if (channelName) {
+            const channel = supabase.channel(channelName);
+            await channel.send({
+                type: 'broadcast',
+                event: 'new_post',
+                payload: newPostWithStats,
+            });
+            supabase.removeChannel(channel); // Clean up channel instance
+        }
 
         return NextResponse.json(newPostWithStats, { status: 201 });
     } catch (error: unknown) {

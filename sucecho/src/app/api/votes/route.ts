@@ -1,7 +1,10 @@
 // sucecho/src/app/api/votes/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
+import supabase, {
+    MAIN_CHANNEL,
+    getPostRoomChannelName,
+} from '@/lib/supabase-realtime';
 import { checkPurificationStatus } from '@/lib/purification';
 import logger from '@/lib/logger';
 import { generateCodename } from '@/lib/codename';
@@ -99,19 +102,43 @@ export async function POST(request: Request) {
             const { shouldPurify } = checkPurificationStatus(updatedStats);
 
             if (shouldPurify) {
-                return { shouldPurify: true, postId, stats: updatedStats };
+                return {
+                    shouldPurify: true,
+                    postId,
+                    stats: updatedStats,
+                    parentPostId: postExists.parentPostId,
+                };
             }
 
-            return { shouldPurify: false, postId, stats: updatedStats };
+            return {
+                shouldPurify: false,
+                postId,
+                stats: updatedStats,
+                parentPostId: postExists.parentPostId,
+            };
         });
 
-        // Add this line to read the environment variable
         const isVoteStatsBroadcastEnabled =
             process.env.REALTIME_VOTE_STATS_ENABLED === 'true';
+        const isGranularEnabled =
+            process.env.NEXT_PUBLIC_GRANULAR_REALTIME_ENABLED === 'true';
 
-        // Only broadcast if the feature is enabled
         if (isVoteStatsBroadcastEnabled) {
-            const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
+            let channelName = MAIN_CHANNEL;
+
+            if (isGranularEnabled) {
+                if (transactionResult.parentPostId) {
+                    channelName = getPostRoomChannelName(
+                        transactionResult.parentPostId
+                    );
+                } else {
+                    channelName = getPostRoomChannelName(
+                        transactionResult.postId
+                    );
+                }
+            }
+
+            const channel = supabase.channel(channelName);
 
             if (transactionResult.shouldPurify) {
                 await prisma.post.delete({
@@ -126,6 +153,7 @@ export async function POST(request: Request) {
                         shouldPurify: true,
                     },
                 });
+                supabase.removeChannel(channel);
                 return NextResponse.json({ purified: true });
             }
 
@@ -138,6 +166,7 @@ export async function POST(request: Request) {
                     shouldPurify: false,
                 },
             });
+            supabase.removeChannel(channel);
         }
 
         return NextResponse.json({

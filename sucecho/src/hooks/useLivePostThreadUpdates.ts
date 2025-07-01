@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import logger from '@/lib/logger';
 import { useRealtime } from './useRealtime';
+import { getPostRoomChannelName, MAIN_CHANNEL } from '@/lib/supabase-realtime';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -101,7 +102,15 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         });
     }, []);
 
-    useRealtime({
+    const isGranularEnabled =
+        process.env.NEXT_PUBLIC_GRANULAR_REALTIME_ENABLED === 'true';
+
+    const channelName =
+        initialPost && isGranularEnabled
+            ? getPostRoomChannelName(initialPost.id)
+            : MAIN_CHANNEL;
+
+    useRealtime(channelName, {
         onNewPost: initialPost ? handleNewPost : undefined,
         onUpdateVote: initialPost ? handleVoteUpdate : undefined,
         onDeletePost: initialPost ? handleDeletePost : undefined,
