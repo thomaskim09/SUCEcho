@@ -62,13 +62,13 @@ export default function Header() {
         return null;
     }
 
-    // Only show the overlay if multiTabAllowed is false and this tab is NOT the leader
     const showMultitabAlert = tabLeaderChecked && !multiTabAllowed && !isTabLeader;
 
     const navLinks = [
         { href: "/how-it-works", label: "运作方式", iconName: "info" as const },
         { href: "/about", label: "关于我们", iconName: "heart" as const },
         { href: "/my-echoes", label: "我的回音", iconName: "edit" as const },
+        { href: "/disclaimer", label: "免责声明", iconName: "shield" as const },
     ];
 
     return (

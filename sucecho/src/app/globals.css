@@ -73,7 +73,11 @@ body {
     1443px 569px #FFF, 290px 1756px #FFF, 345px 1285px #FFF, 946px 148px #FFF, 
     549px 49px #FFF, 804px 1024px #FFF, 1872px 1493px #FFF, 762px 1403px #FFF,
     1821px 1999px #FFF, 1734px 493px #FFF, 928px 281px #FFF, 1390px 1867px #FFF,
-    1060px 1154px #FFF, 8px 1235px #FFF, 1374px 388px #FFF, 609px 1279px #FFF;
+    1060px 1154px #FFF, 8px 1235px #FFF, 1374px 388px #FFF, 609px 1279px #FFF,
+    200px 300px #FFF, 400px 600px #FFF, 1200px 900px #FFF, 1800px 100px #FFF,
+    300px 1700px #FFF, 1000px 500px #FFF, 1600px 1800px #FFF, 50px 1950px #FFF,
+    700px 1300px #FFF, 900px 1700px #FFF, 1100px 1900px #FFF, 1300px 200px #FFF,
+    1500px 300px #FFF, 1700px 400px #FFF, 1900px 500px #FFF, 200px 600px #FFF;
   animation: animStar 50s linear infinite;
 }
 
@@ -86,7 +90,9 @@ body {
     1887px 565px #FFF, 177px 75px #FFF, 1659px 1456px #FFF, 118px 1561px #FFF, 
     1433px 999px #FFF, 190px 1856px #FFF, 545px 185px #FFF, 46px 548px #FFF, 
     1049px 1049px #FFF, 1204px 124px #FFF, 172px 1393px #FFF, 72px 103px #FFF,
-    235px 1467px #FFF, 1756px 901px #FFF, 493px 664px #FFF, 1121px 1386px #FFF;
+    235px 1467px #FFF, 1756px 901px #FFF, 493px 664px #FFF, 1121px 1386px #FFF,
+    300px 1200px #FFF, 600px 1500px #FFF, 900px 1800px #FFF, 1200px 2100px #FFF,
+    1500px 2400px #FFF, 1800px 2700px #FFF, 2100px 3000px #FFF, 2400px 3300px #FFF;
   animation: animStar 100s linear infinite;
 }
 
@@ -98,7 +104,9 @@ body {
     1575px 1824px #FFF, 1017px 152px #FFF, 3px 140px #FFF, 119px 239px #FFF, 
     197px 155px #FFF, 107px 65px #FFF, 169px 76px #FFF, 128px 161px #FFF, 
     443px 59px #FFF, 290px 756px #FFF, 35px 285px #FFF, 96px 148px #FFF,
-    1834px 129px #FFF, 743px 1823px #FFF, 1445px 788px #FFF, 902px 453px #FFF;
+    1834px 129px #FFF, 743px 1823px #FFF, 1445px 788px #FFF, 902px 453px #FFF,
+    200px 300px #FFF, 400px 600px #FFF, 600px 900px #FFF, 800px 1200px #FFF,
+    1000px 1500px #FFF, 1200px 1800px #FFF, 1400px 2100px #FFF, 1600px 2400px #FFF;
   animation: animStar 150s linear infinite;
 }
 
