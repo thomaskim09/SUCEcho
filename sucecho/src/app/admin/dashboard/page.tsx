@@ -153,7 +153,7 @@ export default function AdminDashboardPage() {
                         <label className="block text-gray-300 mb-2">帖子类型</label>
                         <select
                             value={postType}
-                            onChange={(e) => setPostType(e.target.value as any)}
+                            onChange={(e) => setPostType(e.target.value as 'ANNOUNCEMENT' | 'ADVERTISEMENT')}
                             className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
                         >
                             <option value="ANNOUNCEMENT">系统公告</option>

@@ -2,9 +2,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import supabase, { SUPABASE_CHANNEL_NAME } from '@/lib/supabase-realtime';
+import supabase from '@/lib/supabase-realtime';
 import { verifySession } from '@/lib/auth';
 import logger from '@/lib/logger';
+import { MAIN_CHANNEL } from '@/lib/supabase-realtime';
 
 export async function POST(request: NextRequest) {
     // 1. Authenticate the admin
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
         });
 
         // 4. Broadcast the new post to all clients
-        const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
+        const channel = supabase.channel(MAIN_CHANNEL);
         await channel.send({
             type: 'broadcast',
             event: 'new_post',

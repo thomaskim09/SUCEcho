@@ -227,7 +227,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 if (variant === 'purifyVanish' && onPurificationComplete) onPurificationComplete(post.id);
                 if (variant === 'glitching' && onFaded) onFaded(post.id);
             }}
-            className={`relative ${isMenuOpen ? 'z-10' : ''} ${post.type === 'ANNOUNCEMENT' ? 'announcement-post' : ''} ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''}`}
+            className={`relative ${isMenuOpen ? 'z-10' : ''} ${isAnnouncement ? 'announcement-post' : ''} ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''}`}
         >
             <div
                 className={`glass-card rounded-lg p-4`}
@@ -248,7 +248,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     )}
 
                     {/* System Announcement Header */}
-                    {post.type === 'ANNOUNCEMENT' && (
+                    {isAnnouncement && (
                         <div className="flex items-center gap-2 mb-3 text-accent font-mono text-sm">
                             <Icon name="zap" className="w-5 h-5" />
                             <span>系统公告</span>

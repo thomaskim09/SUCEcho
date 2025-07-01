@@ -17,8 +17,6 @@ interface AdCardProps {
 }
 
 export default function AdvertisementCard({ post, onFaded, onDelete, onDeletionComplete }: AdCardProps) {
-    if (!post.advertisementUrl) return null;
-
     const isAdmin = useAdminSession();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { countdownText, colorClass, isExpired } = useCountdown(new Date(post.createdAt));
@@ -34,6 +32,8 @@ export default function AdvertisementCard({ post, onFaded, onDelete, onDeletionC
             return () => clearTimeout(chargeTimer);
         }
     }, [isExpired]);
+
+    if (!post.advertisementUrl) return null;
 
     const handleToggleMenu = (e: React.MouseEvent) => {
         e.preventDefault();
