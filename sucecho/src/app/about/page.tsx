@@ -12,6 +12,9 @@ export default function AboutPage() {
     const router = useRouter();
     const requiredClicks = 10;
 
+    // Read the environment variable to control the donation section
+    const showDonationSection = process.env.NEXT_PUBLIC_ENABLE_DONATIONS === 'true';
+
     useEffect(() => {
         if (logoClicks === requiredClicks) {
             logger.log('Admin login triggered!');
@@ -60,22 +63,24 @@ export default function AboutPage() {
                 </section>
 
                 {/* Actions Section */}
-                <section className="grid md:grid-cols-2 gap-8 mt-10">
-                    <div className="glass-card p-6 rounded-lg text-center flex flex-col items-center">
-                        <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-accent/20 text-accent">
-                            <Icon name="coffee" className="w-8 h-8" />
+                <section className={`grid ${showDonationSection ? 'md:grid-cols-2' : 'grid-cols-1'} gap-8 mt-10`}>
+                    {showDonationSection && (
+                        <div className="glass-card p-6 rounded-lg text-center flex flex-col items-center">
+                            <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-accent/20 text-accent">
+                                <Icon name="coffee" className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-2">成为守护者</h3>
+                            <p className="text-gray-300 mb-4 flex-grow">如果认同这个空间的价值，欢迎支持我们，让回音持续。你的支持将帮助我们覆盖服务器成本。</p>
+                            <Link
+                                href="https://www.kofi.com" // Replace with your actual Ko-fi link
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors text-lg"
+                            >
+                                请我们喝杯Milo冰
+                            </Link>
                         </div>
-                        <h3 className="text-xl font-bold mb-2">成为守护者</h3>
-                        <p className="text-gray-300 mb-4 flex-grow">如果认同这个空间的价值，欢迎支持我们，让回音持续。你的支持将帮助我们覆盖服务器成本。</p>
-                        <Link
-                            href="https://www.kofi.com" // Replace with your actual Ko-fi link
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors text-lg"
-                        >
-                            请我们喝杯Milo冰
-                        </Link>
-                    </div>
+                    )}
                     <div className="glass-card p-6 rounded-lg text-center flex flex-col items-center">
                         <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-accent/20 text-accent">
                             <Icon name="mail" className="w-8 h-8" />
@@ -83,7 +88,7 @@ export default function AboutPage() {
                         <h3 className="text-xl font-bold mb-2">联系与合作</h3>
                         <p className="text-gray-300 mb-4 flex-grow">如果您有任何商业合作、功能建议,技术报错或媒体问询，请通过邮件与我们取得联系。</p>
                         <a
-                            href="mailto:your.email@example.com?subject=SUC Echo Inquiry"
+                            href="mailto:sucecho.info@gmail.com?subject=SUC Echo Inquiry"
                             className="w-full bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors text-lg"
                         >
                             发送邮件
