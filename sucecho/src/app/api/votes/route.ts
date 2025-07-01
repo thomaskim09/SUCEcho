@@ -105,33 +105,40 @@ export async function POST(request: Request) {
             return { shouldPurify: false, postId, stats: updatedStats };
         });
 
-        const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
+        // Add this line to read the environment variable
+        const isVoteStatsBroadcastEnabled =
+            process.env.REALTIME_VOTE_STATS_ENABLED === 'true';
 
-        if (transactionResult.shouldPurify) {
-            await prisma.post.delete({
-                where: { id: transactionResult.postId },
-            });
+        // Only broadcast if the feature is enabled
+        if (isVoteStatsBroadcastEnabled) {
+            const channel = supabase.channel(SUPABASE_CHANNEL_NAME);
+
+            if (transactionResult.shouldPurify) {
+                await prisma.post.delete({
+                    where: { id: transactionResult.postId },
+                });
+                await channel.send({
+                    type: 'broadcast',
+                    event: 'update_vote',
+                    payload: {
+                        postId: transactionResult.postId,
+                        stats: transactionResult.stats,
+                        shouldPurify: true,
+                    },
+                });
+                return NextResponse.json({ purified: true });
+            }
+
             await channel.send({
                 type: 'broadcast',
                 event: 'update_vote',
                 payload: {
                     postId: transactionResult.postId,
                     stats: transactionResult.stats,
-                    shouldPurify: true,
+                    shouldPurify: false,
                 },
             });
-            return NextResponse.json({ purified: true });
         }
-
-        await channel.send({
-            type: 'broadcast',
-            event: 'update_vote',
-            payload: {
-                postId: transactionResult.postId,
-                stats: transactionResult.stats,
-                shouldPurify: false,
-            },
-        });
 
         return NextResponse.json({
             postId: transactionResult.postId,
