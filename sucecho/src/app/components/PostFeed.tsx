@@ -112,11 +112,17 @@ export default function PostFeed() {
             <AnimatePresence>
                 {unexpiredPosts.map(post => {
                     if (post.type === 'ADVERTISEMENT') {
-                        // Render the new AdvertisementCard
-                        return <AdvertisementCard key={post.id} post={post} />;
+                        return (
+                            <AdvertisementCard
+                                key={post.id}
+                                post={post}
+                                onFaded={handlePostFaded}
+                                onDelete={handleDelete}
+                                onDeletionComplete={handlePostFaded}
+                            />
+                        );
                     }
 
-                    // Render default and announcement posts with PostCard
                     const isNew = !initialPostIds.has(post.id);
                     return (
                         <motion.div
