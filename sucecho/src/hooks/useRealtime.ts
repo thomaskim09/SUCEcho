@@ -4,11 +4,12 @@
 import { useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
 import { useTabLeader } from '@/lib/tabLeader';
-import supabase from '@/lib/supabase-realtime';
+import supabase, { MAIN_CHANNEL } from '@/lib/supabase-realtime';
 import type { PostWithStats } from '@/lib/types';
 import { usePageVisibility } from './usePageVisibility';
 import { useIdle } from './useIdle';
 import { usePathname } from 'next/navigation';
+import { useRealtimeStatus } from '@/context/RealtimeStatusContext';
 
 function isLivePage(pathname: string): boolean {
     return (
@@ -37,6 +38,7 @@ interface LiveCallbacks {
 }
 
 export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
+    const { setIsSubscribed } = useRealtimeStatus();
     const isTabLeader = useTabLeader();
     const isVisible = usePageVisibility();
     const isIdle = useIdle();
@@ -49,6 +51,7 @@ export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
 
     useEffect(() => {
         if (!isTabLeader || !isVisible || isIdle || !isLivePage(pathname)) {
+            setIsSubscribed(false);
             return;
         }
 
@@ -70,19 +73,31 @@ export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
                     logger.log(
-                        `Leader tab: Successfully subscribed to ${channelName}.`
+                        `Leader tab: Successfully subscribed to Supabase channel ${channelName}.`
                     );
+                    setIsSubscribed(true);
                 }
                 if (status === 'CHANNEL_ERROR') {
                     logger.error(
                         `Leader tab: Supabase channel error on ${channelName}.`
                     );
+                    setIsSubscribed(false);
                 }
             });
 
         return () => {
-            logger.log(`Leader tab: Unsubscribing from ${channelName}.`);
+            logger.log(
+                `Leader tab: Unsubscribing from Supabase channel ${channelName}.`
+            );
             supabase.removeChannel(channel);
+            setIsSubscribed(false);
         };
-    }, [isTabLeader, isVisible, isIdle, pathname, channelName]);
+    }, [
+        isTabLeader,
+        isVisible,
+        isIdle,
+        pathname,
+        channelName,
+        setIsSubscribed,
+    ]);
 };

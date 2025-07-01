@@ -9,6 +9,7 @@ import { Icon } from './Icon';
 import { Logo } from './Logo';
 import { useTabLeaderContext } from './TabLeaderProvider';
 import MultiTabAlert from './MultiTabAlert';
+import { useRealtimeStatus } from '@/context/RealtimeStatusContext';
 
 const LiveIndicator = () => (
     <div className="flex items-center gap-2 font-mono text-sm text-red-500">
@@ -45,14 +46,11 @@ const LiveIndicator = () => (
     </div>
 );
 
-function isLivePage(pathname: string) {
-    return pathname === '/' || pathname.startsWith('/my-echoes') || pathname.startsWith('/post/');
-}
-
 export default function Header() {
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isTabLeader, multiTabAllowed, tabLeaderChecked } = useTabLeaderContext();
+    const { isSubscribed } = useRealtimeStatus();
 
     if (!tabLeaderChecked) {
         return null;
@@ -90,7 +88,18 @@ export default function Header() {
                     </Link>
 
                     <div className="hidden md:flex items-center gap-6">
-                        {multiTabAllowed && isLivePage(pathname) && <LiveIndicator />}
+                        <AnimatePresence>
+                            {isSubscribed && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <LiveIndicator />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                         <nav className="flex items-center gap-6 font-mono text-lg">
                             {navLinks.map(link => (
                                 <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors">
@@ -101,7 +110,18 @@ export default function Header() {
                     </div>
 
                     <div className="flex items-center gap-4 md:hidden">
-                        {multiTabAllowed && isLivePage(pathname) && <LiveIndicator />}
+                        <AnimatePresence>
+                            {isSubscribed && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <LiveIndicator />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
                             <Icon name="menu" />
                         </button>

@@ -11,6 +11,7 @@ import OnboardingWrapper from "./components/OnboardingWrapper";
 import { SvgGlowFilter } from "./components/Icon";
 import FabContainer from "./components/FabContainer";
 import { TabLeaderProvider } from "./components/TabLeaderProvider";
+import { RealtimeStatusProvider } from "@/context/RealtimeStatusContext";
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -50,12 +51,14 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         <AdminProvider>
           <FingerprintProvider>
             <TabLeaderProvider>
-              <OnboardingWrapper>
-                <UserStatusBanner />
-                <Header />
-                <FramerWrapper>{children}</FramerWrapper>
-                <FabContainer />
-              </OnboardingWrapper>
+              <RealtimeStatusProvider>
+                <OnboardingWrapper>
+                  <UserStatusBanner />
+                  <Header />
+                  <FramerWrapper>{children}</FramerWrapper>
+                  <FabContainer />
+                </OnboardingWrapper>
+              </RealtimeStatusProvider>
             </TabLeaderProvider>
           </FingerprintProvider>
         </AdminProvider>
