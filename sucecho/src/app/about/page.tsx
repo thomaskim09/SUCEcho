@@ -42,7 +42,7 @@ export default function AboutPage() {
         <div className="container mx-auto max-w-3xl p-4 text-white">
             <header className="py-4 text-center">
                 <div onClick={handleTitleClick} className="cursor-pointer select-none inline-block">
-                    <h1 className="text-4xl font-bold font-mono text-accent mb-2">关于南方回音壁</h1>
+                    <h1 className="text-4xl font-bold font-mono text-accent mb-2">关于SUC Echo</h1>
                 </div>
                 <p className="text-xl text-gray-400">一个为爱发电的数字空间。</p>
             </header>

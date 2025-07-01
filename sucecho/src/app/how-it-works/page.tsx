@@ -19,7 +19,7 @@ export default function HowItWorksPage() {
         <div className="container mx-auto max-w-4xl p-4 text-white">
             <header className="py-4 text-center">
                 <h1 className="text-4xl font-bold font-mono text-accent mb-2">运作方式</h1>
-                <p className="text-xl text-gray-400">了解南方回音壁的核心法则。</p>
+                <p className="text-xl text-gray-400">了解SUC Echo的核心法则。</p>
             </header>
             <main className="mt-12 space-y-8 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
                 <FeatureCard iconName="zap" title="短暂存在">

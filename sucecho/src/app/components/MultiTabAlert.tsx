@@ -38,7 +38,7 @@ export default function MultiTabAlert({ visible = false }: { visible?: boolean }
                         color: '#e0e0e0',
                         textShadow: 'none',
                     }}>
-                        南方回音壁
+                        SUC Echo
                     </span>
                 </div>
                 <div

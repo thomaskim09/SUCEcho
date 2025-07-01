@@ -83,7 +83,7 @@ export default function Header() {
                             >
                                 <Logo className="w-8 h-8" />
                             </motion.div>
-                            <span className="text-xl font-bold text-gray-200">南方回音壁</span>
+                            <span className="text-xl font-bold text-gray-200">SUC Echo</span>
                         </div>
                     </Link>
 

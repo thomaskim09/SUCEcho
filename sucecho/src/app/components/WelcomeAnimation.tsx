@@ -55,7 +55,7 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
         <div className="flex flex-col items-center justify-center">
             <Logo isGlowing={step >= 1} className="w-30 h-30" />
             <h2 className="text-center text-2xl font-bold text-gray-200 mt-2">
-                南方回音壁
+                SUC Echo
             </h2>
             <div className="mt-6 text-center font-mono text-xl text-gray-200 h-12">
                 <AnimatePresence mode="wait">
@@ -67,7 +67,7 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
                             exit={{ opacity: 0 }}
                             transition={{ duration: 1.5 }}
                         >
-                            声音只存在一天。
+                            声音只存在一天
                         </motion.h1>
                     )}
                 </AnimatePresence>
@@ -92,14 +92,14 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
                     <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: step >= 1 ? 1 : 0, scale: step >= 1 ? 1 : 0.8 }} transition={{ duration: 1 }}>
                         <Logo isGlowing={step >= 1} className="w-30 h-30" />
                         <h2 className="text-center text-2xl font-bold text-gray-200 mt-2">
-                            南方回音壁
+                            SUC Echo
                         </h2>
                     </motion.div>
                     <div className="mt-6 text-center font-mono text-xl text-gray-200 h-12">
                         <AnimatePresence mode="wait">
                             {step === 2 && (
                                 <motion.h1 key="line1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                    完全匿名，自由发声。
+                                    完全匿名，自由发声
                                 </motion.h1>
                             )}
                             {step === 3 && (
@@ -110,7 +110,7 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 1 }}
                                 >
-                                    声音只存在一天。
+                                    声音只存在一天
                                 </motion.h1>
                             )}
                         </AnimatePresence>
