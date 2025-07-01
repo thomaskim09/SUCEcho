@@ -1,17 +1,17 @@
-// sucecho/src/hooks/useRealtime.ts
+// src/hooks/useRealtime.ts
 'use client';
 
 import { useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
 import { useTabLeader } from '@/lib/tabLeader';
-import supabase, { MAIN_CHANNEL } from '@/lib/supabase-realtime';
+import supabase from '@/lib/supabase-realtime';
 import type { PostWithStats } from '@/lib/types';
 import { usePageVisibility } from './usePageVisibility';
 import { useIdle } from './useIdle';
 import { usePathname } from 'next/navigation';
 import { useRealtimeStatus } from '@/context/RealtimeStatusContext';
 
-function isLivePage(pathname: string): boolean {
+function isLivePage(pathname: string) {
     return (
         pathname === '/' ||
         pathname.startsWith('/my-echoes') ||
@@ -70,16 +70,19 @@ export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
             .on('broadcast', { event: 'delete_post' }, (payload) => {
                 memoizedCallbacks.current.onDeletePost?.(payload.payload);
             })
-            .subscribe((status) => {
+            .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') {
                     logger.log(
                         `Leader tab: Successfully subscribed to Supabase channel ${channelName}.`
                     );
                     setIsSubscribed(true);
-                }
-                if (status === 'CHANNEL_ERROR') {
+                } else if (
+                    status === 'CHANNEL_ERROR' ||
+                    status === 'TIMED_OUT'
+                ) {
                     logger.error(
-                        `Leader tab: Supabase channel error on ${channelName}.`
+                        `Leader tab: Supabase channel error on ${channelName}.`,
+                        err
                     );
                     setIsSubscribed(false);
                 }
