@@ -8,12 +8,21 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum PostType {
+  DEFAULT
+  ANNOUNCEMENT
+  ADVERTISEMENT
+}
+
 model Post {
   id              Int        @id @default(autoincrement())
   content         String?
   fingerprintHash String
   parentPostId    Int?
   createdAt       DateTime   @default(now())
+
+  type            PostType   @default(DEFAULT)
+  advertisementUrl String?   @db.Text // For advertisement links
 
   // Defines the self-relation for threaded replies
   parent          Post?      @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
@@ -22,9 +31,10 @@ model Post {
   // Relation to other models
   stats           PostStats?
   votes           Vote[]
-  reports         Report[]   // Add this relation
+  reports         Report[]   // Ensure this relation exists for reports
 
   @@index([createdAt])
+  @@index([type]) // Index the new type field for faster lookups
 }
 
 model Report {

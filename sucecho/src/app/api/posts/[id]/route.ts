@@ -30,6 +30,8 @@ export async function GET(
                 createdAt: true,
                 parentPostId: true,
                 fingerprintHash: true,
+                type: true,
+                advertisementUrl: true,
                 stats: {
                     select: {
                         upvotes: true,

@@ -3,7 +3,7 @@
 
 import { useAdmin } from '@/context/AdminContext';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import logger from '@/lib/logger';
 
@@ -21,6 +21,11 @@ export default function AdminDashboardPage() {
     const [reportCount, setReportCount] = useState<number | null>(null);
     const [isCronRunning, setIsCronRunning] = useState(false);
     const [isDeepCleaning, setIsDeepCleaning] = useState(false);
+    const [specialPostContent, setSpecialPostContent] = useState('');
+    const [postType, setPostType] = useState<'ANNOUNCEMENT' | 'ADVERTISEMENT'>('ANNOUNCEMENT');
+    const [adUrl, setAdUrl] = useState('');
+    const [isCreatingPost, setIsCreatingPost] = useState(false);
+
 
     const fetchDashboardData = async () => {
         try {
@@ -52,8 +57,6 @@ export default function AdminDashboardPage() {
 
     useEffect(() => {
         fetchDashboardData();
-        const interval = setInterval(fetchDashboardData, 10000); // Refresh every 10 seconds
-        return () => clearInterval(interval);
     }, []);
 
     const handleRunCron = async () => {
@@ -100,6 +103,34 @@ export default function AdminDashboardPage() {
         router.push('/');
     };
 
+    const handleCreateSpecialPost = async (e: FormEvent) => {
+        e.preventDefault();
+        setIsCreatingPost(true);
+        try {
+            const res = await fetch('/api/admin/posts/create-special', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: specialPostContent,
+                    type: postType,
+                    advertisementUrl: postType === 'ADVERTISEMENT' ? adUrl : null,
+                }),
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to create post');
+            }
+            alert('特别帖子发布成功！');
+            setSpecialPostContent('');
+            setAdUrl('');
+        } catch (err) {
+            alert(`创建帖子时出错: ${(err as Error).message}`);
+        } finally {
+            setIsCreatingPost(false);
+        }
+    };
+
+
     return (
         <div className="container mx-auto max-w-6xl p-4 text-white">
             <header className="py-4 flex justify-between items-center">
@@ -114,6 +145,55 @@ export default function AdminDashboardPage() {
                     登出
                 </button>
             </header>
+
+            <section className="mt-8 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
+                <h2 className="text-2xl font-bold text-purple-400 mb-4">发布特别帖子</h2>
+                <form onSubmit={handleCreateSpecialPost} className="space-y-4">
+                    <div>
+                        <label className="block text-gray-300 mb-2">帖子类型</label>
+                        <select
+                            value={postType}
+                            onChange={(e) => setPostType(e.target.value as any)}
+                            className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
+                        >
+                            <option value="ANNOUNCEMENT">系统公告</option>
+                            <option value="ADVERTISEMENT">特约赞助</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="special-content" className="block text-gray-300 mb-2">内容</label>
+                        <textarea
+                            id="special-content"
+                            value={specialPostContent}
+                            onChange={(e) => setSpecialPostContent(e.target.value)}
+                            className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
+                            rows={4}
+                            required
+                        />
+                    </div>
+                    {postType === 'ADVERTISEMENT' && (
+                        <div>
+                            <label htmlFor="ad-url" className="block text-gray-300 mb-2">广告链接 (URL)</label>
+                            <input
+                                type="url"
+                                id="ad-url"
+                                value={adUrl}
+                                onChange={(e) => setAdUrl(e.target.value)}
+                                className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
+                                placeholder="https://example.com"
+                                required
+                            />
+                        </div>
+                    )}
+                    <button
+                        type="submit"
+                        className="w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                        disabled={isCreatingPost}
+                    >
+                        {isCreatingPost ? '发布中...' : '发布帖子'}
+                    </button>
+                </form>
+            </section>
 
             <section className="mt-8">
                 {/* Adjusted grid for 3 items */}

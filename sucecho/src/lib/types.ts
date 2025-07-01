@@ -6,6 +6,8 @@ export interface PostWithStats {
     createdAt: Date;
     fingerprintHash: string;
     parentPostId?: number | null;
+    type: 'DEFAULT' | 'ANNOUNCEMENT' | 'ADVERTISEMENT';
+    advertisementUrl?: string | null;
     stats: {
         upvotes: number;
         downvotes: number;

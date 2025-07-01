@@ -117,6 +117,29 @@ body {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
+/* --- ANNOUNCEMENT POST STYLES --- */
+.announcement-post .glass-card {
+  background: linear-gradient(145deg, rgba(159, 112, 253, 0.1), rgba(159, 112, 253, 0.2));
+  border: 1px solid var(--accent);
+  box-shadow: 0 4px 30px rgba(159, 112, 253, 0.2);
+}
+
+/* --- ADVERTISEMENT POST STYLES --- */
+.ad-card-wrapper {
+  background: rgba(234, 179, 8, 0.1); /* Subtle yellow background tint */
+  border: 1px solid rgba(234, 179, 8, 0.4); /* Subtle yellow border */
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.ad-card-wrapper:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.2);
+}
+
+.ad-card-content {
+    background-color: var(--card-background); /* Keep inner background consistent */
+}
+
 .icon-base {
     color: #9ca3af;
     transition: color 150ms ease-in-out, transform 150ms ease-in-out;

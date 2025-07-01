@@ -76,9 +76,9 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isGlitching, setIsGlitching] = useState(false);
     const [isCharging, setIsCharging] = useState(false);
     const [isPurifyGlow, setIsPurifyGlow] = useState(false);
-
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
+    const isAnnouncement = post.type === 'ANNOUNCEMENT';
 
     // Define animation variants for clarity and type safety
     const cardVariants = {
@@ -227,7 +227,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 if (variant === 'purifyVanish' && onPurificationComplete) onPurificationComplete(post.id);
                 if (variant === 'glitching' && onFaded) onFaded(post.id);
             }}
-            className={`relative ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''}`}
+            className={`relative ${post.type === 'ANNOUNCEMENT' ? 'announcement-post' : ''} ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''}`}
         >
             <div
                 className={`glass-card rounded-lg p-4`}
@@ -246,6 +246,15 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                             ))}
                         </div>
                     )}
+
+                    {/* System Announcement Header */}
+                    {post.type === 'ANNOUNCEMENT' && (
+                        <div className="flex items-center gap-2 mb-3 text-accent font-mono text-sm">
+                            <Icon name="zap" className="w-5 h-5" />
+                            <span>系统公告</span>
+                        </div>
+                    )}
+
                     {(isAdmin || isChildEcho) && (
                         <div className="absolute top-2 right-2 z-10">
                             <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">
@@ -254,7 +263,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         </div>
                     )}
                     <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-                        {isAdmin ? (
+                        {isAdmin && post.type !== 'ANNOUNCEMENT' ? (
                             <span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>
                         ) : (
                             <span></span>
@@ -285,37 +294,39 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         )}
                     </AnimatePresence>
 
-                    <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
-                        <span
-                            className={`font-mono flex-shrink-0 ${isPurifying && showPurifyText
-                                ? 'purify-text-glow-red fade-in'
-                                : colorClass + (isExpired ? ' fade-in' : '') + (isCritical ? ' pulse' : '')
-                                }`}
-                        >
-                            {isPurifying && showPurifyText
-                                ? '社区自治，自主净化'
-                                : isChildEcho
-                                    ? timeSince(new Date(post.createdAt))
-                                    : countdownText}
-                        </span>
-                        <div className="flex items-center gap-4 flex-shrink-0">
-                            <div className="relative">
-                                <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
-                                <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
-                            </div>
-                            <div className="relative">
-                                <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
-                                <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
-                            </div>
-                            {!isChildEcho && (
-                                <div onClick={e => e.stopPropagation()}>
-                                    <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                                        <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                                    </button>
+                    {post.type !== 'ADVERTISEMENT' && (
+                        <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
+                            <span
+                                className={`font-mono flex-shrink-0 ${isPurifying && showPurifyText
+                                    ? 'purify-text-glow-red fade-in'
+                                    : colorClass + (isExpired ? ' fade-in' : '') + (isCritical ? ' pulse' : '')
+                                    }`}
+                            >
+                                {isPurifying && showPurifyText
+                                    ? '社区自治，自主净化'
+                                    : isChildEcho
+                                        ? timeSince(new Date(post.createdAt))
+                                        : countdownText}
+                            </span>
+                            <div className="flex items-center gap-4 flex-shrink-0">
+                                <div className="relative">
+                                    <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
+                                    <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
                                 </div>
-                            )}
+                                <div className="relative">
+                                    <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
+                                    <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
+                                </div>
+                                {!isChildEcho && (
+                                    <div onClick={e => e.stopPropagation()}>
+                                        <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                                            <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
                 {isMenuOpen && (
                     <div className="absolute top-12 right-2 bg-gray-900 rounded-lg shadow-lg p-2 z-10 w-48">

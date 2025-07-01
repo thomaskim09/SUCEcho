@@ -24,13 +24,14 @@ export async function POST(request: Request) {
                 id: { in: postIds },
                 content: { not: null },
             },
-            // --- START OF CHANGE ---
             select: {
                 id: true,
                 content: true,
                 createdAt: true,
                 parentPostId: true,
-                fingerprintHash: true, // <-- The missing piece
+                fingerprintHash: true,
+                type: true,
+                advertisementUrl: true,
                 stats: {
                     select: {
                         upvotes: true,
@@ -39,7 +40,6 @@ export async function POST(request: Request) {
                     },
                 },
             },
-            // --- END OF CHANGE ---
             orderBy: {
                 createdAt: 'desc',
             },

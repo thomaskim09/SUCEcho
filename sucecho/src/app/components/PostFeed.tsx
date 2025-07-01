@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { usePostListManager } from '@/hooks/usePostListManager';
 import logger from '@/lib/logger';
 import { useTabLeaderContext } from './TabLeaderProvider';
+import AdvertisementCard from './AdvertisementCard';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
@@ -110,6 +111,12 @@ export default function PostFeed() {
         <div className="flex flex-col gap-4">
             <AnimatePresence>
                 {unexpiredPosts.map(post => {
+                    if (post.type === 'ADVERTISEMENT') {
+                        // Render the new AdvertisementCard
+                        return <AdvertisementCard key={post.id} post={post} />;
+                    }
+
+                    // Render default and announcement posts with PostCard
                     const isNew = !initialPostIds.has(post.id);
                     return (
                         <motion.div

@@ -39,6 +39,8 @@ export async function GET(request: Request) {
                 createdAt: true,
                 parentPostId: true,
                 fingerprintHash: true,
+                type: true,
+                advertisementUrl: true,
                 stats: {
                     select: {
                         upvotes: true,
