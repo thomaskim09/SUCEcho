@@ -79,15 +79,18 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
     const isAnnouncement = post.type === 'ANNOUNCEMENT';
+    const [isEnlarged, setIsEnlarged] = useState(false);
 
     const cardVariants = {
         visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.5 } },
+        enlarged: { scale: 1.05, transition: { duration: 0.18 } },
         deleting: { opacity: 0, scale: 0.8, transition: { duration: 0.4 } },
         purifyVanish: { opacity: 0, scale: 1.5, filter: 'blur(10px)', transition: { duration: 1.5, ease: "easeOut" as const } },
         glitching: { opacity: 0, scale: 0.8, filter: 'blur(20px)', transition: { duration: 1.0, ease: "easeOut" as const } }
     };
 
     const getAnimationState = (): keyof typeof cardVariants => {
+        if (isEnlarged) return 'enlarged';
         if (post.isDeleting) return 'deleting';
         if (shouldPurifyVanish) return 'purifyVanish';
         if (isVanishing || isGlitching) return 'glitching';
@@ -190,18 +193,18 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const handleReportClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); if (onReport) { onReport(post.id); } setIsMenuOpen(false); };
     const handleCardClick = (e: MouseEvent<HTMLDivElement>) => {
         if (!isLink || isChildEcho) return;
-
         const card = cardRef.current;
         if (card) {
             const rect = card.getBoundingClientRect();
             const size = Math.max(rect.width, rect.height);
             const x = e.clientX - rect.left - size / 2;
             const y = e.clientY - rect.top - size / 2;
-
             const newRipple: Ripple = { key: Date.now(), x, y, size };
             setRipples(prev => [...prev, newRipple]);
         }
-        router.push(`/post/${post.id}`);
+        setIsEnlarged(true);
+        setTimeout(() => setIsEnlarged(false), 180);
+        setTimeout(() => router.push(`/post/${post.id}`), 180);
     };
 
     const { showMeter: showPurificationMeter, meterFillPercentage } = checkPurificationStatus({
