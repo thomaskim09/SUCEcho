@@ -146,7 +146,13 @@ export default function AdminDashboardPage() {
                 </button>
             </header>
 
-            <section className="mt-8 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
+            <section
+                className="mt-8 p-6 rounded-lg"
+                style={{
+                    backgroundColor: 'var(--card-background)',
+                    border: '1px solid #a78bfa'
+                }}
+            >
                 <h2 className="text-2xl font-bold text-purple-400 mb-4">发布特别帖子</h2>
                 <form onSubmit={handleCreateSpecialPost} className="space-y-4">
                     <div>
@@ -196,9 +202,7 @@ export default function AdminDashboardPage() {
             </section>
 
             <section className="mt-8">
-                {/* Adjusted grid for 3 items */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Report Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: `1px solid ${reportCount && reportCount > 0 ? '#ef4444' : '#22c55e'}` }}>
                         <div>
                             <h2 className={`text-2xl font-bold ${reportCount && reportCount > 0 ? 'text-red-400' : 'text-green-400'}`}>
@@ -218,7 +222,6 @@ export default function AdminDashboardPage() {
                         </Link>
                     </div>
 
-                    {/* Total Users Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #3b82f6' }}>
                         <div>
                             <h2 className="text-2xl font-bold text-blue-400">用户总数</h2>
@@ -236,7 +239,6 @@ export default function AdminDashboardPage() {
                         </Link>
                     </div>
 
-                    {/* Echo Management Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #f97316' }}>
                         <div>
                             <h2 className="text-2xl font-bold text-orange-400">回音管理</h2>

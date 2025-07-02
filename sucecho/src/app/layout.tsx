@@ -25,7 +25,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SUC Echo",
+  title: "SUC 回音壁",
   description: "声音只存在一天。",
   manifest: "/manifest.webmanifest",
   icons: {

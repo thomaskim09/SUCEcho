@@ -38,7 +38,7 @@ export default function MultiTabAlert({ visible = false }: { visible?: boolean }
                         color: '#e0e0e0',
                         textShadow: 'none',
                     }}>
-                        SUC Echo
+                        SUC 回音壁
                     </span>
                 </div>
                 <div
@@ -61,7 +61,7 @@ export default function MultiTabAlert({ visible = false }: { visible?: boolean }
                         textAlign: 'center',
                     }}
                 >
-                    为保证公平和实时更新，系统仅允许打开一个标签页。<br />请确保只打开一个 SUC Echo 标签页并刷新此页面。<br />
+                    为保证公平和实时更新，系统仅允许打开一个标签页。<br />请确保只打开一个 SUC 回音壁 标签页并刷新此页面。<br />
                 </div>
             </div>
         </div>
