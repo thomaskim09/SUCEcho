@@ -3,13 +3,13 @@
 
 import { useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
-import { useTabLeader } from '@/lib/tabLeader';
 import supabase from '@/lib/supabase-realtime';
 import type { PostWithStats } from '@/lib/types';
 import { usePageVisibility } from './usePageVisibility';
 import { useIdle } from './useIdle';
 import { usePathname } from 'next/navigation';
 import { useRealtimeStatus } from '@/context/RealtimeStatusContext';
+import { useTabLeaderContext } from '@/app/components/TabLeaderProvider';
 
 function isLivePage(pathname: string) {
     return pathname === '/' || pathname.startsWith('/post/');
@@ -35,7 +35,7 @@ interface LiveCallbacks {
 
 export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
     const { setIsSubscribed } = useRealtimeStatus();
-    const isTabLeader = useTabLeader();
+    const { status } = useTabLeaderContext();
     const isVisible = usePageVisibility();
     const isIdle = useIdle();
     const pathname = usePathname();
@@ -46,7 +46,12 @@ export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
     }, [callbacks]);
 
     useEffect(() => {
-        if (!isTabLeader || !isVisible || isIdle || !isLivePage(pathname)) {
+        if (
+            status !== 'leader' ||
+            !isVisible ||
+            isIdle ||
+            !isLivePage(pathname)
+        ) {
             setIsSubscribed(false);
             return;
         }
@@ -91,12 +96,5 @@ export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
             supabase.removeChannel(channel);
             setIsSubscribed(false);
         };
-    }, [
-        isTabLeader,
-        isVisible,
-        isIdle,
-        pathname,
-        channelName,
-        setIsSubscribed,
-    ]);
+    }, [status, isVisible, isIdle, pathname, channelName, setIsSubscribed]);
 };

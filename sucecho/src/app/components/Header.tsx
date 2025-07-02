@@ -49,10 +49,10 @@ const LiveIndicator = () => (
 export default function Header() {
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { isTabLeader, multiTabAllowed, tabLeaderChecked } = useTabLeaderContext();
+    const { status, multiTabAllowed } = useTabLeaderContext();
     const { isSubscribed } = useRealtimeStatus();
 
-    if (!tabLeaderChecked) {
+    if (status === 'checking') {
         return null;
     }
 
@@ -60,7 +60,7 @@ export default function Header() {
         return null;
     }
 
-    const showMultitabAlert = tabLeaderChecked && !multiTabAllowed && !isTabLeader;
+    const showMultitabAlert = !multiTabAllowed && status === 'follower';
 
     const navLinks = [
         { href: "/how-it-works", label: "运作方式", iconName: "info" as const },
@@ -71,7 +71,9 @@ export default function Header() {
 
     return (
         <>
-            {tabLeaderChecked && <MultiTabAlert visible={showMultitabAlert} />}
+            <AnimatePresence>
+                {showMultitabAlert && <MultiTabAlert />}
+            </AnimatePresence>
             <header className="container mx-auto max-w-2xl py-2 px-4 relative">
                 <div className="flex justify-between items-center py-2">
                     <Link href="/" className="hover:opacity-80 transition-opacity" onClick={() => setIsMenuOpen(false)}>

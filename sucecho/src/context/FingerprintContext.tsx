@@ -20,18 +20,8 @@ export const FingerprintProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const fp = await FingerprintJS.load();
                 const result = await fp.get();
-
-                // Destructure the components to exclude volatile ones
-                const {
-                    canvas,
-                    audio,
-                    screenResolution,
-                    ...remainingComponents
-                } = result.components;
-
-                // Create a new visitor ID by hashing only the remaining components
+                const { canvas: _canvas, audio: _audio, screenResolution: _screenResolution, ...remainingComponents } = result.components;
                 const visitorId = FingerprintJS.hashComponents(remainingComponents);
-
                 setFingerprint(visitorId);
 
             } catch (error) {

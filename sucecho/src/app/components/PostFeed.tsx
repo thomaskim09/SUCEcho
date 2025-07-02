@@ -22,7 +22,7 @@ export default function PostFeed() {
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<number | null>(null);
     const observer = useRef<IntersectionObserver | null>(null);
-    const { isTabLeader, multiTabAllowed, tabLeaderChecked } = useTabLeaderContext();
+    const { status } = useTabLeaderContext();
     const isVisible = usePageVisibility();
 
     const postVariants = {
@@ -40,7 +40,7 @@ export default function PostFeed() {
     };
 
     const fetchInitialPosts = useCallback(async (isRefreshing = false) => {
-        if (!isTabLeader && !multiTabAllowed) return;
+        if (status !== 'leader') return;
 
         if (!isRefreshing) {
             setIsLoading(true);
@@ -68,11 +68,11 @@ export default function PostFeed() {
                 setIsLoading(false);
             }
         }
-    }, [isTabLeader, multiTabAllowed, setPosts]);
+    }, [status, setPosts]);
 
     const loadMorePosts = useCallback(async () => {
         if (isFetchingMore || !nextCursor) return;
-        if (tabLeaderChecked && !multiTabAllowed && !isTabLeader) return;
+        if (status !== 'leader') return;
         setIsFetchingMore(true);
         try {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
@@ -85,7 +85,7 @@ export default function PostFeed() {
         } finally {
             setIsFetchingMore(false);
         }
-    }, [nextCursor, isFetchingMore, setPosts, tabLeaderChecked, multiTabAllowed, isTabLeader]);
+    }, [nextCursor, isFetchingMore, setPosts, status]);
 
     const sentinelRef = useCallback((node: HTMLDivElement | null) => {
         if (isLoading) return;
@@ -99,22 +99,22 @@ export default function PostFeed() {
     }, [isLoading, loadMorePosts, nextCursor]);
 
     useEffect(() => {
-        if (tabLeaderChecked && (multiTabAllowed || isTabLeader)) {
+        if (status === 'leader') {
             fetchInitialPosts(false);
         }
-    }, [tabLeaderChecked, multiTabAllowed, isTabLeader, fetchInitialPosts]);
+    }, [status, fetchInitialPosts]);
 
     useEffect(() => {
-        if (isVisible && !isLoading) {
+        if (isVisible && !isLoading && status === 'leader') {
             logger.log('Tab is visible again, refreshing post feed...');
-            fetchInitialPosts(true); // Pass true to indicate a silent refresh
+            fetchInitialPosts(true);
         }
-    }, [isVisible, isLoading, fetchInitialPosts]);
+    }, [isVisible, isLoading, status, fetchInitialPosts]);
 
-    if (!tabLeaderChecked) {
+    if (status === 'checking') {
         return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
     }
-    if (!multiTabAllowed && !isTabLeader) {
+    if (status === 'follower') {
         return <div className="text-center text-gray-400 p-8"><p>请关闭其他标签页并刷新本页以查看回音。</p></div>;
     }
 
