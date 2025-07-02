@@ -61,6 +61,27 @@ This project is built on four pillars:
 
 The application will be available at `http://localhost:3000`.
 
+## Deployment
+
+This project is optimized for deployment on [Vercel](https://vercel.com/).
+
+### Automatic Deployments with Vercel
+
+Vercel provides seamless, automatic deployments when you connect your Git repository.
+
+1.  **Push to Git:** Make sure your project is pushed to a GitHub, GitLab, or Bitbucket repository.
+2.  **Import Project on Vercel:**
+    *   Go to your Vercel dashboard and click "Add New... > Project".
+    *   Select your Git provider and import the repository.
+3.  **Configure Environment Variables:**
+    *   In the project settings on Vercel, navigate to "Settings > Environment Variables".
+    *   Add all the variables from your `.env.local` file (e.g., `DATABASE_URL`, `NEXTAUTH_SECRET`, etc.). These are crucial for the application to run correctly in production.
+4.  **Deploy:**
+    *   Vercel will automatically detect that it's a Next.js project and use the correct build settings.
+    *   Click "Deploy".
+
+Once set up, any new commits pushed to the `main` branch will automatically trigger a new build and deployment on Vercel.
+
 ---
 
 ## Important: Next.js 15+ Development Note
