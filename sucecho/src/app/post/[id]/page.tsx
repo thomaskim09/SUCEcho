@@ -14,6 +14,8 @@ import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
+import LoadingSpinner from '@/app/components/LoadingVideo';
+import LoadingVideo from '@/app/components/LoadingVideo';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -245,7 +247,7 @@ export default function PostDetailPage() {
         }
 
         if (!post) {
-            return <p className="text-gray-400 text-center p-8">This echo has faded into silence.</p>;
+            return <p className="text-gray-400 text-center p-8">这回音已消散.</p>;
         }
 
         return (
@@ -351,7 +353,7 @@ export default function PostDetailPage() {
 
             <main className="mt-4">
                 {isLoading ? (
-                    <div className="text-center text-gray-400 p-8"><p>加载回音...</p></div>
+                    <LoadingVideo label="加载回音..." />
                 ) : (
                     renderMainContent()
                 )}

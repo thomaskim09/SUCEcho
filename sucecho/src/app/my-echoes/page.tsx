@@ -10,6 +10,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useMyEchoesManager } from '@/hooks/useMyEchoesManager';
 import logger from '@/lib/logger';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
+import LoadingSpinner from '../components/LoadingVideo';
+import LoadingVideo from '../components/LoadingVideo';
 
 export default function MyEchoesPage() {
     const [initialPosts] = useState<PostWithStats[]>([]);
@@ -68,7 +70,7 @@ export default function MyEchoesPage() {
 
     const renderContent = () => {
         if (isLoading) {
-            return <div className="text-center text-gray-400 p-8"><p>正在加载你的回音...</p></div>;
+            return <LoadingVideo label="正在加载你的回音..." />;
         }
         if (posts.length === 0) {
             return (
