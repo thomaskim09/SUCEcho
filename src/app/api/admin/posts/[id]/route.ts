@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import supabase from '@/lib/supabase-realtime';
 import logger from '@/lib/logger';
 import { verifySession } from '@/lib/auth';
-import { MAIN_CHANNEL } from '@/lib/supabase-realtime';
+import { getPostRoomChannelName, MAIN_CHANNEL } from '@/lib/supabase-realtime';
 
 interface Params {
     id: string;
@@ -53,12 +53,35 @@ export async function DELETE(
             where: { id: numericPostId },
         });
 
-        const channel = supabase.channel(MAIN_CHANNEL);
-        await channel.send({
-            type: 'broadcast',
-            event: 'delete_post',
-            payload: { postId: numericPostId },
-        });
+        // If the deleted post was a reply, notify the parent post's channel
+        if (existingPost.parentPostId) {
+            const postRoomChannel = supabase.channel(
+                getPostRoomChannelName(existingPost.parentPostId)
+            );
+            await postRoomChannel.send({
+                type: 'broadcast',
+                event: 'reply_deleted',
+                payload: { postId: numericPostId },
+            });
+        } else {
+            // If the deleted post was a parent post, notify the main channel
+            const mainChannel = supabase.channel(MAIN_CHANNEL);
+            await mainChannel.send({
+                type: 'broadcast',
+                event: 'post_deleted',
+                payload: { postId: numericPostId },
+            });
+
+            // Also notify the specific post room that the parent is gone
+            const postRoomChannel = supabase.channel(
+                getPostRoomChannelName(numericPostId)
+            );
+            await postRoomChannel.send({
+                type: 'broadcast',
+                event: 'parent_post_deleted',
+                payload: { postId: numericPostId },
+            });
+        }
 
         return NextResponse.json(
             { message: 'Post deleted successfully' },
