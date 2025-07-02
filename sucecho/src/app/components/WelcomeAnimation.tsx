@@ -54,8 +54,8 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
     const SplashContent = (
         <div className="flex flex-col items-center justify-center">
             <Logo isGlowing={step >= 1} className="w-30 h-30" />
-            <h2 className="text-center text-2xl font-bold text-gray-200 mt-2">
-                SUC 回音壁
+            <h2 className="text-2xl font-bold text-gray-100 tracking-wide font-mono mt-2" style={{ letterSpacing: '0.08em' }}>
+                SUC Echo
             </h2>
             <div className="mt-6 text-center font-mono text-xl text-gray-200 h-12">
                 <AnimatePresence mode="wait">
@@ -91,8 +91,8 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
                 >
                     <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: step >= 1 ? 1 : 0, scale: step >= 1 ? 1 : 0.8 }} transition={{ duration: 1 }}>
                         <Logo isGlowing={step >= 1} className="w-30 h-30" />
-                        <h2 className="text-center text-2xl font-bold text-gray-200 mt-2">
-                            SUC 回音壁
+                        <h2 className="text-2xl font-bold text-gray-100 tracking-wide font-mono mt-2" style={{ letterSpacing: '0.08em' }}>
+                            SUC Echo
                         </h2>
                     </motion.div>
                     <div className="mt-6 text-center font-mono text-xl text-gray-200 h-12">

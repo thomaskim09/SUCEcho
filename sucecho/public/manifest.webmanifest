@@ -1,6 +1,6 @@
 {
-    "name": "SUC 回音壁",
-    "short_name": "SUC 回音壁",
+    "name": "SUC Echo",
+    "short_name": "SUC Echo",
     "description": "声音只存在一天。",
     "start_url": "/",
     "display": "standalone",

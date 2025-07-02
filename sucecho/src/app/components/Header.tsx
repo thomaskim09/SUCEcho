@@ -83,7 +83,9 @@ export default function Header() {
                             >
                                 <Logo className="w-8 h-8" />
                             </motion.div>
-                            <span className="text-xl font-bold text-gray-200">SUC 回音壁</span>
+                            <span className="text-2xl font-bold text-gray-100 tracking-wide font-mono" style={{ letterSpacing: '0.08em' }}>
+                                SUC Echo
+                            </span>
                         </div>
                     </Link>
 
