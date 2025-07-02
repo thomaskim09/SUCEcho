@@ -310,7 +310,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                         ? timeSince(new Date(post.createdAt))
                                         : countdownText}
                             </span>
-                            <div className="flex items-center gap-4 flex-shrink-0">
+                            <div className="flex items-center gap-4 flex-shrink-0 items-center">
                                 <div className="relative">
                                     <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
                                     <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
@@ -320,9 +320,11 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                     <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
                                 </div>
                                 {!isChildEcho && (
-                                    <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                                        <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                                    </button>
+                                    <div className="relative">
+                                        <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                                            <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>

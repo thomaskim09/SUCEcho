@@ -7,14 +7,13 @@ import type { PostWithStats } from "@/lib/types";
 import { useLivePostThreadUpdates } from '@/hooks/useLivePostThreadUpdates';
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@/app/components/Icon';
 import ReportModal from '@/app/components/ReportModal';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
-import { useCountdown } from '@/hooks/useCountdown';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -32,8 +31,17 @@ const ExpiredPostMessage = () => {
     };
 
     return (
-        <div className="text-center text-gray-400 p-8 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
-            <p className="text-3xl mb-4">⏳</p>
+        <motion.div
+            key="expired"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="text-center text-gray-400 p-8 rounded-lg"
+            style={{ backgroundColor: 'var(--card-background)' }}
+        >
+            <div className="flex justify-center">
+                <Icon name="timer" className="text-3xl mb-4" />
+            </div>
             <h2 className="text-2xl font-bold text-white mb-2">此回音已消逝</h2>
             <p className="text-lg text-gray-400">它已完成了自己的使命，化作了数字尘埃。</p>
             <button
@@ -42,7 +50,7 @@ const ExpiredPostMessage = () => {
             >
                 返回
             </button>
-        </div>
+        </motion.div>
     );
 };
 
@@ -54,7 +62,6 @@ export default function PostDetailPage() {
 
     const [initialPost, setInitialPost] = useState<PostThread | null>(null);
     const [post, setPost] = useLivePostThreadUpdates(initialPost);
-    const { isExpired, isVanishing } = useCountdown(post?.createdAt ? new Date(post.createdAt) : new Date(Date.now() + 10000));
 
     const [showFinalMessage, setShowFinalMessage] = useState(false);
 
@@ -80,7 +87,6 @@ export default function PostDetailPage() {
 
     const fetchPostDetails = useCallback(async (isRefreshing = false) => {
         if (!id) return;
-
         if (!isRefreshing) {
             if (dataFetched.current) return;
             dataFetched.current = true;
@@ -92,7 +98,6 @@ export default function PostDetailPage() {
             const res = await fetch(`/api/posts/${id}`);
             if (!res.ok) {
                 const errorData = await res.json();
-                // If the post is gone, we'll show the expired message.
                 if (res.status === 404 || res.status === 410) {
                     setShowFinalMessage(true);
                 }
@@ -135,7 +140,20 @@ export default function PostDetailPage() {
         });
     };
 
-    // This is now the key handler for both purification and expiration.
+    const handlePurification = (postIdToPurify: number) => {
+        logger.log(`Purification process starting for post ${postIdToPurify}`);
+        setPost(currentThread => {
+            if (!currentThread) return null;
+            if (currentThread.id === postIdToPurify) {
+                return { ...currentThread, isPurifying: true };
+            }
+            const updatedReplies = currentThread.replies.map(reply =>
+                reply.id === postIdToPurify ? { ...reply, isPurifying: true } : reply
+            );
+            return { ...currentThread, replies: updatedReplies };
+        });
+    };
+
     const handleAnimationEnd = (postId: number) => {
         logger.log(`Animation finished for post ${postId}. Showing final message.`);
         setShowFinalMessage(true);
@@ -172,8 +190,11 @@ export default function PostDetailPage() {
             }
             setPost(current => {
                 if (!current) return null;
+                if (current.id === postId) {
+                    return { ...current, isDeleting: true };
+                }
                 const updatedReplies = current.replies.map(p =>
-                    p.id === postId ? { ...p, isPurifying: true } : p
+                    p.id === postId ? { ...p, isDeleting: true } : p
                 );
                 return { ...current, replies: updatedReplies };
             });
@@ -214,85 +235,40 @@ export default function PostDetailPage() {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="container mx-auto max-w-2xl p-4 text-center">
-                <header className="py-4 flex items-center">
-                    <button onClick={handleBackClick} className="text-accent hover:underline">← 返回</button>
-                </header>
-                <main className="mt-8">
-                    <p>加载回音...</p>
-                </main>
-            </div>
-        );
-    }
+    const renderMainContent = () => {
+        if (showFinalMessage) {
+            return <ExpiredPostMessage />;
+        }
 
-    // If we should show the final message, render it. This is our highest priority state.
-    if (showFinalMessage) {
-        return (
-            <div className="container mx-auto max-w-2xl p-4">
-                <header className="py-4 flex items-center">
-                    <button onClick={handleBackClick} className="text-accent hover:underline">← 返回</button>
-                </header>
-                <main className="mt-4">
-                    <ExpiredPostMessage />
-                </main>
-            </div>
-        )
-    }
+        if (error) {
+            return <p className="text-red-400 text-center p-8">{error}</p>;
+        }
 
-    // If there's an error and we aren't about to show the expired message, show the error.
-    if (error || !post) {
-        return (
-            <div className="container mx-auto max-w-2xl p-4 text-center">
-                <header className="py-4 flex items-center">
-                    <button onClick={handleBackClick} className="text-accent hover:underline">← 返回</button>
-                </header>
-                <main className="mt-8">
-                    <p className="text-red-400">{error || 'This echo has faded into silence.'}</p>
-                </main>
-            </div>
-        );
-    }
+        if (!post) {
+            return <p className="text-gray-400 text-center p-8">This echo has faded into silence.</p>;
+        }
 
-    // The main render logic for a visible, active post
-    return (
-        <div className="container mx-auto max-w-2xl p-4">
-            <ReportModal
-                isOpen={isReportModalOpen}
-                onClose={() => setIsReportModalOpen(false)}
-                onSubmit={handleReportSubmit}
-            />
-            <header className="py-4 flex justify-between items-center">
-                <button onClick={() => router.back()} className="text-accent hover:underline">
-                    ← 返回
-                </button>
-                <div className="flex items-center gap-2">
-                    <button onClick={handleShare} aria-label="Share post" className="p-2 rounded-lg transition-colors icon-base icon-share">
-                        <Icon name="share" />
-                    </button>
-                    <button onClick={() => handleOpenReportModal(post.id)} aria-label="Report post" className="p-2 rounded-lg transition-colors icon-base icon-report-flag">
-                        <Icon name="report-flag" />
-                    </button>
-                </div>
-            </header>
-            {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300">{shareFeedback}</div>}
-            {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
-            <main className="mt-4">
+        return (
+            <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+            >
                 <div className="mb-4">
                     <PostCard
                         post={post}
                         isLink={false}
-                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState, handleAnimationEnd)}
+                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState, handlePurification)}
                         userVote={userVotes[post.id]}
-                        isPurifying={post.isPurifying || isVanishing}
+                        isPurifying={post.isPurifying}
                         onPurificationComplete={() => handleAnimationEnd(post.id)}
                         onFaded={() => handleAnimationEnd(post.id)}
                         onDelete={handleDelete}
+                        onDeletionComplete={() => handleAnimationEnd(post.id)}
                     />
                 </div>
-                {/* Hide the reply UI if the post is expiring/purifying */}
-                {(!post.isPurifying && !isVanishing) && (
+                {(!post.isPurifying && !post.isDeleting) && (
                     <>
                         <div className="my-6 text-center">
                             <Link href={`/compose?parentPostId=${post.id}`} className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation">
@@ -315,13 +291,14 @@ export default function PostDetailPage() {
                                                 <PostCard
                                                     post={reply}
                                                     isLink={false}
-                                                    onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState, handleAnimationEnd)}
+                                                    onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState, handlePurification)}
                                                     userVote={userVotes[reply.id]}
                                                     onReport={handleOpenReportModal}
                                                     onPurificationComplete={() => handleAnimationEnd(reply.id)}
                                                     onFaded={() => handleAnimationEnd(reply.id)}
                                                     isPurifying={reply.isPurifying}
                                                     onDelete={handleDelete}
+                                                    onDeletionComplete={() => handleAnimationEnd(reply.id)}
                                                 />
                                             </motion.div>
                                         ))}
@@ -332,6 +309,51 @@ export default function PostDetailPage() {
                             </div>
                         </div>
                     </>
+                )}
+            </motion.div>
+        )
+    }
+
+    return (
+        <div className="container mx-auto max-w-2xl p-4">
+            <ReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                onSubmit={handleReportSubmit}
+            />
+            <header className="py-4 flex justify-between items-center">
+                <button onClick={handleBackClick} className="p-2 rounded-lg text-accent hover:underline">
+                    ← 返回
+                </button>
+
+                <div className={`flex items-center gap-2 transition-opacity duration-300 ${(!isLoading && post && !showFinalMessage) ? 'opacity-100' : 'opacity-0'}`}>
+                    <button
+                        onClick={handleShare}
+                        aria-label="Share post"
+                        className="p-2 rounded-lg transition-colors icon-base icon-share"
+                        disabled={isLoading || !post || showFinalMessage}
+                    >
+                        <Icon name="share" />
+                    </button>
+                    <button
+                        onClick={() => post && handleOpenReportModal(post.id)}
+                        aria-label="Report post"
+                        className="p-2 rounded-lg transition-colors icon-base icon-report-flag"
+                        disabled={isLoading || !post || showFinalMessage}
+                    >
+                        <Icon name="report-flag" />
+                    </button>
+                </div>
+            </header>
+
+            {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300">{shareFeedback}</div>}
+            {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
+
+            <main className="mt-4">
+                {isLoading ? (
+                    <div className="text-center text-gray-400 p-8"><p>加载回音...</p></div>
+                ) : (
+                    renderMainContent()
                 )}
             </main>
         </div>
