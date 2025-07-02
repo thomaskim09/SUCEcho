@@ -135,7 +135,7 @@ export default function PostDetailPage() {
 
         const handleReplyDeleted = (payload: { postId: number }) => {
             if (!payload || typeof payload.postId !== 'number') return;
-            logger.log(`Received reply_deleted event for postId: ${payload.postId}`);
+            logger.log(`Received delete_reply event for postId: ${payload.postId}`);
             setPost(current => {
                 if (!current) return null;
                 const updatedReplies = current.replies.map(p =>
@@ -147,7 +147,7 @@ export default function PostDetailPage() {
 
         const handleParentPostDeleted = (payload: { postId: number }) => {
             if (!payload || typeof payload.postId !== 'number' || !post || payload.postId !== post.id) return;
-            logger.log(`Received parent_post_deleted event for postId: ${payload.postId}`);
+            logger.log(`Received delete_parent_post event for postId: ${payload.postId}`);
             setPost(current => {
                 if (!current) return null;
                 return { ...current, isDeleting: true };
@@ -155,8 +155,8 @@ export default function PostDetailPage() {
         };
 
         channel
-            .on('broadcast', { event: 'reply_deleted' }, ({ payload }) => handleReplyDeleted(payload))
-            .on('broadcast', { event: 'parent_post_deleted' }, ({ payload }) => handleParentPostDeleted(payload))
+            .on('broadcast', { event: 'delete_reply' }, ({ payload }) => handleReplyDeleted(payload))
+            .on('broadcast', { event: 'delete_parent_post' }, ({ payload }) => handleParentPostDeleted(payload))
             .subscribe(status => {
                 if (status === 'SUBSCRIBED') {
                     logger.log(`Successfully subscribed to channel: ${getPostRoomChannelName}`);
@@ -277,6 +277,11 @@ export default function PostDetailPage() {
         }
     };
 
+    const handlePostVanished = (postId: number) => {
+        logger.log(`Vote failed because post ${postId} has vanished. Showing final message.`);
+        setShowFinalMessage(true);
+    };
+
     const renderMainContent = () => {
         if (showFinalMessage) {
             return <ExpiredPostMessage />;
@@ -301,7 +306,7 @@ export default function PostDetailPage() {
                     <PostCard
                         post={post}
                         isLink={false}
-                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState, handlePurification)}
+                        onVote={(_, voteType) => handleOptimisticVote(post, voteType, updatePostInState, handlePurification, handlePostVanished)}
                         userVote={userVotes[post.id]}
                         isPurifying={post.isPurifying}
                         onPurificationComplete={() => handleAnimationEnd(post.id)}
@@ -333,7 +338,7 @@ export default function PostDetailPage() {
                                                 <PostCard
                                                     post={reply}
                                                     isLink={false}
-                                                    onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState, handlePurification)}
+                                                    onVote={(_, voteType) => handleOptimisticVote(reply, voteType, updatePostInState, handlePurification, handlePostVanished)}
                                                     userVote={userVotes[reply.id]}
                                                     onReport={handleOpenReportModal}
                                                     onPurificationComplete={() => handleAnimationEnd(reply.id)}

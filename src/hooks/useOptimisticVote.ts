@@ -12,7 +12,8 @@ interface UseOptimisticVoteReturn {
         post: PostWithStats,
         voteType: 1 | -1,
         updateStateCallback: (updatedPost: PostWithStats) => void,
-        onPurifyCallback: (postId: number) => void
+        onPurifyCallback: (postId: number) => void,
+        onPostVanished: (postId: number) => void
     ) => void;
     isVoting: boolean;
 }
@@ -26,7 +27,8 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
         post: PostWithStats,
         voteType: 1 | -1,
         updateStateCallback: (updatedPost: PostWithStats) => void,
-        onPurifyCallback: (postId: number) => void
+        onPurifyCallback: (postId: number) => void,
+        onPostVanished: (postId: number) => void
     ) => {
         if (!fingerprint) {
             alert('无法识别您的浏览器，请稍后再试。');
@@ -108,6 +110,9 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
 
                     if (!res.ok) {
                         const errorData = await res.json();
+                        if (errorData.error === '帖子已消失，无法投票。') {
+                            onPostVanished(postId);
+                        }
                         throw new Error(
                             errorData.error || 'Server vote failed'
                         );
@@ -118,20 +123,26 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                         onPurifyCallback(postId);
                     }
                 } catch (error) {
-                    logger.error('Reverting optimistic vote:', error);
-                    alert((error as Error).message);
+                    const errorMessage = (error as Error).message;
+                    logger.error('Vote failed:', error);
+                    alert(errorMessage);
 
-                    // Revert UI on error
-                    setUserVotes((prev) => {
-                        const newVotes = { ...prev };
-                        if (originalVote) {
-                            newVotes[postId] = originalVote;
-                        } else {
-                            delete newVotes[postId];
-                        }
-                        return newVotes;
-                    });
-                    updateStateCallback(originalPost);
+                    if (errorMessage !== '帖子已消失，无法投票。') {
+                        logger.log(
+                            'Reverting optimistic vote due to server error.'
+                        );
+                        // Revert UI on error
+                        setUserVotes((prev) => {
+                            const newVotes = { ...prev };
+                            if (originalVote) {
+                                newVotes[postId] = originalVote;
+                            } else {
+                                delete newVotes[postId];
+                            }
+                            return newVotes;
+                        });
+                        updateStateCallback(originalPost);
+                    }
                 }
             };
 

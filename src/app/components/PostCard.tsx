@@ -238,7 +238,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             >
                 <div>
                     {isLink && !isChildEcho && (
-                        <div className="ripple-container z-10">
+                        <div className="ripple-container">
                             {ripples.map((ripple) => (
                                 <span
                                     key={ripple.key}
@@ -258,7 +258,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     )}
 
                     {(isAdmin || isChildEcho) && (
-                        <div className="absolute top-2 right-2 z-10">
+                        <div className="absolute top-2 right-2 z-20">
                             <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">
                                 <Icon name="menu" className="w-4 h-4" />
                             </button>
@@ -283,21 +283,21 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     </div>
 
                     {isLink && isOverflowing && (
-                        <div className="mt-2 text-sm font-bold text-accent hover:underline cursor-pointer" onClick={handleCardClick}>
+                        <div className="mt-2 text-sm font-bold text-accent hover:underline cursor-pointer z-10" onClick={handleCardClick}>
                             ...[阅读全文]
                         </div>
                     )}
 
                     <AnimatePresence>
                         {showPurificationMeter && (
-                            <motion.div className="mt-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                            <motion.div className="mt-3 relative z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
                                 <div className="flex items-center gap-2"><span className="text-red-400 font-mono text-xs flex-shrink-0">净化进度</span><div className="w-full bg-gray-700 rounded-full h-1.5"><motion.div className="bg-gradient-to-r from-yellow-500 to-red-600 h-1.5 rounded-full" style={{ width: `${meterFillPercentage}%` }} /></div></div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
                     {post.type !== 'ADVERTISEMENT' && (
-                        <div className="flex items-center justify-between text-sm text-gray-400 mt-3">
+                        <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
                             <span
                                 className={`font-mono flex-shrink-0 ${isPurifying && showPurifyText
                                     ? 'purify-text-glow-red fade-in'
