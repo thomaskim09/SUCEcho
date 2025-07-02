@@ -1,4 +1,3 @@
-// sucecho/src/app/post/[id]/page.tsx
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -15,6 +14,7 @@ import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingVideo from '@/app/components/LoadingVideo';
+import supabase, { getPostRoomChannelName } from '@/lib/supabase-realtime';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -127,6 +127,47 @@ export default function PostDetailPage() {
         }
     }, [isVisible, isLoading, fetchPostDetails]);
 
+    // Real-time event handling for deletions
+    useEffect(() => {
+        if (!post || !post.id) return;
+
+        const channel = supabase.channel(getPostRoomChannelName(post.id));
+
+        const handleReplyDeleted = (payload: { postId: number }) => {
+            if (!payload || typeof payload.postId !== 'number') return;
+            logger.log(`Received reply_deleted event for postId: ${payload.postId}`);
+            setPost(current => {
+                if (!current) return null;
+                const updatedReplies = current.replies.map(p =>
+                    p.id === payload.postId ? { ...p, isDeleting: true } : p
+                );
+                return { ...current, replies: updatedReplies };
+            });
+        };
+
+        const handleParentPostDeleted = (payload: { postId: number }) => {
+            if (!payload || typeof payload.postId !== 'number' || !post || payload.postId !== post.id) return;
+            logger.log(`Received parent_post_deleted event for postId: ${payload.postId}`);
+            setPost(current => {
+                if (!current) return null;
+                return { ...current, isDeleting: true };
+            });
+        };
+
+        channel
+            .on('broadcast', { event: 'reply_deleted' }, ({ payload }) => handleReplyDeleted(payload))
+            .on('broadcast', { event: 'parent_post_deleted' }, ({ payload }) => handleParentPostDeleted(payload))
+            .subscribe(status => {
+                if (status === 'SUBSCRIBED') {
+                    logger.log(`Successfully subscribed to channel: ${getPostRoomChannelName}`);
+                }
+            });
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [post?.id, setPost]);
+
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {
@@ -156,8 +197,17 @@ export default function PostDetailPage() {
     };
 
     const handleAnimationEnd = (postId: number) => {
-        logger.log(`Animation finished for post ${postId}. Showing final message.`);
-        setShowFinalMessage(true);
+        logger.log(`Animation finished for post ${postId}.`);
+        if (post && postId === post.id) {
+            setShowFinalMessage(true);
+        } else {
+            // A reply's animation finished, filter it out from the state.
+            setPost(current => {
+                if (!current) return null;
+                const updatedReplies = current.replies.filter(reply => reply.id !== postId);
+                return { ...current, replies: updatedReplies };
+            });
+        }
     };
 
     const handleShare = async () => {
@@ -189,16 +239,7 @@ export default function PostDetailPage() {
                 const errorData = await res.json();
                 throw new Error(errorData.message || 'Failed to delete post');
             }
-            setPost(current => {
-                if (!current) return null;
-                if (current.id === postId) {
-                    return { ...current, isDeleting: true };
-                }
-                const updatedReplies = current.replies.map(p =>
-                    p.id === postId ? { ...p, isDeleting: true } : p
-                );
-                return { ...current, replies: updatedReplies };
-            });
+            // The real-time event will handle the UI update, so no immediate state change here.
         } catch (err: unknown) {
             alert(`Error: ${(err as Error).message}`);
         }
@@ -277,7 +318,7 @@ export default function PostDetailPage() {
                             </Link>
                         </div>
                         <div className="mt-8">
-                            <h2 className="text-xl font-mono text-gray-400 mb-2">回复 ({post.replies.length})</h2>
+                            <h2 className="text-xl font-mono text-gray-400 mb-2">回复 ({post.replies.filter(r => !r.isDeleting).length})</h2>
                             <div className="space-y-2 border-l-2 border-accent/30 pl-4 ml-4">
                                 {post.replies.length > 0 ? (
                                     <AnimatePresence>
@@ -287,7 +328,7 @@ export default function PostDetailPage() {
                                                 layout
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.8 } }}
-                                                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                                                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.4 } }}
                                             >
                                                 <PostCard
                                                     post={reply}
@@ -388,3 +429,4 @@ export default function PostDetailPage() {
         </div>
     );
 }
+''
