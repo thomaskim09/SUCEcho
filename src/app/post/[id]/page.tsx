@@ -347,8 +347,36 @@ export default function PostDetailPage() {
                 </div>
             </header>
 
-            {shareFeedback && <div className="text-center p-2 my-2 bg-green-600 text-white rounded-md transition-opacity duration-300">{shareFeedback}</div>}
-            {reportFeedback && <div className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md transition-opacity duration-300">{reportFeedback}</div>}
+            <AnimatePresence>
+                {shareFeedback && (
+                    <motion.div
+                        key="share-feedback"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-center p-2 my-2 bg-green-600 text-white rounded-md"
+                        style={{ position: 'relative', zIndex: 10 }}
+                    >
+                        {shareFeedback}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {reportFeedback && (
+                    <motion.div
+                        key="report-feedback"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-center p-2 my-2 bg-yellow-600 text-white rounded-md"
+                        style={{ position: 'relative', zIndex: 10 }}
+                    >
+                        {reportFeedback}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <main className="mt-4">
                 {isLoading ? (
