@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import { useLivePostThreadUpdates } from '@/hooks/useLivePostThreadUpdates';
 import PostCard from '@/app/components/PostCard';
@@ -20,6 +20,7 @@ type PostThread = PostWithStats & {
 
 export default function PostDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const id = params.id as string;
 
     const [initialPost, setInitialPost] = useState<PostThread | null>(null);
@@ -162,7 +163,7 @@ export default function PostDetailPage() {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
                 <header className="py-4 flex items-center">
-                    <Link href="/" className="text-accent hover:underline">← 返回回音壁</Link>
+                    <button onClick={() => router.back()} className="text-accent hover:underline">← 返回</button>
                 </header>
                 <main className="mt-8">
                     <p>加载回音...</p>
@@ -175,7 +176,7 @@ export default function PostDetailPage() {
         return (
             <div className="container mx-auto max-w-2xl p-4 text-center">
                 <header className="py-4 flex items-center">
-                    <Link href="/" className="text-accent hover:underline">← 返回回音壁</Link>
+                    <button onClick={() => router.back()} className="text-accent hover:underline">← 返回</button>
                 </header>
                 <main className="mt-8">
                     <p className="text-red-400">{error || 'This echo has faded into silence.'}</p>
@@ -192,7 +193,9 @@ export default function PostDetailPage() {
                 onSubmit={handleReportSubmit}
             />
             <header className="py-4 flex justify-between items-center">
-                <Link href="/" className="text-accent hover:underline">← 返回回音壁</Link>
+                <button onClick={() => router.back()} className="text-accent hover:underline">
+                    ← 返回
+                </button>
                 <div className="flex items-center gap-2">
                     <button onClick={handleShare} aria-label="Share post" className="p-2 rounded-lg transition-colors icon-base icon-share">
                         <Icon name="share" />

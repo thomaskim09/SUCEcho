@@ -80,7 +80,11 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
             setIsSent(true);
 
             setTimeout(() => {
-                router.push(parentPostId ? `/post/${parentPostId}` : '/');
+                if (parentPostId) {
+                    router.replace(`/post/${parentPostId}`);
+                } else {
+                    router.push('/');
+                }
             }, 600);
 
         } catch (err: unknown) {

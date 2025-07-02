@@ -9,21 +9,20 @@ import { usePostListManager } from '@/hooks/usePostListManager';
 import logger from '@/lib/logger';
 import { useTabLeaderContext } from './TabLeaderProvider';
 import AdvertisementCard from './AdvertisementCard';
+import { usePageVisibility } from '@/hooks/usePageVisibility';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
 export default function PostFeed() {
     const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
     const [initialPostIds, setInitialPostIds] = useState<Set<number>>(new Set());
-
     const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded } = usePostListManager(initialPosts);
-
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<number | null>(null);
     const observer = useRef<IntersectionObserver | null>(null);
-
     const { isTabLeader, multiTabAllowed, tabLeaderChecked } = useTabLeaderContext();
+    const isVisible = usePageVisibility();
 
     const postVariants = {
         initial: (isNew: boolean) => ({
@@ -38,6 +37,37 @@ export default function PostFeed() {
             transition: { ease: "easeOut" as const, duration: 0.6 }
         },
     };
+
+    const fetchInitialPosts = useCallback(async (isRefreshing = false) => {
+        if (!isTabLeader && !multiTabAllowed) return;
+
+        if (!isRefreshing) {
+            setIsLoading(true);
+        }
+
+        try {
+            const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
+            if (!res.ok) throw new Error('Failed to fetch posts');
+            const { posts: fetchedPosts, nextCursor: initialNextCursor } = await res.json();
+
+            setPosts(currentPosts => {
+                const postMap = new Map(currentPosts.map(p => [p.id, p]));
+                fetchedPosts.forEach((post: PostWithStats) => postMap.set(post.id, post));
+                const mergedPosts = Array.from(postMap.values());
+                mergedPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                return mergedPosts;
+            });
+
+            setInitialPostIds(new Set(fetchedPosts.map((p: PostWithStats) => p.id)));
+            setNextCursor(initialNextCursor);
+        } catch (error) {
+            logger.error("Error fetching initial posts:", error);
+        } finally {
+            if (!isRefreshing) {
+                setIsLoading(false);
+            }
+        }
+    }, [isTabLeader, multiTabAllowed, setPosts]);
 
     const loadMorePosts = useCallback(async () => {
         if (isFetchingMore || !nextCursor) return;
@@ -68,25 +98,17 @@ export default function PostFeed() {
     }, [isLoading, loadMorePosts, nextCursor]);
 
     useEffect(() => {
-        // Only run fetch if tabLeaderChecked is true and (multiTabAllowed or isTabLeader)
-        if (!tabLeaderChecked) return;
-        if (!multiTabAllowed && !isTabLeader) return;
-        const fetchInitialPosts = async () => {
-            try {
-                const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
-                if (!res.ok) throw new Error('Failed to fetch posts');
-                const { posts: fetchedPosts, nextCursor: initialNextCursor } = await res.json();
-                setInitialPosts(fetchedPosts);
-                setInitialPostIds(new Set(fetchedPosts.map((p: PostWithStats) => p.id)));
-                setNextCursor(initialNextCursor);
-            } catch (error) {
-                logger.error("Error fetching initial posts:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchInitialPosts();
-    }, [tabLeaderChecked, multiTabAllowed, isTabLeader]);
+        if (tabLeaderChecked && (multiTabAllowed || isTabLeader)) {
+            fetchInitialPosts(false);
+        }
+    }, [tabLeaderChecked, multiTabAllowed, isTabLeader, fetchInitialPosts]);
+
+    useEffect(() => {
+        if (isVisible && !isLoading) {
+            logger.log('Tab is visible again, refreshing post feed...');
+            fetchInitialPosts(true); // Pass true to indicate a silent refresh
+        }
+    }, [isVisible, isLoading, fetchInitialPosts]);
 
     if (!tabLeaderChecked) {
         return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;

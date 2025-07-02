@@ -1,44 +1,70 @@
 // sucecho/src/app/my-echoes/page.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import { getMyEchoes } from '@/hooks/useMyEchoes';
 import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
-import { usePostListManager } from '@/hooks/usePostListManager';
+import { useMyEchoesManager } from '@/hooks/useMyEchoesManager';
 import logger from '@/lib/logger';
+import { usePageVisibility } from '@/hooks/usePageVisibility';
 
 export default function MyEchoesPage() {
-    const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
-    const { posts, userVotes, handleVote, handlePostFaded } = usePostListManager(initialPosts);
+    const [initialPosts] = useState<PostWithStats[]>([]);
+    const { posts, setPosts, userVotes, handleVote, handlePostFaded } = useMyEchoesManager(initialPosts);
     const [isLoading, setIsLoading] = useState(true);
+    const isVisible = usePageVisibility();
+
+    const fetchMyPosts = useCallback(async (isRefreshing = false) => {
+        const postIds = getMyEchoes();
+        if (postIds.length === 0) {
+            setIsLoading(false);
+            return;
+        }
+
+        if (!isRefreshing) {
+            setIsLoading(true);
+        }
+
+        try {
+            const res = await fetch('/api/posts/mine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ postIds }),
+            });
+            if (!res.ok) throw new Error('Failed to fetch your echoes');
+            const fetchedPosts: PostWithStats[] = await res.json();
+
+            setPosts((currentPosts: PostWithStats[]) => {
+                const postMap = new Map(currentPosts.map(p => [p.id, p]));
+                fetchedPosts.forEach(post => postMap.set(post.id, post));
+                const mergedPosts = Array.from(postMap.values());
+                mergedPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                return mergedPosts;
+            });
+
+        } catch (error) {
+            logger.error(error);
+        } finally {
+            if (!isRefreshing) {
+                setIsLoading(false);
+            }
+        }
+    }, [setPosts]);
 
     useEffect(() => {
-        const fetchMyPosts = async () => {
-            const postIds = getMyEchoes();
-            if (postIds.length === 0) {
-                setIsLoading(false);
-                return;
-            }
-            try {
-                const res = await fetch('/api/posts/mine', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ postIds }),
-                });
-                if (!res.ok) throw new Error('Failed to fetch your echoes');
-                const fetchedPosts = await res.json();
-                setInitialPosts(fetchedPosts);
-            } catch (error) {
-                logger.error(error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchMyPosts();
-    }, []);
+        fetchMyPosts(false);
+    }, [fetchMyPosts]);
+
+    useEffect(() => {
+        if (isVisible && !isLoading) {
+            logger.log('"My Echoes" tab is visible again, refreshing posts...');
+            fetchMyPosts(true);
+        }
+    }, [isVisible, isLoading, fetchMyPosts]);
+
 
     const renderContent = () => {
         if (isLoading) {
