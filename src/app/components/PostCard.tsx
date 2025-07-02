@@ -238,7 +238,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             >
                 <div>
                     {isLink && !isChildEcho && (
-                        <div className="ripple-container">
+                        <div className="ripple-container z-10">
                             {ripples.map((ripple) => (
                                 <span
                                     key={ripple.key}
