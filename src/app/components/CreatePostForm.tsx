@@ -36,7 +36,9 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
     const [isSent, setIsSent] = useState(false);
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const router = useRouter();
-    const charLimit = 400;
+    const charLimit = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_POST_CHAR_LIMIT
+        ? parseInt(process.env.NEXT_PUBLIC_POST_CHAR_LIMIT, 10)
+        : 200;
 
     const placeholderExamples = parentPostId ? replyEchoPlaceholders : mainEchoPlaceholders;
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
