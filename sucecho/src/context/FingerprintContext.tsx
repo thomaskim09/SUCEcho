@@ -1,8 +1,7 @@
-// sucecho/src/context/FingerprintContext.tsx
 "use client";
 
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import FingerprintJS, { hashComponents, sources } from '@fingerprintjs/fingerprintjs';
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import logger from '@/lib/logger';
 
 interface FingerprintContextType {
@@ -19,27 +18,21 @@ export const FingerprintProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         const getFingerprint = async () => {
             try {
-                // Default sources include many unstable options
-                const defaultSources = { ...sources };
-
-                // Exclude the most volatile sources to improve stability
-                delete defaultSources.fonts;
-                delete defaultSources.audio;
-                delete defaultSources.screenFrame; // Can change if browser toolbars/UI changes
-
                 const fp = await FingerprintJS.load();
-
-                // Get the visitor identifier from the more stable sources
                 const result = await fp.get();
-                const components = result.components;
 
-                // Manually filter out unstable components before hashing
-                delete components.fonts;
-                delete components.audio;
-                delete components.screenFrame;
+                // Destructure the components to exclude volatile ones
+                const {
+                    canvas,
+                    audio,
+                    screenResolution,
+                    ...remainingComponents
+                } = result.components;
 
-                const stableVisitorId = hashComponents(components);
-                setFingerprint(stableVisitorId);
+                // Create a new visitor ID by hashing only the remaining components
+                const visitorId = FingerprintJS.hashComponents(remainingComponents);
+
+                setFingerprint(visitorId);
 
             } catch (error) {
                 logger.error("Error getting fingerprint:", error);
