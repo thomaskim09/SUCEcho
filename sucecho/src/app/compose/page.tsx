@@ -2,11 +2,11 @@
 "use client";
 
 import CreatePostForm from "../components/CreatePostForm";
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function ComposePage() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const parentPostId = searchParams.get('parentPostId');
 
     return (
@@ -15,9 +15,9 @@ export default function ComposePage() {
                 <h1 className="text-2xl font-bold font-mono">
                     {parentPostId ? '撰写子回声' : '发布新回音'}
                 </h1>
-                <Link href={parentPostId ? `/post/${parentPostId}` : '/'} className="text-accent hover:underline">
+                <button onClick={() => router.back()} className="text-accent hover:underline">
                     取消
-                </Link>
+                </button>
             </header>
             <main className="mt-4">
                 <CreatePostForm parentPostId={parentPostId ? parseInt(parentPostId) : undefined} />

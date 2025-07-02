@@ -22,9 +22,9 @@ interface PostCardProps {
     onReport?: (postId: number) => void;
     userVote?: 1 | -1;
     isPurifying?: boolean;
+    onFaded?: (postId: number) => void;
     onPurificationComplete?: (postId: number) => void;
     onDeletionComplete?: (postId: number) => void;
-    onFaded?: (postId: number) => void;
 }
 
 interface Ripple {
@@ -80,7 +80,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
     const isAnnouncement = post.type === 'ANNOUNCEMENT';
 
-    // Define animation variants for clarity and type safety
     const cardVariants = {
         visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.5 } },
         deleting: { opacity: 0, scale: 0.8, transition: { duration: 0.4 } },
@@ -88,7 +87,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         glitching: { opacity: 0, scale: 0.8, filter: 'blur(20px)', transition: { duration: 1.0, ease: "easeOut" as const } }
     };
 
-    // Function to determine the current animation state as a string
     const getAnimationState = (): keyof typeof cardVariants => {
         if (post.isDeleting) return 'deleting';
         if (shouldPurifyVanish) return 'purifyVanish';
@@ -150,8 +148,8 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     }, []);
 
     const handleVote = (e: React.MouseEvent, voteType: 1 | -1) => {
-        e.preventDefault();
         e.stopPropagation();
+        e.preventDefault();
         if (isFingerprintLoading || !fingerprint) {
             alert("我们正在努力识别你的设备，请稍后再试。");
             return;
@@ -177,14 +175,19 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         onVote(post.id, voteType);
     };
 
+    const handleCommentClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        router.push(`/compose?parentPostId=${post.id}`);
+    };
+
     const closeUpvoteTooltip = () => { if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current); setShowUpvoteTooltip(false); };
     const closeDownvoteTooltip = () => { if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current); setShowDownvoteTooltip(false); };
-    const handleDelete = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onDelete) onDelete(post.id); setIsMenuOpen(false); };
-    const handleCommentClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); router.push(`/compose?parentPostId=${post.id}`); };
-    const handleToggleMenu = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); };
-    const handleViewProfile = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); router.push(`/admin/users/${post.fingerprintHash}`); setIsMenuOpen(false); };
-    const handleShowDetails = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); alert(`帖子ID: ${post.id}\n指纹哈希: ${post.fingerprintHash}`); setIsMenuOpen(false); };
-    const handleReportClick = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onReport) { onReport(post.id); } setIsMenuOpen(false); };
+    const handleDelete = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); if (onDelete) onDelete(post.id); setIsMenuOpen(false); };
+    const handleToggleMenu = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); setIsMenuOpen(!isMenuOpen); };
+    const handleViewProfile = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); router.push(`/admin/users/${post.fingerprintHash}`); setIsMenuOpen(false); };
+    const handleShowDetails = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); alert(`帖子ID: ${post.id}\n指纹哈希: ${post.fingerprintHash}`); setIsMenuOpen(false); };
+    const handleReportClick = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); if (onReport) { onReport(post.id); } setIsMenuOpen(false); };
     const handleCardClick = (e: MouseEvent<HTMLDivElement>) => {
         if (!isLink || isChildEcho) return;
 
@@ -247,7 +250,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         </div>
                     )}
 
-                    {/* System Announcement Header */}
                     {isAnnouncement && (
                         <div className="flex items-center gap-2 mb-3 text-accent font-mono text-sm">
                             <Icon name="zap" className="w-5 h-5" />
@@ -318,11 +320,9 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                     <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
                                 </div>
                                 {!isChildEcho && (
-                                    <div onClick={e => e.stopPropagation()}>
-                                        <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                                            <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                                        </button>
-                                    </div>
+                                    <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                                        <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                                    </button>
                                 )}
                             </div>
                         </div>

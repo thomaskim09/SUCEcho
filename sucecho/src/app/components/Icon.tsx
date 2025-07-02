@@ -43,6 +43,9 @@ const icons = {
     'comment': (
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
     ),
+    'line-timer': (
+        <path d="M10 2h4M12 14v-4M4 14a8 8 0 1 1 16 0A8 8 0 0 1 4 14z" />
+    ),
     'share': (
         <>
             <circle cx="18" cy="5" r="3" />
