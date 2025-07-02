@@ -96,8 +96,7 @@ export default function ReportModal({ isOpen, onClose, onSubmit }: ReportModalPr
                             <button
                                 onClick={handleSubmit}
                                 className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-opacity disabled:opacity-50"
-                                // The submit button is disabled until a common reason is selected
-                                disabled={!selectedReason}
+                                disabled={!selectedReason && !customReason}
                             >
                                 确认举报
                             </button>
