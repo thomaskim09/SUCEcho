@@ -216,7 +216,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const hasComments = (post.stats?.replyCount ?? 0) > 0;
 
     const upvoteTooltipContent = "点赞是对于内容的肯定，\n让有共鸣的声音浮现。";
-    const downvoteTooltipContent = "到赞是社区净化的力量，\n当一个回声被足够多的人反对，\n它将被永久销毁。";
+    const downvoteTooltipContent = "到赞是社区净化的力量，\n当一个回声被足够多的人反对，\n回声将被永久销毁。";
 
     return (
         <motion.div
