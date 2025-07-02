@@ -12,11 +12,7 @@ import { usePathname } from 'next/navigation';
 import { useRealtimeStatus } from '@/context/RealtimeStatusContext';
 
 function isLivePage(pathname: string) {
-    return (
-        pathname === '/' ||
-        pathname.startsWith('/my-echoes') ||
-        pathname.startsWith('/post/')
-    );
+    return pathname === '/' || pathname.startsWith('/post/');
 }
 
 interface LiveEventData {
