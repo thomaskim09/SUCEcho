@@ -6,30 +6,34 @@ import { useFingerprint } from '@/context/FingerprintContext';
 import logger from '@/lib/logger';
 
 interface AdminLogEntry {
-    action: string;
+    action: 'WARN' | 'BAN' | 'UNBAN';
     reason: string | null;
     createdAt: string;
 }
 
 export default function UserStatusBanner() {
     const { fingerprint, isLoading } = useFingerprint();
-    const [warning, setWarning] = useState<AdminLogEntry | null>(null);
+    const [notification, setNotification] = useState<AdminLogEntry | null>(null);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         if (fingerprint && !isLoading) {
             const checkStatus = async () => {
-                const res = await fetch('/api/users/status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fingerprintHash: fingerprint }),
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.warning) {
-                        setWarning(data.warning);
-                        setIsVisible(true);
+                try {
+                    const res = await fetch('/api/users/status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fingerprintHash: fingerprint }),
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.notification) {
+                            setNotification(data.notification);
+                            setIsVisible(true);
+                        }
                     }
+                } catch (error) {
+                    logger.error("Failed to fetch user status:", error);
                 }
             };
             checkStatus();
@@ -38,38 +42,57 @@ export default function UserStatusBanner() {
 
     const handleDismiss = async () => {
         if (!fingerprint) return;
-        setIsVisible(false); // Hide immediately for better UX
+        setIsVisible(false);
         try {
-            // FIX: The URL was pointing to the old, non-existent endpoint.
-            // It should point to the correct admin route.
             await fetch('/api/admin/users/acknowledge-warning', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fingerprintHash: fingerprint }),
             });
         } catch (error) {
-            logger.error("Failed to dismiss warning:", error);
-            setIsVisible(true); // Re-show if API call fails
+            logger.error("Failed to dismiss notification:", error);
+            setIsVisible(true);
         }
     };
 
-    if (!isVisible || !warning) {
+    if (!isVisible || !notification) {
         return null;
     }
 
+    const getBannerStyle = () => {
+        switch (notification.action) {
+            case 'BAN':
+                return { bg: 'bg-red-600', hoverBg: 'bg-red-700', text: '管理员封禁' };
+            case 'UNBAN':
+                return { bg: 'bg-green-600', hoverBg: 'bg-green-700', text: '管理员解封' };
+            case 'WARN':
+            default:
+                return { bg: 'bg-yellow-600', hoverBg: 'bg-yellow-700', text: '管理员警告' };
+        }
+    };
+
+    const { bg, hoverBg, text } = getBannerStyle();
+
     return (
-        <div className="bg-yellow-600 text-white p-3 font-mono relative">
+        <div className={`${bg} text-white p-3 font-mono relative`}>
             <div className="container mx-auto text-center">
-                <p><strong>管理员警告:</strong> {warning.reason || "未提供理由。"}</p>
-                <p className="text-xs opacity-80">发布于: {new Date(warning.createdAt).toLocaleString()}</p>
+                <p>
+                    <strong>
+                        {text}
+                        {notification.reason ? ':' : ''}
+                    </strong>
+                    {notification.reason ? ` ${notification.reason}` : ''}
+                </p>
+                <p className="text-xs opacity-80">发布于: {new Date(notification.createdAt).toLocaleString()}</p>
             </div>
             <button
                 onClick={handleDismiss}
-                className="absolute top-1/2 right-4 -translate-y-1/2 bg-yellow-700 hover:bg-yellow-800 rounded-full p-2 text-xs"
-                aria-label="解除警告"
+                className={`absolute top-1/2 right-4 -translate-y-1/2 ${hoverBg} rounded-full p-2 text-xs`}
+                aria-label="关闭通知"
             >
                 关闭
             </button>
         </div>
     );
 }
+''

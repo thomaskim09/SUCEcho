@@ -13,23 +13,25 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Find the most recent warning for this user that IS NOT acknowledged.
-        const lastUnacknowledgedWarning = await prisma.adminLog.findFirst({
+        // Find the most recent notification for this user that IS NOT acknowledged.
+        const lastUnacknowledgedNotification = await prisma.adminLog.findFirst({
             where: {
                 targetFingerprintHash: fingerprintHash,
-                action: 'WARN',
-                isAcknowledged: false, // <-- This is the crucial filter
+                action: {
+                    in: ['WARN', 'BAN', 'UNBAN'],
+                },
+                isAcknowledged: false,
             },
             orderBy: {
                 createdAt: 'desc',
             },
         });
 
-        if (lastUnacknowledgedWarning) {
-            return NextResponse.json({ warning: lastUnacknowledgedWarning });
+        if (lastUnacknowledgedNotification) {
+            return NextResponse.json({ notification: lastUnacknowledgedNotification });
         }
 
-        // If no unacknowledged warnings are found, return an empty object.
+        // If no unacknowledged notifications are found, return an empty object.
         return NextResponse.json({});
     } catch (error) {
         logger.error('Failed to fetch user status:', error);

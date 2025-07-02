@@ -12,11 +12,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Find the most recent unacknowledged warning
-        const lastWarning = await prisma.adminLog.findFirst({
+        // Find the most recent unacknowledged notification (WARN, BAN, UNBAN)
+        const lastNotification = await prisma.adminLog.findFirst({
             where: {
                 targetFingerprintHash: fingerprintHash,
-                action: 'WARN',
+                action: { in: ['WARN', 'BAN', 'UNBAN'] },
                 isAcknowledged: false,
             },
             orderBy: {
@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        if (lastWarning) {
+        if (lastNotification) {
             await prisma.adminLog.update({
-                where: { id: lastWarning.id },
+                where: { id: lastNotification.id },
                 data: { isAcknowledged: true },
             });
         }

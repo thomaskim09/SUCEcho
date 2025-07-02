@@ -29,19 +29,13 @@ export async function POST(
             { status: 400 }
         );
     }
-    if (!reason) {
-        return NextResponse.json(
-            { message: 'A reason for the warning is required' },
-            { status: 400 }
-        );
-    }
 
     try {
         const log = await prisma.adminLog.create({
             data: {
                 targetFingerprintHash,
                 action: 'WARN',
-                reason,
+                reason: reason || null,
                 adminId: adminUser.username, // Log which admin took the action
             },
         });

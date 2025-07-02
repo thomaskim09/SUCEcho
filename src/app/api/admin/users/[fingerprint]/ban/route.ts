@@ -43,7 +43,7 @@ export async function POST(
                 data: {
                     targetFingerprintHash,
                     action: 'BAN',
-                    reason,
+                    reason: reason || null,
                     adminId: adminUser.username,
                 },
             }),
@@ -87,7 +87,7 @@ export async function DELETE(
                 data: {
                     targetFingerprintHash,
                     action: 'UNBAN',
-                    reason,
+                    reason: reason || null,
                     adminId: adminUser.username,
                 },
             }),
