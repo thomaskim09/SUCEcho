@@ -1,7 +1,7 @@
 // sucecho/src/app/post/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import { useLivePostThreadUpdates } from '@/hooks/useLivePostThreadUpdates';
@@ -13,6 +13,7 @@ import ReportModal from '@/app/components/ReportModal';
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
+import { usePageVisibility } from '@/hooks/usePageVisibility'; // 1. Import hook
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -36,51 +37,49 @@ export default function PostDetailPage() {
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
+    const isVisible = usePageVisibility(); // 2. Use hook
 
-    const handleDelete = async (postId: number) => {
-        if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) return;
-        try {
-            const res = await fetch(`/api/admin/posts/${postId}`, { method: 'DELETE' });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Failed to delete post');
-            }
-            // Optimistically update the UI to show the post is being purified
-            setPost(current => {
-                if (!current) return null;
-                const updatedReplies = current.replies.map(p =>
-                    p.id === postId ? { ...p, isPurifying: true } : p
-                );
-                return { ...current, replies: updatedReplies };
-            });
-        } catch (err: unknown) {
-            alert(`Error: ${(err as Error).message}`);
-        }
-    };
+    const fetchPostDetails = useCallback(async (isRefreshing = false) => {
+        if (!id) return;
 
-    useEffect(() => {
-        const fetchPostDetails = async () => {
-            if (!id || dataFetched.current) return;
+        if (!isRefreshing) {
+            if (dataFetched.current) return;
             dataFetched.current = true;
             setIsLoading(true);
-            setError(null);
-            try {
-                const res = await fetch(`/api/posts/${id}`);
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.error || 'Failed to fetch post');
-                }
-                const data: PostThread = await res.json();
-                setInitialPost(data);
-            } catch (err) {
-                setError((err as Error).message);
-                setInitialPost(null);
-            } finally {
-                setIsLoading(false);
+        }
+
+        setError(null);
+        try {
+            const res = await fetch(`/api/posts/${id}`);
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to fetch post');
             }
-        };
-        fetchPostDetails();
+            const data: PostThread = await res.json();
+
+            // For a refresh, we just update the initial post state which feeds the live updater
+            setInitialPost(data);
+
+        } catch (err) {
+            setError((err as Error).message);
+            if (!isRefreshing) setInitialPost(null);
+        } finally {
+            if (!isRefreshing) setIsLoading(false);
+        }
     }, [id]);
+
+    useEffect(() => {
+        fetchPostDetails(false);
+    }, [id, fetchPostDetails]);
+
+    // 3. Effect to refresh data when tab becomes visible
+    useEffect(() => {
+        if (isVisible && !isLoading) {
+            logger.log('Post detail tab is visible again, refreshing post data...');
+            fetchPostDetails(true); // Pass true for a silent refresh
+        }
+    }, [isVisible, isLoading, fetchPostDetails]);
+
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {
@@ -124,6 +123,26 @@ export default function PostDetailPage() {
             } finally {
                 setTimeout(() => setShareFeedback(''), 2000);
             }
+        }
+    };
+
+    const handleDelete = async (postId: number) => {
+        if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`)) return;
+        try {
+            const res = await fetch(`/api/admin/posts/${postId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to delete post');
+            }
+            setPost(current => {
+                if (!current) return null;
+                const updatedReplies = current.replies.map(p =>
+                    p.id === postId ? { ...p, isPurifying: true } : p
+                );
+                return { ...current, replies: updatedReplies };
+            });
+        } catch (err: unknown) {
+            alert(`Error: ${(err as Error).message}`);
         }
     };
 
