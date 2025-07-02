@@ -36,12 +36,21 @@ export const useMyEchoesManager = (initialPosts: PostWithStats[] = []) => {
         );
     };
 
+    const handlePostVanished = (postId: number) => {
+        setPosts((prevPosts) =>
+            prevPosts.map((p) =>
+                p.id === postId ? { ...p, isDeleting: true } : p
+            )
+        );
+    };
+
     const voteHandler = (post: PostWithStats, voteType: 1 | -1) => {
         handleOptimisticVote(
             post,
             voteType,
             updatePostInState,
-            handlePostPurified
+            handlePostPurified,
+            handlePostVanished
         );
     };
 

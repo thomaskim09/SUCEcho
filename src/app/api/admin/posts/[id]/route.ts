@@ -60,7 +60,7 @@ export async function DELETE(
             );
             await postRoomChannel.send({
                 type: 'broadcast',
-                event: 'reply_deleted',
+                event: 'delete_reply',
                 payload: { postId: numericPostId },
             });
         } else {
@@ -68,7 +68,7 @@ export async function DELETE(
             const mainChannel = supabase.channel(MAIN_CHANNEL);
             await mainChannel.send({
                 type: 'broadcast',
-                event: 'post_deleted',
+                event: 'delete_post',
                 payload: { postId: numericPostId },
             });
 
@@ -78,7 +78,7 @@ export async function DELETE(
             );
             await postRoomChannel.send({
                 type: 'broadcast',
-                event: 'parent_post_deleted',
+                event: 'delete_parent_post',
                 payload: { postId: numericPostId },
             });
         }

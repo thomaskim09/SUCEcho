@@ -300,14 +300,12 @@ export async function POST(request: Request) {
         let channelName: string | null = null;
 
         if (parentPostId) {
-            // This is a reply
             if (areRepliesEnabled) {
                 channelName = isGranularEnabled
-                    ? getPostRoomChannelName(parentPostId) // Granular channel for the parent post
-                    : MAIN_CHANNEL; // Main channel if granular is off
+                    ? getPostRoomChannelName(parentPostId)
+                    : MAIN_CHANNEL;
             }
         } else {
-            // This is a new top-level post, always broadcast on the main channel
             channelName = MAIN_CHANNEL;
         }
 
