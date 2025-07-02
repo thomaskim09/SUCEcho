@@ -61,7 +61,7 @@ export default function MultiTabAlert({ visible = false }: { visible?: boolean }
                         textAlign: 'center',
                     }}
                 >
-                    为保证公平和实时更新，SUC Echo 仅允许打开一个标签页。<br />请确保只打开一个 SUC Echo 标签页并刷新此页面。<br />
+                    为保证公平和实时更新，系统仅允许打开一个标签页。<br />请确保只打开一个 SUC Echo 标签页并刷新此页面。<br />
                 </div>
             </div>
         </div>
