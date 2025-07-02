@@ -78,7 +78,13 @@ export default function PostFeed() {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
-            setPosts(prev => [...prev, ...newPosts]);
+            setPosts(prev => {
+                const postMap = new Map(prev.map(p => [p.id, p]));
+                newPosts.forEach((post: PostWithStats) => postMap.set(post.id, post));
+                const mergedPosts = Array.from(postMap.values());
+                mergedPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                return mergedPosts;
+            });
             setNextCursor(newNextCursor);
         } catch (error) {
             logger.error("Error loading more posts:", error);
