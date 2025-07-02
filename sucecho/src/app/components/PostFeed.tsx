@@ -15,7 +15,7 @@ import LoadingVideo from './LoadingVideo';
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
 export default function PostFeed() {
-    const [initialPosts, setInitialPosts] = useState<PostWithStats[]>([]);
+    const [initialPosts] = useState<PostWithStats[]>([]);
     const [initialPostIds, setInitialPostIds] = useState<Set<number>>(new Set());
     const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded } = usePostListManager(initialPosts);
     const [isLoading, setIsLoading] = useState(true);

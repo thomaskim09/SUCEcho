@@ -10,7 +10,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useMyEchoesManager } from '@/hooks/useMyEchoesManager';
 import logger from '@/lib/logger';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
-import LoadingSpinner from '../components/LoadingVideo';
 import LoadingVideo from '../components/LoadingVideo';
 
 export default function MyEchoesPage() {

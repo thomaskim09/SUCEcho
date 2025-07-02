@@ -14,7 +14,6 @@ import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
-import LoadingSpinner from '@/app/components/LoadingVideo';
 import LoadingVideo from '@/app/components/LoadingVideo';
 
 type PostThread = PostWithStats & {
