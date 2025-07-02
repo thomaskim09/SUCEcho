@@ -99,39 +99,46 @@ export default function AdminReportsPage() {
 
         return (
             <div className="space-y-8">
-                {reportedPosts.map(post => (
-                    <div key={post.id} className="p-4 rounded-lg bg-red-900/20 border border-red-700/50">
-                        <PostCard
-                            post={post}
-                            onVote={handleDummyVote}
-                            onDelete={() => handleDeletePost(post.id)}
-                            onPurificationComplete={() => handlePostRemovedFromUI(post.id)}
-                            isLink={true}
-                        />
-                        <div className="mt-4 border-t border-red-700/50 pt-4">
-                            <h4 className="font-bold text-sm mb-2 text-red-300">
-                                {post._count.reports} 条举报:
-                            </h4>
-                            <ul className="space-y-2 text-sm text-gray-300">
-                                {post.reports.map((report) => (
-                                    <li key={report.id} className="flex justify-between items-center p-2 bg-gray-800/50 rounded-md">
-                                        <div>
-                                            <p>{report.reason || <i className="opacity-60">未提供理由</i>}</p>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                举报来自: <span className="font-mono">{report.reporterCodename}</span>
-                                                <span className="mx-2">|</span>
-                                                {new Date(report.createdAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <button onClick={() => handleDismissReport(report.id)} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-2 rounded-lg text-xs">
-                                            跳过
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
+                {reportedPosts.map(post => {
+                    const isReply = !!post.parentPostId;
+                    const wrapperClass = isReply ? "border-l-2 border-accent/30 pl-4 ml-4" : "";
+
+                    return (
+                        <div key={post.id} className={wrapperClass}>
+                            <div className="p-4 rounded-lg bg-red-900/20 border border-red-700/50">
+                                <PostCard
+                                    post={post}
+                                    onVote={handleDummyVote}
+                                    onDelete={() => handleDeletePost(post.id)}
+                                    onPurificationComplete={() => handlePostRemovedFromUI(post.id)}
+                                    isLink={!isReply}
+                                />
+                                <div className="mt-4 border-t border-red-700/50 pt-4">
+                                    <h4 className="font-bold text-sm mb-2 text-red-300">
+                                        举报详情:
+                                    </h4>
+                                    <ul className="space-y-2 text-sm text-gray-300">
+                                        {post.reports.map((report) => (
+                                            <li key={report.id} className="flex justify-between items-center p-2 bg-gray-800/50 rounded-md">
+                                                <div>
+                                                    <p>{report.reason || <i className="opacity-60">未提供理由</i>}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        举报来自: <span className="font-mono">{report.reporterCodename}</span>
+                                                        <span className="mx-2">|</span>
+                                                        {new Date(report.createdAt).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                                <button onClick={() => handleDismissReport(report.id)} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-2 rounded-lg text-xs">
+                                                    跳过
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         );
     }
