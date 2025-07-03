@@ -1,4 +1,3 @@
-// sucecho/src/app/components/UserStatusBanner.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -11,6 +10,13 @@ interface AdminLogEntry {
     createdAt: string;
 }
 
+interface CachedNotification {
+    notification: AdminLogEntry | null;
+    timestamp: number;
+}
+
+const USER_STATUS_CACHE_KEY = 'user_status_cache';
+
 export default function UserStatusBanner() {
     const { fingerprint, isLoading } = useFingerprint();
     const [notification, setNotification] = useState<AdminLogEntry | null>(null);
@@ -19,6 +25,21 @@ export default function UserStatusBanner() {
     useEffect(() => {
         if (fingerprint && !isLoading) {
             const checkStatus = async () => {
+                const now = Date.now();
+                const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
+                const cachedItem = localStorage.getItem(USER_STATUS_CACHE_KEY);
+
+                if (cachedItem) {
+                    const cache: CachedNotification = JSON.parse(cachedItem);
+                    if (now - cache.timestamp < twentyFourHoursInMs) {
+                        if (cache.notification) {
+                            setNotification(cache.notification);
+                            setIsVisible(true);
+                        }
+                        return;
+                    }
+                }
+
                 try {
                     const res = await fetch('/api/users/status', {
                         method: 'POST',
@@ -27,6 +48,11 @@ export default function UserStatusBanner() {
                     });
                     if (res.ok) {
                         const data = await res.json();
+                        const newCachedItem: CachedNotification = {
+                            notification: data.notification || null,
+                            timestamp: now,
+                        };
+                        localStorage.setItem(USER_STATUS_CACHE_KEY, JSON.stringify(newCachedItem));
                         if (data.notification) {
                             setNotification(data.notification);
                             setIsVisible(true);
@@ -42,7 +68,10 @@ export default function UserStatusBanner() {
 
     const handleDismiss = async () => {
         if (!fingerprint) return;
+
         setIsVisible(false);
+        localStorage.removeItem(USER_STATUS_CACHE_KEY);
+
         try {
             await fetch('/api/admin/users/acknowledge-warning', {
                 method: 'POST',
