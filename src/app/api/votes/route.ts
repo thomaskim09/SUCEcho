@@ -1,7 +1,7 @@
-// sucecho/src/app/api/votes/route.ts
+// src/app/api/votes/route.ts
+
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-// Re-add the supabase import to keep the broadcast functionality
 import supabase, {
     MAIN_CHANNEL,
     getPostRoomChannelName,
@@ -22,42 +22,36 @@ export async function POST(request: Request) {
             );
         }
 
-        const userProfile = await prisma.userAnonymizedProfile.upsert({
-            where: { fingerprintHash },
-            create: {
-                fingerprintHash,
-                codename: generateCodename(fingerprintHash),
-                lastSeenAt: new Date(),
-            },
-            update: {},
-        });
-
-        if (userProfile?.isBanned) {
-            if (
-                !userProfile.banExpiresAt ||
-                new Date(userProfile.banExpiresAt) > new Date()
-            ) {
-                return NextResponse.json(
-                    { error: '你已被封禁，无法进行投票。' },
-                    { status: 403 }
-                );
-            }
-        }
-
-        const postExists = await prisma.post.findUnique({
-            where: { id: postId },
-        });
-
-        if (!postExists) {
-            return NextResponse.json(
-                {
-                    error: '该回音已消失，未能计入你的投票。',
-                },
-                { status: 410 }
-            );
-        }
-
         const transactionResult = await prisma.$transaction(async (tx) => {
+            const userProfile = await tx.userAnonymizedProfile.upsert({
+                where: { fingerprintHash },
+                create: {
+                    fingerprintHash,
+                    codename: generateCodename(fingerprintHash),
+                    lastSeenAt: new Date(),
+                },
+                update: {
+                    lastSeenAt: new Date(),
+                },
+            });
+
+            if (userProfile.isBanned) {
+                if (
+                    !userProfile.banExpiresAt ||
+                    new Date(userProfile.banExpiresAt) > new Date()
+                ) {
+                    throw new Error('BANNED');
+                }
+            }
+
+            const postExists = await tx.post.findUnique({
+                where: { id: postId },
+            });
+
+            if (!postExists) {
+                throw new Error('POST_NOT_FOUND');
+            }
+
             const existingVote = await tx.vote.findUnique({
                 where: { postId_fingerprintHash: { postId, fingerprintHash } },
             });
@@ -117,43 +111,26 @@ export async function POST(request: Request) {
 
         if (isVoteStatsBroadcastEnabled) {
             let channelName = MAIN_CHANNEL;
-
             if (isGranularEnabled) {
-                if (transactionResult.parentPostId) {
-                    channelName = getPostRoomChannelName(
-                        transactionResult.parentPostId
-                    );
-                } else {
-                    channelName = getPostRoomChannelName(
-                        transactionResult.postId
-                    );
-                }
+                channelName = transactionResult.parentPostId
+                    ? getPostRoomChannelName(transactionResult.parentPostId)
+                    : getPostRoomChannelName(transactionResult.postId);
             }
 
             const channel = supabase.channel(channelName);
-
-            if (transactionResult.shouldPurify) {
-                await channel.send({
+            channel
+                .send({
                     type: 'broadcast',
                     event: 'update_vote',
                     payload: {
                         postId: transactionResult.postId,
                         stats: transactionResult.stats,
-                        shouldPurify: true,
+                        shouldPurify: transactionResult.shouldPurify,
                     },
+                })
+                .then(() => {
+                    supabase.removeChannel(channel);
                 });
-            } else {
-                await channel.send({
-                    type: 'broadcast',
-                    event: 'update_vote',
-                    payload: {
-                        postId: transactionResult.postId,
-                        stats: transactionResult.stats,
-                        shouldPurify: false,
-                    },
-                });
-            }
-            supabase.removeChannel(channel);
         }
 
         return NextResponse.json({
@@ -162,23 +139,19 @@ export async function POST(request: Request) {
             purified: transactionResult.shouldPurify,
         });
     } catch (error: unknown) {
-        if ((error as { code?: string }).code === 'P2003') {
-            return NextResponse.json(
-                {
-                    error: '该回音已消失，未能计入你的投票。',
-                },
-                { status: 410 }
-            );
-        }
-        if (
-            error instanceof Error &&
-            'code' in error &&
-            (error as Record<string, unknown>).code === 'P2025'
-        ) {
-            return NextResponse.json(
-                { error: '更新时未找到该回音。' },
-                { status: 404 }
-            );
+        if (error instanceof Error) {
+            if (error.message === 'BANNED') {
+                return NextResponse.json(
+                    { error: '你已被封禁，无法进行投票。' },
+                    { status: 403 }
+                );
+            }
+            if (error.message === 'POST_NOT_FOUND') {
+                return NextResponse.json(
+                    { error: '该回音已消失，未能计入你的投票。' },
+                    { status: 410 }
+                );
+            }
         }
 
         logger.error(`Error processing vote for post:`, error);
