@@ -83,9 +83,12 @@ export async function POST(request: Request) {
                 { status: 400 }
             );
         }
-        if (content.length > 400) {
+        const postCharLimit = parseInt(
+            process.env.NEXT_PUBLIC_POST_CHAR_LIMIT || '400'
+        );
+        if (content.length > postCharLimit) {
             return NextResponse.json(
-                { error: '内容超过400个字符' },
+                { error: `内容超过${postCharLimit}个字符` },
                 { status: 400 }
             );
         }
