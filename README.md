@@ -1,6 +1,6 @@
 # SUC Echo (南方回音壁)
 
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[](https://www.repostatus.org/#active)
 
 **Motto:** 声音只存在一天。(Sounds only exist for a day.)
 
@@ -8,158 +8,141 @@
 
 SUC Echo aims to be the premier, trusted, and most vibrant anonymous communication platform for the Southern University College (SUC) community. It is a digital space for sharing fleeting thoughts, secrets, and moments that define the "campus moment," free from the social pressures of permanent, real-name platforms.
 
-## Core Philosophy
-
-This project is built on four pillars:
-
-1.  **Cruel Aesthetics:** Rules are absolute. All posts and their replies are permanently destroyed after 24 hours, creating a unique sense of fairness and ephemerality.
-2.  **Absolute Anonymity:** No registration required. Identity is abstracted to focus discussions on content, not the speaker.
-3.  **Community Sovereignty:** The community governs itself through a voting system. The role of admins is to guard the rules, not to censor content.
-4.  **Minimalist Efficiency:** Every feature is simple, intuitive, and serves a clear purpose, avoiding feature bloat.
-
 ## Tech Stack
 
 -   **Framework:** Next.js (with TypeScript)
 -   **Database:** Supabase (PostgreSQL)
 -   **ORM:** Prisma
--   **Real-time:** Server-Sent Events (SSE)
--   **Anonymity:** FingerprintJS (Community Edition)
--   **Deployment:** Vercel & Supabase
+-   **Real-time:** Supabase Realtime
+-   **Anonymity:** FingerprintJS
+-   **Deployment:** Vercel
 -   **Styling:** Tailwind CSS
--   **Authentication (Admin):** NextAuth.js
 
-## Getting Started
+---
 
-### Prerequisites
+## Development Setup Guide
 
--   Node.js (LTS)
--   npm or yarn
+Follow these steps to set up the project locally for development and testing.
+
+### 1\. Prerequisites
+
+-   Node.js (v18.18.0 or later)
+-   npm (or yarn/pnpm)
 -   Git
 
-### Installation & Setup
+### 2\. Initial Project Setup
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [your-repo-url]
-    cd sucecho
-    ```
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Set up environment variables:**
-    Create a `.env.local` file in the root directory. Copy the contents of an `.env.example` file (you should create this to show what variables are needed) and fill in your Supabase, NextAuth, and other credentials.
-4.  **Sync the database schema:**
-    ```bash
-    npx prisma db pull
-    npx prisma generate
-    ```
-5.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
+First, clone the repository and install the project dependencies.
 
-The application will be available at `http://localhost:3000`.
+```bash
+# Clone the repository
+git clone [your-repo-url]
+cd sucecho
 
-## Deployment
+# Install dependencies, including the 'dotenv-cli' for managing env files
+npm install
+npm install dotenv-cli --save-dev
+```
 
-This project is optimized for deployment on [Vercel](https://vercel.com/).
+### 3\. Environment Configuration
 
-### Automatic Deployments with Vercel
+This project uses separate databases for production and testing to ensure data safety.
 
-Vercel provides seamless, automatic deployments when you connect your Git repository.
+#### **Production Environment**
 
-1.  **Push to Git:** Make sure your project is pushed to a GitHub, GitLab, or Bitbucket repository.
-2.  **Import Project on Vercel:**
-    -   Go to your Vercel dashboard and click "Add New... > Project".
-    -   Select your Git provider and import the repository.
-3.  **Configure Environment Variables:**
-    -   In the project settings on Vercel, navigate to "Settings > Environment Variables".
-    -   Add all the variables from your `.env.local` file (e.g., `DATABASE_URL`, `NEXTAUTH_SECRET`, etc.). These are crucial for the application to run correctly in production.
-4.  **Deploy:**
-    -   Vercel will automatically detect that it's a Next.js project and use the correct build settings.
-    -   Click "Deploy".
+Create a file named `.env.local`. This file is used by Next.js for your production build and default development environment (`npm run dev`).
 
-Once set up, any new commits pushed to the `main` branch will automatically trigger a new build and deployment on Vercel.
+**File: `.env.local`**
 
----
+```env
+# Main Production Database URL from Supabase
+DATABASE_URL="YOUR_PRODUCTION_DATABASE_URL"
 
-## Important: Next.js 15+ Development Note
+# Supabase API Keys for Production
+NEXT_PUBLIC_SUPABASE_URL="YOUR_PRODUCTION_SUPABASE_URL"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_PRODUCTION_SUPABASE_ANON_KEY"
 
-A key change in Next.js 15 (especially when using Turbopack) is how parameters from dynamic routes are handled. They must be awaited.
+# Other Production Variables
+JWT_SECRET_KEY="your_strong_jwt_secret"
+ADMIN_USERNAME="your_admin_username"
+ADMIN_PASSWORD="your_admin_password"
+# ... add any other production-specific variables
+```
 
-**Problem:** You get an error like `Error: Route "..." used \`params.id\`. \`params\` should be awaited before using its properties.`
+#### **Testing Environment**
 
-**Solution:** Always `await` the `params` object before accessing its properties in both page components and API routes.
+Create a second file named `.env.development`. This will be used exclusively for local testing against a separate, safe database.
 
-### **For Page Components (`/app/post/[id]/page.tsx`):**
+**File: `.env.development`**
 
-````typescript
-// Define the params type as a Promise
-export type PageParams = Promise<{ id: string }>;
+```env
+# Testing Database URL from your second Supabase project
+DATABASE_URL="YOUR_TESTING_DATABASE_URL"
 
-// The component must be async
-export default async function MyPage({ params }: { params: PageParams }) {
-  // Await the params to get the value
-  const { id } = await params;
+# Supabase API Keys for Testing
+NEXT_PUBLIC_SUPABASE_URL="YOUR_TESTING_SUPABASE_URL"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_TESTING_SUPABASE_ANON_KEY"
 
-  // Now you can safely use `id`
-  return <div>The post ID is: {id}</div>;
+# You can use the same secrets for local testing or generate new ones
+JWT_SECRET_KEY="your_strong_jwt_secret"
+ADMIN_USERNAME="your_admin_username"
+ADMIN_PASSWORD="your_admin_password"
+# ...
+```
+
+> **Note:** Get your `DATABASE_URL`, `SUPABASE_URL`, and `SUPABASE_ANON_KEY` from your Supabase project settings. You should create two separate projects in Supabase: one for production and one for testing.
+
+### 4\. Database Migration
+
+You need to set up the schema for both your production and testing databases. We use `prisma migrate` to keep them in sync.
+
+**Migrating the Production Database:**
+_(Run this once to set up your main database)_
+
+```bash
+# Temporarily rename .env.local to .env before running
+npm run prisma:migrate:dev
+# Rename .env back to .env.local after
+```
+
+**Migrating the Testing Database:**
+_(Run this once to set up your testing database)_
+
+```bash
+# This command uses dotenv-cli to load the correct .env file
+npm run prisma:migrate:test
+```
+
+### 5\. Running the Application
+
+With everything configured, you can now run the application in different modes.
+
+**Run with the PRODUCTION database:**
+
+```bash
+npm run dev
+```
+
+**Run with the TESTING database:**
+
+```bash
+npm run dev:test
+```
+
+### 6\. Package.json Scripts
+
+For reference, your `package.json` should contain these scripts to enable the workflow described above:
+
+```json
+"scripts": {
+  "dev": "next dev",
+  "dev:test": "dotenv -e .env.development -- next dev",
+  "build": "prisma generate && next build",
+  "start": "next start",
+  "lint": "next lint",
+  "prisma:migrate:dev": "prisma migrate dev",
+  "prisma:migrate:test": "dotenv -e .env.development -- prisma migrate dev"
 }
+```
 
----
-
-## Troubleshooting
-
-A quick guide for common setup errors.
-
-### **Problem: Build fails with "params should be awaited" error when using Turbopack.**
-
-* **Symptom:** When running `npm run dev -- --turbo` or building with Next.js 15+, you get an error like `Error: Route "/..." used \`params.id\`. \`params\` should be awaited before using its properties.`
-* **Cause:** This is a known issue in some versions of Next.js, particularly with Turbopack. The `params` object in dynamic routes needs to be explicitly awaited, even though it's not a standard Promise.
-* **Solution:** In your dynamic route handlers or page components, `await` the params object before accessing its properties.
-
-    ```javascript
-    // Example for a page or component
-    export default async function MyPage({ params }) {
-      const awaitedParams = await params;
-      const id = awaitedParams.id;
-      // ... use id
-    }
-
-    // Example for an API route
-    export async function GET(request, { params }) {
-      const awaitedParams = await params;
-      const id = awaitedParams.id;
-      // ... use id
-    }
-    ```
-
-### **Problem: Database is empty after running a Prisma command.**
-
-* **Symptom:** You run a command, and your Supabase database has no tables, or only a `_prisma_migrations` table.
-* **Cause:** For the very first setup, `migrate` is not the right tool. You need to "push" your schema to the empty database.
-* **Solution:** Run `npx prisma db push`. This command reads your `schema.prisma` and creates all the tables.
-    * **Important:** Remember to use the `.env` rename trick for this command (see below).
-
-### **Problem: Prisma command fails (e.g., `db push`, `migrate`).**
-
-* **Error:** `Environment variable not found: DIRECT_URL`.
-* **Cause:** Prisma's command-line tools read from a `.env` file, not `.env.local`.
-* **Solution:** **Temporarily rename `.env.local` to `.env`**, run the Prisma command, then **rename it back to `.env.local`** so your app can run.
-
-### **Problem: Editor shows `"No exported member 'PrismaClient'"`**
-
-* **Error:** A red squiggly line appears under your import from `@prisma/client`.
-* **Cause:** The editor's TypeScript cache is stale and hasn't seen the newly generated client.
-* **Solution:** Restart the TS Server. In VS Code/Cursor, press `Ctrl+Shift+P` (or `Cmd+Shift+P`) and run **`TypeScript: Restart TS Server`**.
-
-### **Problem: App fails to run (`npm run dev`)**
-
-* **Error:** `PrismaClient did not initialize...`
-* **Cause:** This usually means the database tables don't exist (see the first problem) or the `DATABASE_URL` is incorrect in your `.env.local` file.
-
-## Environment Variables
-
-- `NEXT_PUBLIC_POST_CHAR_LIMIT`: (default: 400) The maximum number of characters allowed in a post. Used by the CreatePostForm component to limit user input.
-````
+This updated guide should make the setup process much smoother. Let me know if you have any other questions\!
