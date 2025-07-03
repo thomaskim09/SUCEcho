@@ -10,7 +10,7 @@ import logger from '@/lib/logger';
 import { useTabLeaderContext } from './TabLeaderProvider';
 import AdvertisementCard from './AdvertisementCard';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
-import LoadingVideo from './LoadingVideo';
+import LoadingSpinner from './LoadingSpinner';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
@@ -125,7 +125,7 @@ export default function PostFeed() {
     }
 
     if (isLoading) {
-        return <LoadingVideo label="加载回音中..." />;
+        return <LoadingSpinner label="加载回音中..." />;
     }
 
     const showEndLabel = !isLoading && !isFetchingMore && !nextCursor;

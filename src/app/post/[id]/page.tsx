@@ -13,7 +13,7 @@ import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
-import LoadingVideo from '@/app/components/LoadingVideo';
+import LoadingSpinner from '@/app/components/LoadingSpinner';
 import supabase, { getPostRoomChannelName } from '@/lib/supabase-realtime';
 
 type PostThread = PostWithStats & {
@@ -426,7 +426,7 @@ export default function PostDetailPage() {
 
             <main className="mt-4">
                 {isLoading ? (
-                    <LoadingVideo label="加载回音..." />
+                    <LoadingSpinner label="加载回音..." />
                 ) : (
                     renderMainContent()
                 )}
