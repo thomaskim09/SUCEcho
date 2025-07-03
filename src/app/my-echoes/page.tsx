@@ -1,7 +1,7 @@
 // sucecho/src/app/my-echoes/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import { getMyEchoes } from '@/hooks/useMyEchoes';
 import PostCard from '@/app/components/PostCard';
@@ -60,11 +60,17 @@ export default function MyEchoesPage() {
         fetchMyPosts(false);
     }, [fetchMyPosts]);
 
+    const prevIsVisibleRef = useRef<boolean>(true);
     useEffect(() => {
-        if (isVisible && !isLoading) {
+        if (
+            prevIsVisibleRef.current === false &&
+            isVisible &&
+            !isLoading
+        ) {
             logger.log('"My Echoes" tab is visible again, refreshing posts...');
             fetchMyPosts(true);
         }
+        prevIsVisibleRef.current = isVisible;
     }, [isVisible, isLoading, fetchMyPosts]);
 
     const renderContent = () => {

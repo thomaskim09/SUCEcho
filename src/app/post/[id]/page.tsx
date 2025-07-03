@@ -172,7 +172,7 @@ export default function PostDetailPage() {
             .on('broadcast', { event: 'delete_parent_post' }, ({ payload }) => handleParentPostDeleted(payload))
             .subscribe(status => {
                 if (status === 'SUBSCRIBED') {
-                    logger.log(`Successfully subscribed to channel: ${getPostRoomChannelName}`);
+                    logger.log(`Successfully subscribed to channel: ${getPostRoomChannelName(post.id)}`);
                 }
             });
 

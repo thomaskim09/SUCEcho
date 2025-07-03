@@ -27,10 +27,6 @@ export default function PostFeed() {
     const isVisible = usePageVisibility();
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
 
-    useEffect(() => {
-        setPurifiedPostIds(getPurifiedPostIds());
-    }, []);
-
     const postVariants = {
         initial: (isNew: boolean) => ({
             opacity: 0,
@@ -70,6 +66,24 @@ export default function PostFeed() {
             if (!isRefreshing) setIsLoading(false);
         }
     }, [status, setPosts]);
+
+    const prevIsVisibleRef = useRef<boolean>(true);
+    useEffect(() => {
+        if (
+            prevIsVisibleRef.current === false &&
+            isVisible &&
+            !isLoading &&
+            status === 'leader'
+        ) {
+            logger.log('Tab is visible again, refreshing post feed...');
+            fetchInitialPosts(true);
+        }
+        prevIsVisibleRef.current = isVisible;
+    }, [isVisible, isLoading, status, fetchInitialPosts]);
+
+    useEffect(() => {
+        setPurifiedPostIds(getPurifiedPostIds());
+    }, []);
 
     const loadMorePosts = useCallback(async () => {
         if (isFetchingMore || !nextCursor || status !== 'leader') return;
@@ -112,24 +126,18 @@ export default function PostFeed() {
         }
     }, [status, fetchInitialPosts]);
 
-    useEffect(() => {
-        if (isVisible && !isLoading && status === 'leader') {
-            logger.log('Tab is visible again, refreshing post feed...');
-            fetchInitialPosts(true);
-        }
-    }, [isVisible, isLoading, status, fetchInitialPosts]);
-
     if (status === 'checking') return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
     if (status === 'follower') return <div className="text-center text-gray-400 p-8"><p>请关闭其他标签页并刷新本页以查看回音。</p></div>;
     if (isLoading) return <LoadingSpinner label="加载回音中..." />;
 
-    const showEndLabel = !isLoading && !isFetchingMore && !nextCursor;
     const twentyFourHours = 24 * 60 * 60 * 1000;
 
     const displayablePosts = posts.filter(post => {
         const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
         return postAge < twentyFourHours && !purifiedPostIds.has(post.id);
     });
+
+    const showEndLabel = !isLoading && !isFetchingMore && !nextCursor && displayablePosts.length > 0;
 
     return (
         <div className="flex flex-col gap-4">
@@ -178,8 +186,12 @@ export default function PostFeed() {
 
             {nextCursor && <div ref={sentinelRef} className="h-10" />}
             {isFetchingMore && <p className="text-center text-gray-400 py-4">正在加载更多回音...</p>}
-            {showEndLabel && posts.length > 0 && <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>}
-            {!isLoading && posts.length === 0 && <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>}
+            {showEndLabel && <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>}
+            {!isLoading && displayablePosts.length === 0 && (
+                <p className="text-center text-gray-400 py-4">
+                    还没有回音。<br />快来发布第一个吧！
+                </p>
+            )}
         </div>
     );
 }
