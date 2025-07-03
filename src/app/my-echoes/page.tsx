@@ -15,7 +15,7 @@ import { getPurifiedPostIds } from '@/lib/purifiedStore';
 import { Icon } from '../components/Icon';
 
 export default function MyEchoesPage() {
-    const { posts, setPosts, userVotes, handleVote, handlePostFaded, handlePostPurified } = useMyEchoesManager([]);
+    const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded, handlePostPurified } = useMyEchoesManager([]);
     const [isLoading, setIsLoading] = useState(true);
     const isVisible = usePageVisibility();
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
@@ -115,6 +115,7 @@ export default function MyEchoesPage() {
                                     post={post}
                                     isLink={!isChildEcho}
                                     onVote={(_, voteType) => handleVote(post, voteType)}
+                                    onDelete={handleDelete}
                                     userVote={userVotes[post.id]}
                                     isPurifying={post.isPurifying}
                                     onPurificationComplete={(postId) => {

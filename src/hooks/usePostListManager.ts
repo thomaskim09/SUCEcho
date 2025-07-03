@@ -32,7 +32,6 @@ export const usePostListManager = (initialPosts: PostWithStats[] = []) => {
                 const error = await res.json();
                 throw new Error(error.message || 'Failed to delete post');
             }
-            // Use the isDeleting flag for the correct exit animation
             setPosts((prevPosts) =>
                 prevPosts.map((p) =>
                     p.id === postId ? { ...p, isDeleting: true } : p

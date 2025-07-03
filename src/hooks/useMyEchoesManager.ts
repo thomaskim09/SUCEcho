@@ -45,11 +45,33 @@ export const useMyEchoesManager = (initialPosts: PostWithStats[] = []) => {
         );
     };
 
+    const handleDelete = async (postId: number) => {
+        if (!confirm(`您确定要删除帖子 #${postId} 吗？此操作无法撤销。`))
+            return;
+        try {
+            const res = await fetch(`/api/admin/posts/${postId}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Failed to delete post');
+            }
+            setPosts((prevPosts) =>
+                prevPosts.map((p) =>
+                    p.id === postId ? { ...p, isDeleting: true } : p
+                )
+            );
+        } catch (err: unknown) {
+            alert(`Error: ${(err as Error).message}`);
+        }
+    };
+
     return {
         posts,
         setPosts,
         userVotes,
         handleVote: voteHandler,
+        handleDelete,
         handlePostFaded,
         handlePostPurified,
     };

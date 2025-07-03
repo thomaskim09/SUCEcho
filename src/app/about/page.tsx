@@ -86,7 +86,7 @@ export default function AboutPage() {
                             <Icon name="mail" className="w-8 h-8" />
                         </div>
                         <h3 className="text-xl font-bold mb-2">联系与合作</h3>
-                        <p className="text-gray-300 mb-4 flex-grow">如果您有任何商业合作、功能建议,技术报错或媒体问询，请通过邮件与我们取得联系。</p>
+                        <p className="text-gray-300 mb-4 flex-grow">如果您有任何商业合作、功能建议、技术报错或媒体问询，请通过邮件与我们取得联系。</p>
                         <a
                             href="mailto:sucecho.info@gmail.com?subject=SUC Echo Inquiry"
                             className="w-full bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors text-lg"
