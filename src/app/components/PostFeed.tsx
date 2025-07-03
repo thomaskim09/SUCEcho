@@ -11,19 +11,25 @@ import { useTabLeaderContext } from './TabLeaderProvider';
 import AdvertisementCard from './AdvertisementCard';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from './LoadingSpinner';
+import { getPurifiedPostIds } from '@/lib/purifiedStore';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
 export default function PostFeed() {
     const [initialPosts] = useState<PostWithStats[]>([]);
     const [initialPostIds, setInitialPostIds] = useState<Set<number>>(new Set());
-    const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded } = usePostListManager(initialPosts);
+    const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded, handlePostPurified } = usePostListManager(initialPosts);
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<number | null>(null);
     const observer = useRef<IntersectionObserver | null>(null);
     const { status } = useTabLeaderContext();
     const isVisible = usePageVisibility();
+    const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
+
+    useEffect(() => {
+        setPurifiedPostIds(getPurifiedPostIds());
+    }, []);
 
     const postVariants = {
         initial: (isNew: boolean) => ({
@@ -41,10 +47,7 @@ export default function PostFeed() {
 
     const fetchInitialPosts = useCallback(async (isRefreshing = false) => {
         if (status !== 'leader') return;
-
-        if (!isRefreshing) {
-            setIsLoading(true);
-        }
+        if (!isRefreshing) setIsLoading(true);
 
         try {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
@@ -64,20 +67,19 @@ export default function PostFeed() {
         } catch (error) {
             logger.error("Error fetching initial posts:", error);
         } finally {
-            if (!isRefreshing) {
-                setIsLoading(false);
-            }
+            if (!isRefreshing) setIsLoading(false);
         }
     }, [status, setPosts]);
 
     const loadMorePosts = useCallback(async () => {
-        if (isFetchingMore || !nextCursor) return;
-        if (status !== 'leader') return;
+        if (isFetchingMore || !nextCursor || status !== 'leader') return;
         setIsFetchingMore(true);
+
         try {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`);
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
+
             setPosts(prev => {
                 const postMap = new Map(prev.map(p => [p.id, p]));
                 newPosts.forEach((post: PostWithStats) => postMap.set(post.id, post));
@@ -117,29 +119,22 @@ export default function PostFeed() {
         }
     }, [isVisible, isLoading, status, fetchInitialPosts]);
 
-    if (status === 'checking') {
-        return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
-    }
-    if (status === 'follower') {
-        return <div className="text-center text-gray-400 p-8"><p>请关闭其他标签页并刷新本页以查看回音。</p></div>;
-    }
-
-    if (isLoading) {
-        return <LoadingSpinner label="加载回音中..." />;
-    }
+    if (status === 'checking') return <div className="text-center text-gray-400 p-8"><p>加载回音中...</p></div>;
+    if (status === 'follower') return <div className="text-center text-gray-400 p-8"><p>请关闭其他标签页并刷新本页以查看回音。</p></div>;
+    if (isLoading) return <LoadingSpinner label="加载回音中..." />;
 
     const showEndLabel = !isLoading && !isFetchingMore && !nextCursor;
-
     const twentyFourHours = 24 * 60 * 60 * 1000;
-    const unexpiredPosts = posts.filter(post => {
+
+    const displayablePosts = posts.filter(post => {
         const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
-        return postAge < twentyFourHours;
+        return postAge < twentyFourHours && !purifiedPostIds.has(post.id);
     });
 
     return (
         <div className="flex flex-col gap-4">
             <AnimatePresence>
-                {unexpiredPosts.map(post => {
+                {displayablePosts.map(post => {
                     if (post.type === 'ADVERTISEMENT') {
                         return (
                             <AdvertisementCard
@@ -165,12 +160,16 @@ export default function PostFeed() {
                             <PostCard
                                 post={post}
                                 isPurifying={post.isPurifying}
-                                onPurificationComplete={handlePostFaded}
+                                onPurificationComplete={(postId) => {
+                                    handlePostFaded(postId);
+                                    setPurifiedPostIds(prev => new Set([...prev, postId]));
+                                }}
                                 onDeletionComplete={handlePostFaded}
                                 onFaded={handlePostFaded}
                                 onVote={(_, voteType) => handleVote(post, voteType)}
                                 onDelete={handleDelete}
                                 userVote={userVotes[post.id]}
+                                onAutoPurify={handlePostPurified}
                             />
                         </motion.div>
                     );
@@ -179,14 +178,8 @@ export default function PostFeed() {
 
             {nextCursor && <div ref={sentinelRef} className="h-10" />}
             {isFetchingMore && <p className="text-center text-gray-400 py-4">正在加载更多回音...</p>}
-
-            {showEndLabel && posts.length > 0 && (
-                <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>
-            )}
-
-            {!isLoading && posts.length === 0 && (
-                <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>
-            )}
+            {showEndLabel && posts.length > 0 && <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>}
+            {!isLoading && posts.length === 0 && <p className="text-center text-gray-400 py-4">还没有回音。快来发布第一个吧！</p>}
         </div>
     );
 }

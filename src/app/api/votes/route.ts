@@ -1,6 +1,7 @@
 // sucecho/src/app/api/votes/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+// Re-add the supabase import to keep the broadcast functionality
 import supabase, {
     MAIN_CHANNEL,
     getPostRoomChannelName,
@@ -101,17 +102,8 @@ export async function POST(request: Request) {
 
             const { shouldPurify } = checkPurificationStatus(updatedStats);
 
-            if (shouldPurify) {
-                return {
-                    shouldPurify: true,
-                    postId,
-                    stats: updatedStats,
-                    parentPostId: postExists.parentPostId,
-                };
-            }
-
             return {
-                shouldPurify: false,
+                shouldPurify,
                 postId,
                 stats: updatedStats,
                 parentPostId: postExists.parentPostId,
@@ -141,9 +133,6 @@ export async function POST(request: Request) {
             const channel = supabase.channel(channelName);
 
             if (transactionResult.shouldPurify) {
-                await prisma.post.delete({
-                    where: { id: transactionResult.postId },
-                });
                 await channel.send({
                     type: 'broadcast',
                     event: 'update_vote',
@@ -153,26 +142,24 @@ export async function POST(request: Request) {
                         shouldPurify: true,
                     },
                 });
-                supabase.removeChannel(channel);
-                return NextResponse.json({ purified: true });
+            } else {
+                await channel.send({
+                    type: 'broadcast',
+                    event: 'update_vote',
+                    payload: {
+                        postId: transactionResult.postId,
+                        stats: transactionResult.stats,
+                        shouldPurify: false,
+                    },
+                });
             }
-
-            await channel.send({
-                type: 'broadcast',
-                event: 'update_vote',
-                payload: {
-                    postId: transactionResult.postId,
-                    stats: transactionResult.stats,
-                    shouldPurify: false,
-                },
-            });
             supabase.removeChannel(channel);
         }
 
         return NextResponse.json({
             postId: transactionResult.postId,
             stats: transactionResult.stats,
-            shouldPurify: transactionResult.shouldPurify,
+            purified: transactionResult.shouldPurify,
         });
     } catch (error: unknown) {
         if ((error as { code?: string }).code === 'P2003') {
