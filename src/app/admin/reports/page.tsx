@@ -112,6 +112,7 @@ export default function AdminReportsPage() {
                                     onDelete={() => handleDeletePost(post.id)}
                                     onPurificationComplete={() => handlePostRemovedFromUI(post.id)}
                                     isLink={!isReply}
+                                    onAutoPurify={() => { }}
                                 />
                                 <div className="mt-4 border-t border-red-700/50 pt-4">
                                     <h4 className="font-bold text-sm mb-2 text-red-300">

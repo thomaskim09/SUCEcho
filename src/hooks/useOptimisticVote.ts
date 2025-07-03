@@ -38,7 +38,7 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
 
         startTransition(() => {
             const postId = post.id;
-            const originalPost = JSON.parse(JSON.stringify(post)); // Deep copy for rollback
+            const originalPost = JSON.parse(JSON.stringify(post));
             const originalVote = userVotes[postId];
 
             const newUserVote =
@@ -132,7 +132,6 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                         logger.log(
                             'Reverting optimistic vote due to server error.'
                         );
-                        // Revert UI on error
                         setUserVotes((prev) => {
                             const newVotes = { ...prev };
                             if (originalVote) {
