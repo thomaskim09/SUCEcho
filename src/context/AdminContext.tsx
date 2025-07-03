@@ -1,7 +1,7 @@
 // sucecho/src/context/AdminContext.tsx
 "use client";
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import logger from '@/lib/logger';
 
@@ -18,6 +18,21 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
     const [isAdmin, setIsAdmin] = useState(false);
     const router = useRouter();
+
+    const logout = useCallback(async () => {
+        localStorage.removeItem(ADMIN_STORAGE_KEY);
+        setIsAdmin(false);
+
+        try {
+            await fetch('/api/admin/logout', { method: 'POST' });
+        } catch (error) {
+            logger.error('Failed to logout from server:', error);
+        } finally {
+            if (window.location.pathname.startsWith('/admin')) {
+                router.push('/');
+            }
+        }
+    }, [router]);
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -53,26 +68,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             window.removeEventListener('storage', handleStorageChange);
         };
-    }, []);
+    }, [logout]);
 
     const login = () => {
         localStorage.setItem(ADMIN_STORAGE_KEY, 'true');
         setIsAdmin(true);
-    };
-
-    const logout = async () => {
-        localStorage.removeItem(ADMIN_STORAGE_KEY);
-        setIsAdmin(false);
-
-        try {
-            await fetch('/api/admin/logout', { method: 'POST' });
-        } catch (error) {
-            logger.error('Failed to logout from server:', error);
-        } finally {
-            if (window.location.pathname.startsWith('/admin')) {
-                router.push('/');
-            }
-        }
     };
 
     return (

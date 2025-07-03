@@ -1,7 +1,7 @@
 // sucecho/src/hooks/useMyEchoesManager.ts
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import { useOptimisticVote } from './useOptimisticVote';
 

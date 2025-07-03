@@ -12,6 +12,7 @@ import logger from '@/lib/logger';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getPurifiedPostIds } from '@/lib/purifiedStore';
+import { Icon } from '../components/Icon';
 
 export default function MyEchoesPage() {
     const { posts, setPosts, userVotes, handleVote, handlePostFaded, handlePostPurified } = useMyEchoesManager([]);
@@ -75,11 +76,13 @@ export default function MyEchoesPage() {
 
         if (displayablePosts.length === 0) {
             return (
-                <div className="text-center text-gray-400 p-8 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
-                    <p className="text-2xl mb-4">✍️</p>
-                    <p className="text-xl">你还没有发布任何回音。</p>
+                <div className="flex flex-col items-center justify-center text-gray-400 p-8 rounded-lg gap-2" style={{ backgroundColor: 'var(--card-background)' }}>
+                    <div className="mb-3">
+                        <Icon name="edit-line" className="w-10 h-10 text-accent" />
+                    </div>
+                    <p className="text-xl font-semibold">你还没有发布任何回音。</p>
                     <p className="text-base mt-2">在本设备上发布的回音会自动出现在这里。</p>
-                    <Link href="/compose" className="text-accent hover:underline mt-6 inline-block">
+                    <Link href="/compose" className="mt-6 underline text-accent font-bold text-lg hover:text-accent/80 transition-colors">
                         发布第一条回音
                     </Link>
                 </div>

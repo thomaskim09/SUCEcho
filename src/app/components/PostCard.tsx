@@ -73,7 +73,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const downvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
     const [isOverflowing, setIsOverflowing] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
-    const [showPurifyText, setShowPurifyText] = useState(false);
     const [shouldPurifyVanish, setShouldPurifyVanish] = useState(false);
     const [isGlitching, setIsGlitching] = useState(false);
     const [isCharging, setIsCharging] = useState(false);
@@ -103,17 +102,14 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         let vanishTimeout: NodeJS.Timeout | null = null;
         let textTimeout: NodeJS.Timeout | null = null;
         if (isPurifying) {
-            setShowPurifyText(true);
             setIsPurifyGlow(true);
             textTimeout = setTimeout(() => {
                 setIsPurifyGlow(false);
                 setShouldPurifyVanish(true);
                 vanishTimeout = setTimeout(() => {
-                    setShowPurifyText(false);
                 }, 1500);
             }, 3000);
         } else {
-            setShowPurifyText(false);
             setIsPurifyGlow(false);
             setShouldPurifyVanish(false);
         }
