@@ -1,4 +1,4 @@
-// sucecho/src/app/api/posts/route.ts
+// src/app/api/posts/route.ts (Optimized)
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import supabase, {
@@ -9,7 +9,6 @@ import { generateCodename } from '@/lib/codename';
 import logger from '@/lib/logger';
 import { findBestMatch } from 'string-similarity';
 
-// Rate Limiting Cache
 const postCooldown = new Map<string, number>();
 const commentCooldown = new Map<string, number>();
 const replyCooldown = new Map<string, Map<number, number>>();
@@ -174,15 +173,37 @@ export async function POST(request: Request) {
                     { status: 429 }
                 );
             }
+        }
 
-            if (process.env.SIMILARITY_CHECK_ENABLED === 'true') {
+        const newPostWithStats = await prisma.$transaction(async (tx) => {
+            const userProfile = await tx.userAnonymizedProfile.upsert({
+                where: { fingerprintHash },
+                update: { lastSeenAt: new Date() },
+                create: {
+                    fingerprintHash,
+                    codename: generateCodename(fingerprintHash),
+                    lastSeenAt: new Date(),
+                },
+            });
+
+            if (userProfile.isBanned) {
+                const expires = userProfile.banExpiresAt;
+                if (!expires || new Date(expires) > new Date()) {
+                    throw new Error('BANNED');
+                }
+            }
+
+            if (
+                process.env.SIMILARITY_CHECK_ENABLED === 'true' &&
+                !parentPostId
+            ) {
                 const similarityThreshold = parseFloat(
                     process.env.SIMILARITY_THRESHOLD || '0.85'
                 );
                 const checkHours = parseInt(
                     process.env.SIMILARITY_CHECK_HOURS || '1'
                 );
-                const recentPosts = await prisma.post.findMany({
+                const recentPosts = await tx.post.findMany({
                     where: {
                         createdAt: {
                             gte: new Date(now - checkHours * 60 * 60 * 1000),
@@ -198,52 +219,10 @@ export async function POST(request: Request) {
                         .filter((c): c is string => c !== null);
                     const { bestMatch } = findBestMatch(content, contents);
                     if (bestMatch && bestMatch.rating > similarityThreshold) {
-                        return NextResponse.json(
-                            {
-                                error: '这个想法很棒，但似乎有人捷足先登了，换个说法试试？',
-                            },
-                            { status: 400 }
-                        );
+                        throw new Error('SIMILAR');
                     }
                 }
             }
-        }
-
-        const userProfile = await prisma.userAnonymizedProfile.findUnique({
-            where: { fingerprintHash },
-        });
-
-        if (userProfile?.isBanned) {
-            const expires = userProfile.banExpiresAt;
-            if (!expires || new Date(expires) > new Date()) {
-                const banLog = await prisma.adminLog.findFirst({
-                    where: {
-                        targetFingerprintHash: fingerprintHash,
-                        action: 'BAN',
-                    },
-                    orderBy: { createdAt: 'desc' },
-                });
-                let message = `你已被封禁。`;
-                if (expires)
-                    message += ` 你的封禁将在 ${new Date(
-                        expires
-                    ).toLocaleString()} 解除。`;
-                else message += ` 此次封禁是永久的。`;
-                if (banLog?.reason) message += ` 原因: ${banLog.reason}`;
-                return NextResponse.json({ error: message }, { status: 403 });
-            }
-        }
-
-        const newPostWithStats = await prisma.$transaction(async (tx) => {
-            await tx.userAnonymizedProfile.upsert({
-                where: { fingerprintHash },
-                update: { lastSeenAt: new Date() },
-                create: {
-                    fingerprintHash,
-                    codename: generateCodename(fingerprintHash),
-                    lastSeenAt: new Date(),
-                },
-            });
 
             const createdPost = await tx.post.create({
                 data: {
@@ -314,16 +293,36 @@ export async function POST(request: Request) {
 
         if (channelName) {
             const channel = supabase.channel(channelName);
-            await channel.send({
-                type: 'broadcast',
-                event: 'new_post',
-                payload: newPostWithStats,
-            });
-            supabase.removeChannel(channel); // Clean up channel instance
+            channel
+                .send({
+                    type: 'broadcast',
+                    event: 'new_post',
+                    payload: newPostWithStats,
+                })
+                .then(() => {
+                    supabase.removeChannel(channel);
+                });
         }
 
         return NextResponse.json(newPostWithStats, { status: 201 });
     } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message === 'BANNED') {
+                return NextResponse.json(
+                    { error: '你已被封禁，无法发布内容。' },
+                    { status: 403 }
+                );
+            }
+            if (error.message === 'SIMILAR') {
+                return NextResponse.json(
+                    {
+                        error: '这个想法很棒，但似乎有人捷足先登了，换个说法试试？',
+                    },
+                    { status: 400 }
+                );
+            }
+        }
+
         logger.error('Error creating post:', error);
         if ((error as { code?: string }).code === 'P2025') {
             return NextResponse.json(
