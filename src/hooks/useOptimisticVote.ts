@@ -1,11 +1,12 @@
-// sucecho/src/hooks/useOptimisticVote.ts
+// src/hooks/useOptimisticVote.ts
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useFingerprint } from '@/context/FingerprintContext';
 import type { PostWithStats } from '@/lib/types';
 import logger from '@/lib/logger';
-import { addPurifiedPostId } from '@/lib/purifiedStore'; // Ensure this is imported
+import { addPurifiedPostId } from '@/lib/purifiedStore';
+import { getStoredVotes, storeVote } from '@/lib/voteStore'; // Import the new functions
 
 interface UseOptimisticVoteReturn {
     userVotes: Record<number, 1 | -1>;
@@ -23,6 +24,10 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
     const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
     const { fingerprint } = useFingerprint();
     const [isVoting, startTransition] = useTransition();
+
+    useEffect(() => {
+        setUserVotes(getStoredVotes());
+    }, []);
 
     const handleOptimisticVote = (
         post: PostWithStats,
@@ -43,6 +48,8 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
 
             const newUserVote =
                 originalVote === voteType ? undefined : voteType;
+
+            storeVote(postId, newUserVote);
 
             setUserVotes((prev) => {
                 const newVotes = { ...prev };
@@ -132,6 +139,7 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                         logger.log(
                             'Reverting optimistic vote due to server error.'
                         );
+                        storeVote(postId, originalVote);
                         setUserVotes((prev) => {
                             const newVotes = { ...prev };
                             if (originalVote) {
