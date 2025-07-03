@@ -166,7 +166,7 @@ export default function PostDetailPage() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [post?.id, setPost]);
+    }, [post, setPost]);
 
 
     const updatePostInState = (updatedPost: PostWithStats) => {
@@ -434,4 +434,3 @@ export default function PostDetailPage() {
         </div>
     );
 }
-''
