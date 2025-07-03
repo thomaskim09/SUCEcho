@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import logger from '@/lib/logger';
+import LocalStorageManager from '@/app/components/LocalStorageManager';
 
 interface AdminStats {
     totalUsers: number;
@@ -199,6 +200,18 @@ export default function AdminDashboardPage() {
                         {isCreatingPost ? '发布中...' : '发布帖子'}
                     </button>
                 </form>
+            </section>
+
+            {/* LocalStorage Management Section */}
+            <section
+                className="mt-8 p-6 rounded-lg"
+                style={{
+                    backgroundColor: 'var(--card-background)',
+                    border: '1px solid #14b8a6'
+                }}
+            >
+                <h2 className="text-2xl font-bold text-teal-400 mb-4">本地存储管理</h2>
+                <LocalStorageManager />
             </section>
 
             <section className="mt-8">
