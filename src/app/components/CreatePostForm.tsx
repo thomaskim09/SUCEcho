@@ -76,7 +76,7 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
 
             const newPost = await response.json();
             if (newPost && newPost.id) {
-                addMyEcho(newPost.id);
+                addMyEcho(newPost);
             }
 
             setIsSent(true);
@@ -107,14 +107,14 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
                     style={{ backgroundColor: 'var(--card-background)' }}
                     initial={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{
-                        y: [0, 20, -250],      // Keyframes: Start -> Pull Down -> Eject Up
-                        opacity: [1, 1, 0],     // Keyframes: Opaque -> Opaque -> Fade Out
-                        scale: [1, 0.98, 0.8],  // Keyframes: Full size -> Slightly squish -> Shrink
+                        y: [0, 20, -250],
+                        opacity: [1, 1, 0],
+                        scale: [1, 0.98, 0.8],
                     }}
                     transition={{
                         duration: 0.6,
                         ease: "easeInOut",
-                        times: [0, 0.4, 1] // Defines the timing for each keyframe
+                        times: [0, 0.4, 1]
                     }}
                 >
                     <form onSubmit={handleSubmit} className="relative">

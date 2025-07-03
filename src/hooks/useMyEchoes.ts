@@ -5,10 +5,19 @@ import logger from '@/lib/logger';
 
 const MY_ECHOES_KEY = 'my_echoes';
 
+type EchoEntry = {
+    id: number;
+    createdAt: number;
+};
+
+interface PostWithTimestamp {
+    id: number;
+    createdAt: string | number | Date;
+}
+
 /**
- * Retrieves the user's post IDs from localStorage.
- * This function is safe to call on the server, as it checks for `window`.
- * @returns {number[]} An array of post IDs.
+ * Retrieves recent post IDs, cleaning up any older than 24 hours.
+ * @returns {number[]} An array of post IDs from the last 24 hours.
  */
 export const getMyEchoes = (): number[] => {
     if (typeof window === 'undefined') {
@@ -17,31 +26,73 @@ export const getMyEchoes = (): number[] => {
     try {
         const item = window.localStorage.getItem(MY_ECHOES_KEY);
         if (!item) return [];
-        const ids = JSON.parse(item);
-        // Basic validation to ensure it's an array of numbers
-        if (Array.isArray(ids) && ids.every((id) => typeof id === 'number')) {
-            return ids;
-        }
-        return [];
+
+        const allEntries: EchoEntry[] = JSON.parse(item);
+        const now = Date.now();
+        const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
+
+        const recentEntries = allEntries.filter((entry) => {
+            if (
+                typeof entry?.id !== 'number' ||
+                typeof entry?.createdAt !== 'number'
+            ) {
+                return false;
+            }
+            return now - entry.createdAt < twentyFourHoursInMs;
+        });
+
+        window.localStorage.setItem(
+            MY_ECHOES_KEY,
+            JSON.stringify(recentEntries)
+        );
+
+        return recentEntries.map((entry) => entry.id);
     } catch (error) {
-        logger.error('Failed to parse my echoes from localStorage', error);
+        logger.error(
+            'Failed to parse or clean my echoes from localStorage',
+            error
+        );
+        window.localStorage.removeItem(MY_ECHOES_KEY);
         return [];
     }
 };
 
 /**
- * Adds a new post ID to the user's list in localStorage.
- * @param {number} postId The ID of the post to add.
+ * Adds a new post to localStorage, but only if it was created within the last 24 hours.
+ * @param {PostWithTimestamp} post The new post object from the server.
  */
-export const addMyEcho = (postId: number): void => {
-    if (typeof window === 'undefined' || typeof postId !== 'number') {
+export const addMyEcho = (post: PostWithTimestamp): void => {
+    if (
+        typeof window === 'undefined' ||
+        !post ||
+        typeof post.id !== 'number' ||
+        !post.createdAt
+    ) {
         return;
     }
+
     try {
-        const currentEchoes = getMyEchoes();
+        const postTimestamp = new Date(post.createdAt).getTime();
+        const now = Date.now();
+        const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
+
+        if (now - postTimestamp > twentyFourHoursInMs) {
+            logger.log(
+                `Post ${post.id} is older than 24 hours and will not be added to My Echoes.`
+            );
+            return;
+        }
+
+        const item = window.localStorage.getItem(MY_ECHOES_KEY);
+        const currentEntries: EchoEntry[] = item ? JSON.parse(item) : [];
+
         // Avoid adding duplicates
-        if (!currentEchoes.includes(postId)) {
-            const newEchoes = [postId, ...currentEchoes];
+        if (!currentEntries.some((entry) => entry.id === post.id)) {
+            const newEntry: EchoEntry = {
+                id: post.id,
+                createdAt: postTimestamp,
+            };
+            const newEchoes = [newEntry, ...currentEntries];
             window.localStorage.setItem(
                 MY_ECHOES_KEY,
                 JSON.stringify(newEchoes)
