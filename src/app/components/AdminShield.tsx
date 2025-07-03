@@ -5,10 +5,13 @@ import Link from "next/link";
 import { useAdmin } from "@/context/AdminContext";
 import { usePathname } from "next/navigation";
 import { motion } from 'motion/react';
+import { Icon } from "./Icon";
+import { useRef } from 'react';
 
 export default function AdminShield() {
   const { isAdmin } = useAdmin();
   const pathname = usePathname();
+  const buttonRef = useRef<HTMLAnchorElement>(null);
 
   if (!isAdmin) return null;
 
@@ -20,8 +23,26 @@ export default function AdminShield() {
   // Use a different style when it's not on the home page (where the main FAB is)
   const isHomePage = pathname === '/';
   const wrapperClass = isHomePage
-    ? "relative" // Stacked on the home page
-    : "fixed bottom-6 right-6 z-50"; // FAB position on other pages
+    ? "relative"
+    : "fixed bottom-6 right-6 z-50";
+
+  function createRipple(event: React.MouseEvent) {
+    const button = buttonRef.current;
+    if (!button) return;
+    const rippleContainer = button.querySelector('.ripple-container');
+    if (!rippleContainer) return;
+    const circle = document.createElement('span');
+    const diameter = Math.max(button.clientWidth, button.clientHeight);
+    const radius = diameter / 2;
+    circle.classList.add('ripple');
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+    circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+    rippleContainer.appendChild(circle);
+    circle.addEventListener('animationend', () => {
+      circle.remove();
+    });
+  }
 
   return (
     <motion.div
@@ -30,12 +51,16 @@ export default function AdminShield() {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.6 }}
       whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 1.08 }}
     >
-      <Link href="/admin/dashboard" >
-        <div className="p-3 bg-gray-800 border border-gray-600 rounded-full shadow-lg hover:bg-gray-700 transition-colors w-16 h-16 flex items-center justify-center">
-          <span className="text-3xl">🛡️</span>
-        </div>
+      <Link href="/admin/dashboard"
+        ref={buttonRef}
+        className="bg-gradient-to-br from-blue-500 to-blue-700 text-white border border-blue-400 rounded-full shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-colors w-16 h-16 flex items-center justify-center press-animation relative overflow-hidden"
+        onClick={createRipple}
+        aria-label="Admin Dashboard"
+      >
+        <span className="ripple-container absolute inset-0 pointer-events-none" />
+        <span className="text-3xl"> <Icon name="shield" /></span>
       </Link>
     </motion.div>
   );
