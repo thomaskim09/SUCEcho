@@ -5,18 +5,9 @@ import { useState, useEffect } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import { useOptimisticVote } from './useOptimisticVote';
 
-/**
- * A simplified post list manager for the "My Echoes" page.
- * It handles voting optimistically but does NOT subscribe to any
- * real-time updates, saving resources.
- */
 export const useMyEchoesManager = (initialPosts: PostWithStats[] = []) => {
     const [posts, setPosts] = useState<PostWithStats[]>(initialPosts);
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
-
-    useEffect(() => {
-        setPosts(initialPosts);
-    }, [initialPosts]);
 
     const handlePostPurified = (postId: number) => {
         setPosts((prevPosts) =>
@@ -60,5 +51,6 @@ export const useMyEchoesManager = (initialPosts: PostWithStats[] = []) => {
         userVotes,
         handleVote: voteHandler,
         handlePostFaded,
+        handlePostPurified,
     };
 };

@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react';
 import { useFingerprint } from '@/context/FingerprintContext';
 import type { PostWithStats } from '@/lib/types';
 import logger from '@/lib/logger';
+import { addPurifiedPostId } from '@/lib/purifiedStore'; // Ensure this is imported
 
 interface UseOptimisticVoteReturn {
     userVotes: Record<number, 1 | -1>;
@@ -40,11 +41,9 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
             const originalPost = JSON.parse(JSON.stringify(post)); // Deep copy for rollback
             const originalVote = userVotes[postId];
 
-            // Determine the new vote state
             const newUserVote =
                 originalVote === voteType ? undefined : voteType;
 
-            // Update the local record of user votes
             setUserVotes((prev) => {
                 const newVotes = { ...prev };
                 if (newUserVote) {
@@ -55,27 +54,21 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                 return newVotes;
             });
 
-            // Calculate the new stats based on the change
             let upvoteChange = 0;
             let downvoteChange = 0;
 
             if (originalVote === voteType) {
-                // Undoing a vote
                 if (voteType === 1) upvoteChange = -1;
                 else downvoteChange = -1;
             } else if (originalVote) {
-                // Changing a vote
                 if (voteType === 1) {
-                    // from down to up
                     upvoteChange = 1;
                     downvoteChange = -1;
                 } else {
-                    // from up to down
                     upvoteChange = -1;
                     downvoteChange = 1;
                 }
             } else {
-                // New vote
                 if (voteType === 1) upvoteChange = 1;
                 else downvoteChange = 1;
             }
@@ -86,16 +79,13 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                 replyCount: post.stats?.replyCount ?? 0,
             };
 
-            // Create a completely new post object to ensure React re-renders
             const updatedPost: PostWithStats = {
                 ...post,
                 stats: newStats,
             };
 
-            // Immediately update the UI
             updateStateCallback(updatedPost);
 
-            // Send the request to the server
             const sendVoteRequest = async () => {
                 try {
                     const res = await fetch('/api/votes', {
@@ -110,7 +100,10 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
 
                     if (!res.ok) {
                         const errorData = await res.json();
-                        if (errorData.error === '帖子已消失，无法投票。') {
+                        if (
+                            errorData.error ===
+                            '该回音已消失，未能计入你的投票。'
+                        ) {
                             onPostVanished(postId);
                         }
                         throw new Error(
@@ -119,7 +112,15 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                     }
 
                     const result = await res.json();
+
+                    const serverCorrectedPost: PostWithStats = {
+                        ...post,
+                        stats: result.stats,
+                    };
+                    updateStateCallback(serverCorrectedPost);
+
                     if (result.purified) {
+                        addPurifiedPostId(postId);
                         onPurifyCallback(postId);
                     }
                 } catch (error) {
@@ -127,7 +128,7 @@ export function useOptimisticVote(): UseOptimisticVoteReturn {
                     logger.error('Vote failed:', error);
                     alert(errorMessage);
 
-                    if (errorMessage !== '帖子已消失，无法投票。') {
+                    if (errorMessage !== '该回音已消失，未能计入你的投票。') {
                         logger.log(
                             'Reverting optimistic vote due to server error.'
                         );

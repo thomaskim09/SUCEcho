@@ -1,3 +1,4 @@
+// sucecho/src/app/post/[id]/page.tsx
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -15,6 +16,7 @@ import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import supabase, { getPostRoomChannelName } from '@/lib/supabase-realtime';
+import { getPurifiedPostIds, addPurifiedPostId } from '@/lib/purifiedStore';
 
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
@@ -63,9 +65,7 @@ export default function PostDetailPage() {
 
     const [initialPost, setInitialPost] = useState<PostThread | null>(null);
     const [post, setPost] = useLivePostThreadUpdates(initialPost);
-
     const [showFinalMessage, setShowFinalMessage] = useState(false);
-
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [shareFeedback, setShareFeedback] = useState('');
@@ -78,6 +78,18 @@ export default function PostDetailPage() {
     const { fingerprint } = useFingerprint();
     const isVisible = usePageVisibility();
 
+    useEffect(() => {
+        const postId = parseInt(id, 10);
+        if (!isNaN(postId)) {
+            const purifiedIds = getPurifiedPostIds();
+            if (purifiedIds.has(postId)) {
+                setShowFinalMessage(true);
+                setIsLoading(false);
+            }
+        }
+    }, [id]);
+
+
     const handleBackClick = () => {
         if (typeof document !== 'undefined' && document.referrer.includes('/compose')) {
             router.push('/');
@@ -87,7 +99,7 @@ export default function PostDetailPage() {
     };
 
     const fetchPostDetails = useCallback(async (isRefreshing = false) => {
-        if (!id) return;
+        if (showFinalMessage || !id) return;
         if (!isRefreshing) {
             if (dataFetched.current) return;
             dataFetched.current = true;
@@ -118,8 +130,10 @@ export default function PostDetailPage() {
     }, [id, showFinalMessage]);
 
     useEffect(() => {
-        fetchPostDetails(false);
-    }, [id, fetchPostDetails]);
+        if (!showFinalMessage) {
+            fetchPostDetails(false);
+        }
+    }, [id, showFinalMessage, fetchPostDetails]);
 
     useEffect(() => {
         if (isVisible && !isLoading) {
@@ -127,7 +141,6 @@ export default function PostDetailPage() {
         }
     }, [isVisible, isLoading, fetchPostDetails]);
 
-    // Real-time event handling for deletions
     useEffect(() => {
         if (!post || !post.id) return;
 
@@ -182,8 +195,24 @@ export default function PostDetailPage() {
         });
     };
 
+    const handleAutoPurify = (postIdToPurify: number) => {
+        logger.log(`Auto-purification triggered for post ${postIdToPurify}`);
+        addPurifiedPostId(postIdToPurify);
+        setPost(currentThread => {
+            if (!currentThread) return null;
+            if (currentThread.id === postIdToPurify) {
+                return { ...currentThread, isPurifying: true };
+            }
+            const updatedReplies = currentThread.replies.map(reply =>
+                reply.id === postIdToPurify ? { ...reply, isPurifying: true } : reply
+            );
+            return { ...currentThread, replies: updatedReplies };
+        });
+    };
+
     const handlePurification = (postIdToPurify: number) => {
         logger.log(`Purification process starting for post ${postIdToPurify}`);
+        addPurifiedPostId(postIdToPurify); // Add to store immediately
         setPost(currentThread => {
             if (!currentThread) return null;
             if (currentThread.id === postIdToPurify) {
@@ -313,6 +342,7 @@ export default function PostDetailPage() {
                         onFaded={() => handleAnimationEnd(post.id)}
                         onDelete={handleDelete}
                         onDeletionComplete={() => handleAnimationEnd(post.id)}
+                        onAutoPurify={handleAutoPurify}
                     />
                 </div>
                 {(!post.isPurifying && !post.isDeleting) && (
@@ -346,6 +376,7 @@ export default function PostDetailPage() {
                                                     isPurifying={reply.isPurifying}
                                                     onDelete={handleDelete}
                                                     onDeletionComplete={() => handleAnimationEnd(reply.id)}
+                                                    onAutoPurify={handleAutoPurify}
                                                 />
                                             </motion.div>
                                         ))}

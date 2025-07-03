@@ -13,6 +13,7 @@ import { checkPurificationStatus } from "@/lib/purification";
 import { timeSince } from "@/lib/time-helpers";
 import { useCountdown } from '@/hooks/useCountdown';
 import Tooltip from './Tooltip';
+import { addPurifiedPostId } from "@/lib/purifiedStore";
 
 interface PostCardProps {
     post: PostWithStats;
@@ -25,6 +26,7 @@ interface PostCardProps {
     onFaded?: (postId: number) => void;
     onPurificationComplete?: (postId: number) => void;
     onDeletionComplete?: (postId: number) => void;
+    onAutoPurify: (postId: number) => void;
 }
 
 interface Ripple {
@@ -58,7 +60,7 @@ const renderContentWithLinks = (content: string) => {
     });
 };
 
-export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
     const router = useRouter();
@@ -207,10 +209,17 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         setTimeout(() => router.push(`/post/${post.id}`), 180);
     };
 
-    const { showMeter: showPurificationMeter, meterFillPercentage } = checkPurificationStatus({
+    const { showMeter: showPurificationMeter, meterFillPercentage, shouldPurify } = checkPurificationStatus({
         upvotes: post.stats?.upvotes ?? 0,
         downvotes: post.stats?.downvotes ?? 0,
     });
+
+    useEffect(() => {
+        if (shouldPurify && !isPurifying) {
+            addPurifiedPostId(post.id);
+            onAutoPurify(post.id);
+        }
+    }, [shouldPurify, isPurifying, post.id, onAutoPurify]);
 
     const upvoteIsActive = userVote === 1;
     const downvoteIsActive = userVote === -1;
@@ -301,18 +310,33 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
                     {post.type !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
-                            <span
-                                className={`font-mono flex-shrink-0 ${isPurifying && showPurifyText
-                                    ? 'purify-text-glow-red fade-in'
-                                    : colorClass + (isExpired ? ' fade-in' : '') + (isCritical ? ' pulse' : '')
-                                    }`}
-                            >
-                                {isPurifying && showPurifyText
-                                    ? '社区自治，自主净化'
-                                    : isChildEcho
-                                        ? timeSince(new Date(post.createdAt))
-                                        : countdownText}
-                            </span>
+                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : colorClass + (isCritical ? ' pulse' : '')}`}>
+                                <AnimatePresence mode="wait">
+                                    {isPurifying ? (
+                                        <motion.span
+                                            key="purify-text"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            社区自治，自主净化
+                                        </motion.span>
+                                    ) : (
+                                        <motion.span
+                                            key="countdown-text"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            {isChildEcho
+                                                ? timeSince(new Date(post.createdAt))
+                                                : countdownText}
+                                        </motion.span>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                             <div className="flex items-center gap-4 flex-shrink-0 items-center">
                                 <div className="relative">
                                     <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>

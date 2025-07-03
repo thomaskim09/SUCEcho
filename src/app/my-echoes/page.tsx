@@ -11,12 +11,17 @@ import { useMyEchoesManager } from '@/hooks/useMyEchoesManager';
 import logger from '@/lib/logger';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getPurifiedPostIds } from '@/lib/purifiedStore';
 
 export default function MyEchoesPage() {
-    const [initialPosts] = useState<PostWithStats[]>([]);
-    const { posts, setPosts, userVotes, handleVote, handlePostFaded } = useMyEchoesManager(initialPosts);
+    const { posts, setPosts, userVotes, handleVote, handlePostFaded, handlePostPurified } = useMyEchoesManager([]);
     const [isLoading, setIsLoading] = useState(true);
     const isVisible = usePageVisibility();
+    const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
+
+    useEffect(() => {
+        setPurifiedPostIds(getPurifiedPostIds());
+    }, []);
 
     const fetchMyPosts = useCallback(async (isRefreshing = false) => {
         const postIds = getMyEchoes();
@@ -24,10 +29,7 @@ export default function MyEchoesPage() {
             setIsLoading(false);
             return;
         }
-
-        if (!isRefreshing) {
-            setIsLoading(true);
-        }
+        if (!isRefreshing) setIsLoading(true);
 
         try {
             const res = await fetch('/api/posts/mine', {
@@ -49,9 +51,7 @@ export default function MyEchoesPage() {
         } catch (error) {
             logger.error(error);
         } finally {
-            if (!isRefreshing) {
-                setIsLoading(false);
-            }
+            if (!isRefreshing) setIsLoading(false);
         }
     }, [setPosts]);
 
@@ -66,12 +66,14 @@ export default function MyEchoesPage() {
         }
     }, [isVisible, isLoading, fetchMyPosts]);
 
-
     const renderContent = () => {
         if (isLoading) {
             return <LoadingSpinner label="正在加载你的回音..." />;
         }
-        if (posts.length === 0) {
+
+        const displayablePosts = posts.filter(p => !purifiedPostIds.has(p.id));
+
+        if (displayablePosts.length === 0) {
             return (
                 <div className="text-center text-gray-400 p-8 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
                     <p className="text-2xl mb-4">✍️</p>
@@ -83,10 +85,11 @@ export default function MyEchoesPage() {
                 </div>
             );
         }
+
         return (
             <div className="flex flex-col gap-4">
                 <AnimatePresence>
-                    {posts.map(post => {
+                    {displayablePosts.map(post => {
                         const isChildEcho = !!post.parentPostId;
                         const wrapperClass = isChildEcho ? "border-l-2 border-accent/30 pl-4 ml-4" : "";
 
@@ -105,9 +108,13 @@ export default function MyEchoesPage() {
                                     onVote={(_, voteType) => handleVote(post, voteType)}
                                     userVote={userVotes[post.id]}
                                     isPurifying={post.isPurifying}
-                                    onPurificationComplete={handlePostFaded}
+                                    onPurificationComplete={(postId) => {
+                                        handlePostFaded(postId);
+                                        setPurifiedPostIds(prev => new Set([...prev, postId]));
+                                    }}
                                     onDeletionComplete={handlePostFaded}
                                     onFaded={handlePostFaded}
+                                    onAutoPurify={handlePostPurified}
                                 />
                             </motion.div>
                         );

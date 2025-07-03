@@ -5,12 +5,6 @@ import type { PostWithStats } from '@/lib/types';
 import { useLivePostUpdates } from './useLivePostUpdates';
 import { useOptimisticVote } from './useOptimisticVote';
 
-/**
- * A centralized hook to manage a list of posts, including live updates,
- * voting, and admin actions.
- * @param initialPosts The initial array of posts to display.
- * @returns An object with state and handlers for a post list component.
- */
 export const usePostListManager = (initialPosts: PostWithStats[] = []) => {
     const [posts, setPosts] = useLivePostUpdates(initialPosts);
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
@@ -72,7 +66,6 @@ export const usePostListManager = (initialPosts: PostWithStats[] = []) => {
             handlePostVanished
         );
     };
-
     return {
         posts,
         setPosts,
@@ -80,5 +73,6 @@ export const usePostListManager = (initialPosts: PostWithStats[] = []) => {
         handleVote: voteHandler,
         handleDelete,
         handlePostFaded,
+        handlePostPurified,
     };
 };
