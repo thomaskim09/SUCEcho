@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.6.2",
-    "@prisma/client": "^6.11.0",
+    "@prisma/client": "^6.11.1",
     "@supabase/supabase-js": "^2.50.2",
     "@svgr/webpack": "^8.1.0",
     "broadcast-channel": "^7.1.0",

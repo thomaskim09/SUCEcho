@@ -53,7 +53,6 @@ export async function DELETE(
             where: { id: numericPostId },
         });
 
-        // If the deleted post was a reply, decrement parent post's replyCount
         if (existingPost.parentPostId) {
             await prisma.postStats.update({
                 where: { postId: existingPost.parentPostId },
