@@ -81,6 +81,8 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
     const isAnnouncement = post.type === 'ANNOUNCEMENT';
     const [isEnlarged, setIsEnlarged] = useState(false);
+    const [isReplyExpanded, setIsReplyExpanded] = useState(false);
+    const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
 
     const cardVariants = {
         visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.5 } },
@@ -134,6 +136,9 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             if (contentRef.current) {
                 const maxHeight = 125;
                 setIsOverflowing(contentRef.current.scrollHeight > maxHeight);
+                if (isChildEcho) {
+                    setIsReplyOverflowing(contentRef.current.scrollHeight > maxHeight);
+                }
             }
         };
         checkOverflow();
@@ -283,16 +288,23 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     <div
                         ref={contentRef}
                         className={
-                            (isLink ? "max-h-[300px] overflow-y-hidden relative" : "") +
-                            (isLink && isOverflowing ? " truncated-content" : "")
+                            isChildEcho
+                                ? `relative transition-all duration-300 ${!isReplyExpanded ? 'max-h-[125px] overflow-y-hidden' : ''}`
+                                : (isLink ? "max-h-[300px] overflow-y-hidden relative" : "") +
+                                (isLink && isOverflowing ? " truncated-content" : "")
                         }
                     >
                         <p className="text-white whitespace-pre-wrap break-words">{post.content && renderContentWithLinks(post.content)}</p>
                     </div>
 
-                    {isLink && isOverflowing && (
-                        <div className="mt-2 text-sm font-bold text-accent hover:underline cursor-pointer z-10" onClick={handleCardClick}>
+                    {isChildEcho && isReplyOverflowing && !isReplyExpanded && (
+                        <div className="mt-2 text-sm font-bold text-accent hover:underline cursor-pointer z-10" onClick={() => setIsReplyExpanded(true)}>
                             ...[阅读全文]
+                        </div>
+                    )}
+                    {isChildEcho && isReplyOverflowing && isReplyExpanded && (
+                        <div className="mt-2 text-sm font-bold text-accent hover:underline cursor-pointer z-10" onClick={() => setIsReplyExpanded(false)}>
+                            [收起]
                         </div>
                     )}
 
