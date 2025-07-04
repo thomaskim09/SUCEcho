@@ -53,8 +53,12 @@ export async function DELETE(
             where: { id: numericPostId },
         });
 
-        // If the deleted post was a reply, notify the parent post's channel
+        // If the deleted post was a reply, decrement parent post's replyCount
         if (existingPost.parentPostId) {
+            await prisma.postStats.update({
+                where: { postId: existingPost.parentPostId },
+                data: { replyCount: { decrement: 1 } },
+            });
             const postRoomChannel = supabase.channel(
                 getPostRoomChannelName(existingPost.parentPostId)
             );
