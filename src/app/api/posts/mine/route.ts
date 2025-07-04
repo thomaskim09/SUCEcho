@@ -1,4 +1,4 @@
-// sucecho/src/app/api/posts/mine/route.ts
+// src/app/api/posts/mine/route.ts
 import logger from '@/lib/logger';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';

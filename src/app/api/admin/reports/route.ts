@@ -1,4 +1,4 @@
-// sucecho/src/app/api/admin/reports/route.ts
+// src/app/api/admin/reports/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth';
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
                 },
                 reports: {
                     select: {
-                        id: true, // Add id to be able to delete it
+                        id: true,
                         fingerprintHash: true,
                         reason: true,
                         createdAt: true,
@@ -57,10 +57,36 @@ export async function GET(request: Request) {
             },
         });
 
+        const reporterFingerprints = Array.from(
+            new Set(
+                reportedPosts.flatMap((post) =>
+                    post.reports.map((r) => r.fingerprintHash)
+                )
+            )
+        );
+
+        const reporters = await prisma.userAnonymizedProfile.findMany({
+            where: {
+                fingerprintHash: {
+                    in: reporterFingerprints,
+                },
+            },
+            select: {
+                fingerprintHash: true,
+                codename: true,
+            },
+        });
+
+        const reporterCodenameMap = new Map(
+            reporters.map((r) => [r.fingerprintHash, r.codename])
+        );
+
         const postsWithReporterCodename = reportedPosts.map((post) => {
             const reportsWithCodename = post.reports.map((report) => ({
                 ...report,
-                reporterCodename: generateCodename(report.fingerprintHash),
+                reporterCodename:
+                    reporterCodenameMap.get(report.fingerprintHash) ||
+                    generateCodename(report.fingerprintHash),
             }));
             return { ...post, reports: reportsWithCodename };
         });

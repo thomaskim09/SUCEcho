@@ -18,6 +18,9 @@ import LoadingSpinner from '@/app/components/LoadingSpinner';
 import supabase, { getPostRoomChannelName } from '@/lib/supabase-realtime';
 import { getPurifiedPostIds, addPurifiedPostId } from '@/lib/purifiedStore';
 
+// Use the same limit as the post feed
+const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
+
 type PostThread = PostWithStats & {
     replies: PostWithStats[];
 };
@@ -73,6 +76,8 @@ export default function PostDetailPage() {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [reportingPostId, setReportingPostId] = useState<number | null>(null);
     const dataFetched = useRef(false);
+    const [nextReplyCursor, setNextReplyCursor] = useState<number | null>(null);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
@@ -116,8 +121,9 @@ export default function PostDetailPage() {
                 }
                 throw new Error(errorData.error || 'Failed to fetch post');
             }
-            const data: PostThread = await res.json();
+            const data = await res.json();
             setInitialPost(data);
+            setNextReplyCursor(data.nextReplyCursor);
 
         } catch (err) {
             if (!showFinalMessage) {
@@ -128,6 +134,38 @@ export default function PostDetailPage() {
             if (!isRefreshing) setIsLoading(false);
         }
     }, [id, showFinalMessage]);
+
+    const loadMoreReplies = async () => {
+        if (!nextReplyCursor || isFetchingMore) return;
+
+        setIsFetchingMore(true);
+        setError(null);
+
+        try {
+            const res = await fetch(`/api/posts/${id}?limit=${POST_FEED_LIMIT}&cursor=${nextReplyCursor}`);
+            if (!res.ok) {
+                throw new Error('Failed to fetch more replies');
+            }
+            const data = await res.json();
+
+            setPost(currentThread => {
+                if (!currentThread) return null;
+                const existingReplyIds = new Set(currentThread.replies.map(r => r.id));
+                const newReplies = data.replies.filter((r: PostWithStats) => !existingReplyIds.has(r.id));
+                return {
+                    ...currentThread,
+                    replies: [...currentThread.replies, ...newReplies],
+                };
+            });
+
+            setNextReplyCursor(data.nextReplyCursor);
+
+        } catch (err) {
+            setError((err as Error).message);
+        } finally {
+            setIsFetchingMore(false);
+        }
+    };
 
     useEffect(() => {
         if (!showFinalMessage) {
@@ -316,7 +354,7 @@ export default function PostDetailPage() {
             return <ExpiredPostMessage />;
         }
 
-        if (error) {
+        if (error && !post) {
             return <p className="text-red-400 text-center p-8">{error}</p>;
         }
 
@@ -383,6 +421,18 @@ export default function PostDetailPage() {
                                     </AnimatePresence>
                                 ) : (
                                     <p className="text-gray-500 text-sm">目前并没有回复.</p>
+                                )}
+
+                                {nextReplyCursor && (
+                                    <div className="pt-4 text-center">
+                                        <button
+                                            onClick={loadMoreReplies}
+                                            disabled={isFetchingMore}
+                                            className="text-accent hover:underline disabled:opacity-50 disabled:no-underline"
+                                        >
+                                            {isFetchingMore ? '加载中...' : '加载更多回复'}
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>

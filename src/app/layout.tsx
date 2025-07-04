@@ -62,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
             </TabLeaderProvider>
           </FingerprintProvider>
         </AdminProvider>
+        <div id="modal-root"></div>
       </body>
     </html>
   );

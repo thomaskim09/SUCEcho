@@ -1,4 +1,4 @@
-// sucecho/src/app/api/posts/[id]/route.ts
+// src/app/api/posts/[id]/route.ts
 import logger from '@/lib/logger';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -22,6 +22,10 @@ export async function GET(
             );
         }
 
+        const { searchParams } = new URL(request.url);
+        const limit = parseInt(searchParams.get('limit') || '20', 10);
+        const cursor = searchParams.get('cursor');
+
         const post = await prisma.post.findUnique({
             where: { id: postId },
             select: {
@@ -40,6 +44,11 @@ export async function GET(
                     },
                 },
                 replies: {
+                    take: limit,
+                    ...(cursor && {
+                        skip: 1,
+                        cursor: { id: parseInt(cursor, 10) },
+                    }),
                     orderBy: { createdAt: 'asc' },
                     select: {
                         id: true,
@@ -73,7 +82,12 @@ export async function GET(
             );
         }
 
-        return NextResponse.json(post);
+        let nextReplyCursor: number | null = null;
+        if (post.replies.length === limit) {
+            nextReplyCursor = post.replies[post.replies.length - 1].id;
+        }
+
+        return NextResponse.json({ ...post, nextReplyCursor });
     } catch (error) {
         logger.error(`Error fetching post:`, error);
         return NextResponse.json({ error: '获取回音失败' }, { status: 500 });
