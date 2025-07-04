@@ -65,8 +65,8 @@ export default function Header() {
     const navLinks = [
         { href: "/how-it-works", label: "运作方式", iconName: "info" as const },
         { href: "/about", label: "关于我们", iconName: "heart" as const },
-        { href: "/my-echoes", label: "我的回音", iconName: "edit" as const },
         { href: "/disclaimer", label: "免责声明", iconName: "shield" as const },
+        { href: "/my-echoes", label: "我的回音", iconName: "edit" as const },
     ];
 
     return (
@@ -139,7 +139,7 @@ export default function Header() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                             transition={{ duration: 0.2 }}
-                            className="md:hidden absolute top-full left-0 right-0 p-4 z-20 rounded-b-lg glass-card"
+                            className="md:hidden absolute top-full left-0 right-0 p-4 z-20 rounded-b-lg glass-card bg-gray-900/90"
                         >
                             <nav className="flex flex-col items-center gap-4 font-mono text-xl">
                                 {navLinks.map(link => (

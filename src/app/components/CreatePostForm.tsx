@@ -22,7 +22,7 @@ const replyEchoPlaceholders = [
     "楼主冲啊！别让它成为下一个遗憾…",
     "天啊一模一样！我们不是一个人在战斗…",
     "谢谢你分享这个，感觉整个世界都亮了一点…",
-    "我不会删除。抽掉任何一块，整个“我”可能都会崩塌…"
+    "加油，你可以的…"
 ];
 
 interface CreatePostFormProps {
