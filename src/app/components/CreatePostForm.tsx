@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 const mainEchoPlaceholders = [
     "此刻你想说什么？",
     "那个戴白色耳机的男生，你的侧脸很好看… #暗恋",
-    "感觉自己像个被榨干的柠檬，这里有一样的“柠檬人”吗？ #FYP",
+    "感觉自己像个被榨干的柠檬，这里有一样的柠檬人吗？ #FYP",
     "谢谢你，撑伞的陌生人… #校园小事",
     "如果人生有回收站，你会删除哪段记忆？ #深夜思考"
 ];
@@ -27,6 +27,18 @@ const replyEchoPlaceholders = [
 
 interface CreatePostFormProps {
     parentPostId?: number;
+}
+
+// Animated loading dots component
+function LoadingDots() {
+    const [dotCount, setDotCount] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDotCount((prev) => (prev + 1) % 4);
+        }, 400);
+        return () => clearInterval(interval);
+    }, []);
+    return <span>{'.'.repeat(dotCount)}</span>;
 }
 
 export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
@@ -140,6 +152,7 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
                             rows={5}
                             maxLength={charLimit}
                             autoFocus
+                            disabled={isSubmitting}
                         />
                         <div className="flex justify-between items-center mt-3">
                             <span className="text-sm text-gray-400 font-mono">
@@ -150,11 +163,24 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
                                 className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                                 disabled={!content.trim() || isSubmitting || isFingerprintLoading || !fingerprint}
                             >
-                                {isSubmitting ? "发送中..." : (parentPostId ? "发布回应" : "发布回音")}
+                                {parentPostId ? "发布回应" : "发布回音"}
                             </button>
                         </div>
                         {error && <p className="text-red-500 mt-2">{error}</p>}
                         {isFingerprintLoading && !error && <p className="text-gray-400 mt-2">初始化中...</p>}
+                        {isSubmitting && (
+                            <motion.div
+                                className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-lg pointer-events-auto"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <span className="text-lg font-bold text-white select-none" style={{ letterSpacing: '0.1em' }}>
+                                    发送中<LoadingDots />
+                                </span>
+                            </motion.div>
+                        )}
                     </form>
                 </motion.div>
             )}
