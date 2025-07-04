@@ -367,19 +367,18 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 </div>
                 {isMenuOpen && (
                     <div className="absolute top-12 right-2 bg-gray-900 rounded-lg shadow-lg p-2 z-10 w-48">
-                        {isAdmin ? (
-                            <ul>
-                                <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
-                                <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</button></li>
-                                <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ 帖子详情</button></li>
-                            </ul>
-                        ) : (
-                            isChildEcho && (
-                                <ul>
-                                    <li><button onClick={handleReportClick} className="w-full text-left p-2 rounded hover:bg-red-800/50">🚩 举报此回声</button></li>
-                                </ul>
-                            )
-                        )}
+                        <ul>
+                            {isAdmin && (
+                                <>
+                                    <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
+                                    <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</button></li>
+                                    <li><button onClick={handleShowDetails} className="w-full text-left p-2 rounded hover:bg-gray-700">ℹ️ 帖子详情</button></li>
+                                </>
+                            )}
+                            {isChildEcho && (
+                                <li><button onClick={handleReportClick} className="w-full text-left p-2 rounded hover:bg-red-800/50">🚩 举报此回声</button></li>
+                            )}
+                        </ul>
                     </div>
                 )}
             </div>
