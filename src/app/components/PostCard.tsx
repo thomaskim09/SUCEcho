@@ -144,7 +144,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         checkOverflow();
         window.addEventListener('resize', checkOverflow);
         return () => window.removeEventListener('resize', checkOverflow);
-    }, [post.content]);
+    }, [post.content, isChildEcho]);
 
     useEffect(() => {
         return () => {

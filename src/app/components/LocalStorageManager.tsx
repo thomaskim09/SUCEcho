@@ -17,7 +17,7 @@ export default function LocalStorageManager() {
                 setSelectedKey(localKeys[0]);
             }
         }
-    }, []);
+    }, [selectedKey]);
 
     useEffect(() => {
         if (selectedKey && typeof window !== 'undefined') {
