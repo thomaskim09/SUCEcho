@@ -2,7 +2,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import WelcomeAnimation from './WelcomeAnimation';
+import dynamic from 'next/dynamic';
+const WelcomeAnimation = dynamic(() => import('./WelcomeAnimation'), {
+    ssr: false
+});
 import logger from '@/lib/logger';
 
 const FullScreenBlocker = () => (

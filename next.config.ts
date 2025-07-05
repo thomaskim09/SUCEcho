@@ -10,7 +10,7 @@ const withPWA = withPWAInit({
     skipWaiting: true,
 });
 
-const withBundleAnalyzer = withBundleAnalyzerInit({
+const withTM = withBundleAnalyzerInit({
     enabled: process.env.ANALYZE === 'true',
 });
 
@@ -26,4 +26,4 @@ const nextConfig: NextConfig = {
     },
 };
 
-export default withBundleAnalyzer(withPWA(nextConfig));
+export default withTM(withPWA(nextConfig));

@@ -3,7 +3,10 @@
 
 import { useAdmin } from "@/context/AdminContext"
 import FloatingActionButton from "./FloatingActionButton"
-import AdminShield from "./AdminShield"
+import dynamic from 'next/dynamic';
+const AdminShield = dynamic(() => import('./AdminShield'), {
+    ssr: false
+});
 import { usePathname } from "next/navigation"
 
 export default function FabContainer() {

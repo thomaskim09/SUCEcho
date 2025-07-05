@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:test": "dotenv -e .env.development -- prisma migrate dev"
+    "prisma:migrate:test": "dotenv -e .env.development -- prisma migrate dev",
+    "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.6.2",
@@ -33,6 +34,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/string-similarity": "^4.0.2",
+    "cross-env": "^7.0.3",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",

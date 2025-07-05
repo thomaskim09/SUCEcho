@@ -9,7 +9,10 @@ import PostCard from '@/app/components/PostCard';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@/app/components/Icon';
-import ReportModal from '@/app/components/ReportModal';
+import dynamic from 'next/dynamic';
+const ReportModal = dynamic(() => import('@/app/components/ReportModal'), {
+    ssr: false
+});
 import { useOptimisticVote } from '@/hooks/useOptimisticVote';
 import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
