@@ -445,3 +445,26 @@ body {
   display: block;
   margin: auto;
 }
+
+/* --- CRITICAL GLOW ANIMATION FOR LAST 10 SECONDS --- */
+.critical-glow .glass-card {
+  animation: critical-glow-anim 1s ease-in-out infinite;
+}
+
+@keyframes critical-glow-anim {
+  0% {
+    box-shadow: 0 0 0 0 rgba(159, 112, 253, 0.22);
+  }
+  25% {
+    box-shadow: 0 0 14px 3px rgba(159, 112, 253, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 24px 6px rgba(159, 112, 253, 0.48);
+  }
+  75% {
+    box-shadow: 0 0 18px 4px rgba(159, 112, 253, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(159, 112, 253, 0.22);
+  }
+}

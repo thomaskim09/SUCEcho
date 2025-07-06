@@ -34,10 +34,10 @@ export const useCountdown = (createdAt: Date) => {
     const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
     const seconds = Math.floor((timeLeft / 1000) % 60);
 
-    let countdownText = '心间回音，限定消散。'; // Updated text
-    let colorClass = 'expired-text-glow'; // New class for glowing text
+    let countdownText = '心间回音，限定消散。';
+    let colorClass = 'expired-text-glow';
 
-    const isCritical = !isExpired && timeLeft <= 10000; // Last 10 seconds
+    const isCritical = !isExpired && timeLeft <= 10000;
 
     if (!isExpired) {
         if (hours > 0) {
@@ -45,7 +45,7 @@ export const useCountdown = (createdAt: Date) => {
         } else if (minutes > 0) {
             countdownText = `余 ${minutes} 分`;
         } else {
-            countdownText = `${seconds}s`;
+            countdownText = `${seconds}秒`;
         }
 
         // Reset colorClass if not expired

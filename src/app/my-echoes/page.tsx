@@ -104,7 +104,7 @@ export default function MyEchoesPage() {
                         <Icon name="edit" className="w-10 h-10 text-accent" />
                     </div>
                     <p className="text-xl font-semibold">你还没有发布任何回音。</p>
-                    <p className="text-base mt-2">在本设备上发布的回音会自动出现在这里。</p>
+                    <p className="text-base mt-2">在本设备上发布的回音会出现在这里。</p>
                     <Link href="/compose" className="mt-6 underline text-accent font-bold text-lg hover:text-accent/80 transition-colors">
                         发布第一条回音
                     </Link>

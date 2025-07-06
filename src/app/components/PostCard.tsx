@@ -243,7 +243,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 if (variant === 'purifyVanish' && onPurificationComplete) onPurificationComplete(post.id);
                 if (variant === 'glitching' && onFaded) onFaded(post.id);
             }}
-            className={`relative ${isMenuOpen ? 'z-10' : ''} ${isAnnouncement ? 'announcement-post' : ''} ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''}`}
+            className={`relative ${isMenuOpen ? 'z-10' : ''} ${isAnnouncement ? 'announcement-post' : ''} ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''} ${isCritical && !isPurifying && !isGlitching && !isCharging ? 'critical-glow' : ''}`}
         >
             <div
                 className={`glass-card rounded-lg p-4`}
@@ -318,7 +318,8 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
                     {post.type !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
-                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : colorClass + (isCritical ? ' pulse' : '')}`}>
+                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
+                                style={{ textAlign: 'left', display: 'inline-block' }}>
                                 <AnimatePresence mode="wait">
                                     {isPurifying ? (
                                         <motion.span
@@ -330,17 +331,29 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                         >
                                             社区自治，自主净化
                                         </motion.span>
-                                    ) : (
+                                    ) : !isExpired ? (
                                         <motion.span
                                             key="countdown-text"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.3 }}
+                                            style={{ display: 'inline-block', width: '100%' }}
                                         >
                                             {isChildEcho
                                                 ? timeSince(new Date(post.createdAt))
                                                 : countdownText}
+                                        </motion.span>
+                                    ) : (
+                                        <motion.span
+                                            key="final-message"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.5 }}
+                                            style={{ display: 'inline-block', width: '100%' }}
+                                        >
+                                            心间回音，限定消散。
                                         </motion.span>
                                     )}
                                 </AnimatePresence>
