@@ -1,4 +1,4 @@
-// sucecho/src/app/post/[id]/page.tsx
+// src/app/post/[id]/page.tsx
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -18,7 +18,6 @@ import logger from '@/lib/logger';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
-import supabase, { getPostRoomChannelName } from '@/lib/supabase-realtime';
 import { getPurifiedPostIds, addPurifiedPostId } from '@/lib/purifiedStore';
 
 // Use the same limit as the post feed
@@ -181,47 +180,6 @@ export default function PostDetailPage() {
             fetchPostDetails(true);
         }
     }, [isVisible, isLoading, fetchPostDetails]);
-
-    useEffect(() => {
-        if (!post || !post.id) return;
-
-        const channel = supabase.channel(getPostRoomChannelName(post.id));
-
-        const handleReplyDeleted = (payload: { postId: number }) => {
-            if (!payload || typeof payload.postId !== 'number') return;
-            logger.log(`Received delete_reply event for postId: ${payload.postId}`);
-            setPost(current => {
-                if (!current) return null;
-                const updatedReplies = current.replies.map(p =>
-                    p.id === payload.postId ? { ...p, isDeleting: true } : p
-                );
-                return { ...current, replies: updatedReplies };
-            });
-        };
-
-        const handleParentPostDeleted = (payload: { postId: number }) => {
-            if (!payload || typeof payload.postId !== 'number' || !post || payload.postId !== post.id) return;
-            logger.log(`Received delete_parent_post event for postId: ${payload.postId}`);
-            setPost(current => {
-                if (!current) return null;
-                return { ...current, isDeleting: true };
-            });
-        };
-
-        channel
-            .on('broadcast', { event: 'delete_reply' }, ({ payload }) => handleReplyDeleted(payload))
-            .on('broadcast', { event: 'delete_parent_post' }, ({ payload }) => handleParentPostDeleted(payload))
-            .subscribe(status => {
-                if (status === 'SUBSCRIBED') {
-                    logger.log(`Successfully subscribed to channel: ${getPostRoomChannelName(post.id)}`);
-                }
-            });
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [post, setPost]);
-
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {

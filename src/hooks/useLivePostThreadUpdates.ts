@@ -16,36 +16,35 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         initialPost
     );
 
-    const postThreadRef = useRef(postThread);
-    postThreadRef.current = postThread;
-
     useEffect(() => {
         setPostThread(initialPost);
     }, [initialPost]);
 
-    const handleNewPost = useCallback((newPost: PostWithStats) => {
-        const currentThread = postThreadRef.current;
-        if (
-            !currentThread ||
-            !newPost.parentPostId ||
-            newPost.parentPostId.toString() !== currentThread.id.toString()
-        ) {
-            return;
-        }
-        logger.log(
-            "LIVE 'new_post' is a reply to the current thread:",
-            newPost
-        );
-        setPostThread((prevThread) => {
-            if (
-                !prevThread ||
-                prevThread.replies.some((r) => r.id === newPost.id)
-            ) {
-                return prevThread;
-            }
-            return { ...prevThread, replies: [...prevThread.replies, newPost] };
-        });
-    }, []);
+    const handleNewPost = useCallback(
+        (newPost: PostWithStats) => {
+            setPostThread((prevThread) => {
+                // Check against the latest state inside the updater function
+                if (
+                    !prevThread ||
+                    !newPost.parentPostId ||
+                    newPost.parentPostId.toString() !==
+                        prevThread.id.toString() ||
+                    prevThread.replies.some((r) => r.id === newPost.id)
+                ) {
+                    return prevThread;
+                }
+                logger.log(
+                    "LIVE 'new_post' is a reply to the current thread:",
+                    newPost
+                );
+                return {
+                    ...prevThread,
+                    replies: [...prevThread.replies, newPost],
+                };
+            });
+        },
+        [setPostThread]
+    );
 
     const handleVoteUpdate = useCallback(
         (data: {
@@ -102,6 +101,34 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         });
     }, []);
 
+    const handleDeleteReply = useCallback((data: { postId: number }) => {
+        const { postId } = data;
+        logger.log(
+            "LIVE 'delete_reply' received for post detail page:",
+            postId
+        );
+        setPostThread((currentThread) => {
+            if (!currentThread) return null;
+            const updatedReplies = currentThread.replies.map((reply) =>
+                reply.id === postId ? { ...reply, isDeleting: true } : reply
+            );
+            return { ...currentThread, replies: updatedReplies };
+        });
+    }, []);
+
+    const handleDeleteParentPost = useCallback((data: { postId: number }) => {
+        const { postId } = data;
+        logger.log(
+            "LIVE 'delete_parent_post' received for post detail page:",
+            postId
+        );
+        setPostThread((currentThread) => {
+            if (!currentThread || currentThread.id !== postId)
+                return currentThread;
+            return { ...currentThread, isDeleting: true };
+        });
+    }, []);
+
     const isGranularEnabled =
         process.env.NEXT_PUBLIC_GRANULAR_REALTIME_ENABLED === 'true';
 
@@ -114,6 +141,8 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         onNewPost: initialPost ? handleNewPost : undefined,
         onUpdateVote: initialPost ? handleVoteUpdate : undefined,
         onDeletePost: initialPost ? handleDeletePost : undefined,
+        onDeleteReply: initialPost ? handleDeleteReply : undefined,
+        onDeleteParentPost: initialPost ? handleDeleteParentPost : undefined,
     });
 
     return [postThread, setPostThread] as const;

@@ -25,12 +25,20 @@ interface LiveEventData {
     delete_post: {
         postId: number;
     };
+    delete_reply: {
+        postId: number;
+    };
+    delete_parent_post: {
+        postId: number;
+    };
 }
 
 interface LiveCallbacks {
     onNewPost?: (data: LiveEventData['new_post']) => void;
     onUpdateVote?: (data: LiveEventData['update_vote']) => void;
     onDeletePost?: (data: LiveEventData['delete_post']) => void;
+    onDeleteReply?: (data: LiveEventData['delete_reply']) => void;
+    onDeleteParentPost?: (data: LiveEventData['delete_parent_post']) => void;
 }
 
 export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
@@ -70,6 +78,12 @@ export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
             })
             .on('broadcast', { event: 'delete_post' }, (payload) => {
                 memoizedCallbacks.current.onDeletePost?.(payload.payload);
+            })
+            .on('broadcast', { event: 'delete_reply' }, (payload) => {
+                memoizedCallbacks.current.onDeleteReply?.(payload.payload);
+            })
+            .on('broadcast', { event: 'delete_parent_post' }, (payload) => {
+                memoizedCallbacks.current.onDeleteParentPost?.(payload.payload);
             })
             .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') {
