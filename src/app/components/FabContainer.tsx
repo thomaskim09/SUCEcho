@@ -40,7 +40,7 @@ export default function FabContainer() {
     // Show tooltip only if not seen before, with 3s delay for FAB, and auto-dismiss after 5s
     useEffect(() => {
         let showTimer: NodeJS.Timeout | null = null;
-        let hideTimer: NodeJS.Timeout | null = null;
+        const hideTimer: NodeJS.Timeout | null = null;
         if (isHomePage && typeof window !== 'undefined') {
             if (localStorage.getItem(FAB_TIP_KEY) !== 'true') {
                 showTimer = setTimeout(() => setShowFabTip(true), 3000);
