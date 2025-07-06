@@ -1,4 +1,4 @@
-// sucecho/src/hooks/useLivePostThreadUpdates.ts
+// src/hooks/useLivePostThreadUpdates.ts
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -20,31 +20,35 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         setPostThread(initialPost);
     }, [initialPost]);
 
-    const handleNewPost = useCallback(
-        (newPost: PostWithStats) => {
-            setPostThread((prevThread) => {
-                // Check against the latest state inside the updater function
-                if (
-                    !prevThread ||
-                    !newPost.parentPostId ||
-                    newPost.parentPostId.toString() !==
-                        prevThread.id.toString() ||
-                    prevThread.replies.some((r) => r.id === newPost.id)
-                ) {
-                    return prevThread;
-                }
-                logger.log(
-                    "LIVE 'new_post' is a reply to the current thread:",
-                    newPost
-                );
-                return {
-                    ...prevThread,
-                    replies: [...prevThread.replies, newPost],
-                };
-            });
-        },
-        [setPostThread]
-    );
+    const handleNewPost = useCallback((newPost: PostWithStats) => {
+        setPostThread((prevThread) => {
+            if (
+                !prevThread ||
+                !newPost.parentPostId ||
+                newPost.parentPostId.toString() !== prevThread.id.toString() ||
+                prevThread.replies.some((r) => r.id === newPost.id)
+            ) {
+                return prevThread;
+            }
+            logger.log(
+                "LIVE 'new_post' is a reply to the current thread:",
+                newPost
+            );
+
+            const newStats = prevThread.stats
+                ? {
+                      ...prevThread.stats,
+                      replyCount: (prevThread.stats.replyCount ?? 0) + 1,
+                  }
+                : { upvotes: 0, downvotes: 0, replyCount: 1 };
+
+            return {
+                ...prevThread,
+                stats: newStats,
+                replies: [...prevThread.replies, newPost],
+            };
+        });
+    }, []);
 
     const handleVoteUpdate = useCallback(
         (data: {
@@ -94,38 +98,33 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
             if (currentThread.id === postId) {
                 return { ...currentThread, isDeleting: true };
             }
-            const updatedReplies = currentThread.replies.map((reply) =>
-                reply.id === postId ? { ...reply, isDeleting: true } : reply
-            );
-            return { ...currentThread, replies: updatedReplies };
-        });
-    }, []);
 
-    const handleDeleteReply = useCallback((data: { postId: number }) => {
-        const { postId } = data;
-        logger.log(
-            "LIVE 'delete_reply' received for post detail page:",
-            postId
-        );
-        setPostThread((currentThread) => {
-            if (!currentThread) return null;
-            const updatedReplies = currentThread.replies.map((reply) =>
-                reply.id === postId ? { ...reply, isDeleting: true } : reply
+            const replyExists = currentThread.replies.some(
+                (p) => p.id === postId && !p.isDeleting
             );
-            return { ...currentThread, replies: updatedReplies };
-        });
-    }, []);
+            if (replyExists) {
+                const updatedReplies = currentThread.replies.map((reply) =>
+                    reply.id === postId ? { ...reply, isDeleting: true } : reply
+                );
 
-    const handleDeleteParentPost = useCallback((data: { postId: number }) => {
-        const { postId } = data;
-        logger.log(
-            "LIVE 'delete_parent_post' received for post detail page:",
-            postId
-        );
-        setPostThread((currentThread) => {
-            if (!currentThread || currentThread.id !== postId)
-                return currentThread;
-            return { ...currentThread, isDeleting: true };
+                const newStats = currentThread.stats
+                    ? {
+                          ...currentThread.stats,
+                          replyCount: Math.max(
+                              0,
+                              (currentThread.stats.replyCount ?? 0) - 1
+                          ),
+                      }
+                    : null;
+
+                return {
+                    ...currentThread,
+                    stats: newStats,
+                    replies: updatedReplies,
+                };
+            }
+
+            return currentThread;
         });
     }, []);
 
@@ -141,8 +140,8 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         onNewPost: initialPost ? handleNewPost : undefined,
         onUpdateVote: initialPost ? handleVoteUpdate : undefined,
         onDeletePost: initialPost ? handleDeletePost : undefined,
-        onDeleteReply: initialPost ? handleDeleteReply : undefined,
-        onDeleteParentPost: initialPost ? handleDeleteParentPost : undefined,
+        onDeleteReply: initialPost ? handleDeletePost : undefined,
+        onDeleteParentPost: initialPost ? handleDeletePost : undefined,
     });
 
     return [postThread, setPostThread] as const;
