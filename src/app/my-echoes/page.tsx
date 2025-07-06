@@ -14,15 +14,29 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { getPurifiedPostIds } from '@/lib/purifiedStore';
 import { Icon } from '../components/Icon';
 
+const isPostExpired = (post: PostWithStats) => {
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    return new Date().getTime() - new Date(post.createdAt).getTime() >= twentyFourHours;
+};
+
 export default function MyEchoesPage() {
     const { posts, setPosts, userVotes, handleVote, handleDelete, handlePostFaded, handlePostPurified } = useMyEchoesManager([]);
     const [isLoading, setIsLoading] = useState(true);
     const isVisible = usePageVisibility();
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
+    const [vanishingPostIds, setVanishingPostIds] = useState<Set<number>>(new Set());
 
     useEffect(() => {
         setPurifiedPostIds(getPurifiedPostIds());
     }, []);
+
+    useEffect(() => {
+        posts.forEach(post => {
+            if (isPostExpired(post) && !vanishingPostIds.has(post.id)) {
+                setVanishingPostIds(prev => new Set(prev).add(post.id));
+            }
+        });
+    }, [posts, vanishingPostIds]);
 
     const fetchMyPosts = useCallback(async (isRefreshing = false) => {
         const postIds = getMyEchoes();
@@ -45,8 +59,9 @@ export default function MyEchoesPage() {
                 const postMap = new Map(currentPosts.map(p => [p.id, p]));
                 fetchedPosts.forEach(post => postMap.set(post.id, post));
                 const mergedPosts = Array.from(postMap.values());
-                mergedPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                return mergedPosts;
+                const notExpired = mergedPosts.filter(p => !isPostExpired(p));
+                notExpired.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                return notExpired;
             });
 
         } catch (error) {
@@ -78,13 +93,15 @@ export default function MyEchoesPage() {
             return <LoadingSpinner label="正在加载你的回音..." />;
         }
 
-        const displayablePosts = posts.filter(p => !purifiedPostIds.has(p.id));
+        const displayablePosts = posts.filter(p =>
+            (!isPostExpired(p) && !purifiedPostIds.has(p.id)) || vanishingPostIds.has(p.id)
+        );
 
         if (displayablePosts.length === 0) {
             return (
                 <div className="flex flex-col items-center justify-center text-gray-400 p-8 rounded-lg gap-2" style={{ backgroundColor: 'var(--card-background)' }}>
                     <div className="mb-3">
-                        <Icon name="edit-line" className="w-10 h-10 text-accent" />
+                        <Icon name="edit" className="w-10 h-10 text-accent" />
                     </div>
                     <p className="text-xl font-semibold">你还没有发布任何回音。</p>
                     <p className="text-base mt-2">在本设备上发布的回音会自动出现在这里。</p>
@@ -123,7 +140,14 @@ export default function MyEchoesPage() {
                                         setPurifiedPostIds(prev => new Set([...prev, postId]));
                                     }}
                                     onDeletionComplete={handlePostFaded}
-                                    onFaded={handlePostFaded}
+                                    onFaded={(postId) => {
+                                        setVanishingPostIds(prev => {
+                                            const newSet = new Set(prev);
+                                            newSet.delete(postId);
+                                            return newSet;
+                                        });
+                                        setPosts(prev => prev.filter(p => p.id !== postId));
+                                    }}
                                     onAutoPurify={handlePostPurified}
                                 />
                             </motion.div>
