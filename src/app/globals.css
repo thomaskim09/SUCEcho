@@ -439,3 +439,9 @@ body {
     opacity: 0;
   }
 }
+
+.fab-icon svg {
+  stroke-width: 2.2 !important;
+  display: block;
+  margin: auto;
+}

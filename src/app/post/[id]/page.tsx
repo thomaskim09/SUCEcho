@@ -346,11 +346,6 @@ export default function PostDetailPage() {
                 </div>
                 {(!post.isPurifying && !post.isDeleting) && (
                     <>
-                        <div className="my-6 text-center">
-                            <Link href={`/compose?parentPostId=${post.id}`} className="inline-flex items-center justify-center gap-2 bg-accent text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg press-animation">
-                                <Icon name="comment" /> 回复这回音
-                            </Link>
-                        </div>
                         <div className="mt-8">
                             <h2 className="text-xl font-mono text-gray-400 mb-2">回复 ({post.replies.filter(r => !r.isDeleting).length})</h2>
                             <div className="space-y-2 border-l-2 border-accent/30 pl-4 ml-4">

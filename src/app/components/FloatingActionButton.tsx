@@ -1,11 +1,18 @@
-// sucecho/src/app/components/FloatingActionButton.tsx
+// src/app/components/FloatingActionButton.tsx
 "use client";
 
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
+import { Icon, IconProps } from './Icon';
 
-export default function FloatingActionButton() {
+interface FabProps {
+    href: string;
+    iconName: IconProps['name'];
+    ariaLabel: string;
+}
+
+export default function FloatingActionButton({ href, iconName, ariaLabel }: FabProps) {
     const buttonRef = useRef<HTMLAnchorElement>(null);
 
     function createRipple(event: React.MouseEvent) {
@@ -35,14 +42,16 @@ export default function FloatingActionButton() {
             transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.5 }}
         >
             <Link
-                href="/compose"
+                href={href}
                 ref={buttonRef}
                 className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-full p-4 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 flex items-center justify-center w-16 h-16 press-animation relative overflow-hidden"
-                aria-label="发布新回音"
+                aria-label={ariaLabel}
                 onClick={createRipple}
             >
                 <span className="ripple-container absolute inset-0 pointer-events-none" />
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+                <div className="flex items-center justify-center w-full h-full">
+                    <Icon name={iconName} className="fab-icon w-8 h-8" />
+                </div>
             </Link>
         </motion.div>
     );

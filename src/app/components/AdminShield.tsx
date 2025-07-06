@@ -20,11 +20,7 @@ export default function AdminShield() {
     return null;
   }
 
-  // Use a different style when it's not on the home page (where the main FAB is)
-  const isHomePage = pathname === '/';
-  const wrapperClass = isHomePage
-    ? "relative"
-    : "fixed bottom-6 right-6 z-50";
+  const wrapperClass = "relative";
 
   function createRipple(event: React.MouseEvent) {
     const button = buttonRef.current;
