@@ -7,20 +7,26 @@ import logger from '@/lib/logger';
 import { useRealtime } from './useRealtime';
 import { MAIN_CHANNEL } from '@/lib/supabase-realtime';
 
-export function useLivePostUpdates(initialPosts: PostWithStats[] = []) {
+export function useLivePostUpdates(
+    initialPosts: PostWithStats[] = [],
+    onNewPost: (newPost: PostWithStats) => void
+) {
     const [posts, setPosts] = useState<PostWithStats[]>(initialPosts);
 
     useEffect(() => {
         setPosts(initialPosts);
-    }, [initialPosts]);
-
-    const handleNewPost = useCallback((newPost: PostWithStats) => {
-        logger.log("LIVE event 'new_post' received:", newPost);
-        // Only add top-level posts to the main feed
-        if (!newPost.parentPostId) {
-            setPosts((prevPosts) => [newPost, ...prevPosts]);
-        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const handleNewPost = useCallback(
+        (newPost: PostWithStats) => {
+            logger.log("LIVE event 'new_post' received:", newPost);
+            if (onNewPost) {
+                onNewPost(newPost);
+            }
+        },
+        [onNewPost]
+    );
 
     const handleVoteUpdate = useCallback(
         (data: {
@@ -62,7 +68,6 @@ export function useLivePostUpdates(initialPosts: PostWithStats[] = []) {
         );
     }, []);
 
-    // Subscribe to events using the centralized hook on the main channel
     useRealtime(MAIN_CHANNEL, {
         onNewPost: handleNewPost,
         onUpdateVote: handleVoteUpdate,

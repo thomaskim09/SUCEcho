@@ -5,8 +5,12 @@ import type { PostWithStats } from '@/lib/types';
 import { useLivePostUpdates } from './useLivePostUpdates';
 import { useOptimisticVote } from './useOptimisticVote';
 
-export const usePostListManager = (initialPosts: PostWithStats[] = []) => {
-    const [posts, setPosts] = useLivePostUpdates(initialPosts);
+// Accept the onNewPost callback
+export const usePostListManager = (
+    initialPosts: PostWithStats[] = [],
+    onNewPost: (newPost: PostWithStats) => void
+) => {
+    const [posts, setPosts] = useLivePostUpdates(initialPosts, onNewPost);
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
 
     const handlePostPurified = (postId: number) => {
