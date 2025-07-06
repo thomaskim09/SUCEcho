@@ -1,7 +1,7 @@
 // sucecho/src/hooks/useLivePostThreadUpdates.ts
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import logger from '@/lib/logger';
 import { useRealtime } from './useRealtime';
