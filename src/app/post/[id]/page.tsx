@@ -6,7 +6,6 @@ import { useParams, useRouter } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import { useLivePostThreadUpdates } from '@/hooks/useLivePostThreadUpdates';
 import PostCard from '@/app/components/PostCard';
-import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@/app/components/Icon';
 import dynamic from 'next/dynamic';
