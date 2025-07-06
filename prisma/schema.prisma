@@ -31,10 +31,11 @@ model Post {
   // Relation to other models
   stats           PostStats?
   votes           Vote[]
-  reports         Report[]   // Ensure this relation exists for reports
+  reports         Report[]  
 
   @@index([createdAt])
-  @@index([type]) // Index the new type field for faster lookups
+  @@index([type]) 
+  @@index([fingerprintHash])
 }
 
 model Report {
@@ -46,7 +47,7 @@ model Report {
 
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@unique([postId, fingerprintHash]) // A user can only report a post once
+  @@unique([postId, fingerprintHash]) 
 }
 
 model PostStats {
