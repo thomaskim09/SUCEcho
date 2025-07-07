@@ -13,6 +13,7 @@ import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from './LoadingSpinner';
 import { getPurifiedPostIds } from '@/lib/purifiedStore';
 import FloatingNotification from './FloatingNotification';
+import { useRouter } from 'next/navigation';
 
 const POST_FEED_LIMIT = parseInt(
     process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10',
@@ -24,6 +25,7 @@ export default function PostFeed() {
     const isNearTopRef = useRef(true);
     const [initialPosts] = useState<PostWithStats[]>([]);
     const postsRef = useRef<PostWithStats[]>(initialPosts);
+    const router = useRouter();
 
     function handleNewPost(newPost: PostWithStats) {
         const postExists = postsRef.current.some(p => p.id === newPost.id) || pendingPosts.some(p => p.id === newPost.id);
@@ -179,6 +181,52 @@ export default function PostFeed() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const getLastVisiblePostId = () => {
+        const postDivs = Array.from(document.querySelectorAll('[data-post-id]'));
+        let lastVisibleId = null;
+        for (let i = 0; i < postDivs.length; i++) {
+            const el = postDivs[i] as HTMLElement;
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                lastVisibleId = el.getAttribute('data-post-id');
+            }
+        }
+        return lastVisibleId;
+    };
+
+    const handlePostClick = useCallback((postId: number) => {
+        sessionStorage.setItem('postFeedScroll', window.scrollY.toString());
+        const lastVisibleId = getLastVisiblePostId();
+        if (lastVisibleId) {
+            sessionStorage.setItem('postFeedLastVisibleId', lastVisibleId);
+        }
+        router.push(`/post/${postId}`);
+    }, [router]);
+
+    useEffect(() => {
+        if (!isLoading) {
+            const savedId = sessionStorage.getItem('postFeedLastVisibleId');
+            if (savedId) {
+                const el = document.querySelector(`[data-post-id="${savedId}"]`);
+                if (el) {
+                    (el as HTMLElement).scrollIntoView({ block: 'center' });
+                    window.scrollBy(0, -150);
+                    sessionStorage.removeItem('postFeedLastVisibleId');
+                    sessionStorage.removeItem('postFeedScroll');
+                } else if (nextCursor) {
+                    loadMorePosts();
+                }
+                return;
+            }
+            const savedScroll = sessionStorage.getItem('postFeedScroll');
+            if (savedScroll) {
+                window.scrollTo(0, parseInt(savedScroll, 10));
+                sessionStorage.removeItem('postFeedScroll');
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoading, posts]);
+
     if (status === 'checking')
         return (
             <div className="text-center text-gray-400 p-8">
@@ -231,11 +279,14 @@ export default function PostFeed() {
                     return (
                         <motion.div
                             key={post.id}
+                            data-post-id={post.id}
                             custom={isNew}
                             variants={postVariants}
                             initial="initial"
                             animate="animate"
                             layout
+                            onClick={() => handlePostClick(post.id)}
+                            style={{ cursor: 'pointer' }}
                         >
                             <PostCard
                                 post={post}
