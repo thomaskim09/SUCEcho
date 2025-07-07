@@ -25,7 +25,7 @@ export default function PostFeed() {
     const [initialPosts] = useState<PostWithStats[]>([]);
     const postsRef = useRef<PostWithStats[]>(initialPosts);
 
-    const handleNewPost = useCallback((newPost: PostWithStats) => {
+    function handleNewPost(newPost: PostWithStats) {
         const postExists = postsRef.current.some(p => p.id === newPost.id) || pendingPosts.some(p => p.id === newPost.id);
         if (postExists) return;
         if (isNearTopRef.current) {
@@ -33,7 +33,7 @@ export default function PostFeed() {
         } else {
             setPendingPosts(prev => [newPost, ...prev]);
         }
-    }, [pendingPosts]);
+    }
 
     const {
         posts,
@@ -68,7 +68,7 @@ export default function PostFeed() {
         };
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [pendingPosts]);
+    }, [pendingPosts, setPosts]);
 
     const postVariants = {
         initial: {
@@ -105,7 +105,7 @@ export default function PostFeed() {
         } finally {
             if (!isRefreshing) setIsLoading(false);
         }
-    }, [status]);
+    }, [status, setPosts]);
 
 
     const prevIsVisibleRef = useRef<boolean>(true);
@@ -153,7 +153,7 @@ export default function PostFeed() {
         } finally {
             setIsFetchingMore(false);
         }
-    }, [nextCursor, isFetchingMore, status]);
+    }, [nextCursor, isFetchingMore, status, setPosts]);
 
     const sentinelRef = useCallback(
         (node: HTMLDivElement | null) => {

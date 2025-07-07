@@ -26,13 +26,13 @@ export default function HowItWorksPage() {
             </header>
             <main className="mt-12 space-y-8 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
                 <FeatureCard iconName="zap" title="短暂存在">
-                    每一条回音及其所有回复将在创建24小时后自动、彻底地销毁。这种"残酷美学"保证了对话的新鲜感，让你无惧永久记录。
+                    每一条回音及其所有回复将在创建24小时后自动、彻底地销毁。这种&quot;残酷美学&quot;保证了对话的新鲜感，让你无惧永久记录。
                 </FeatureCard>
                 <FeatureCard iconName="shield" title="绝对匿名">
                     无需注册，无需登录。我们仅用浏览器指纹防止刷屏和实现投票，但这个标识不会对其他用户可见，让你真正地畅所欲言。
                 </FeatureCard>
                 <FeatureCard iconName="users" title="社区主权">
-                    你决定什么内容被保留。当一条回音的倒赞比例过高时，系统将自动"净化"并移除它。权力，掌握在社区手中。
+                    你决定什么内容被保留。当一条回音的倒赞比例过高时，系统将自动&quot;净化&quot;并移除它。权力，掌握在社区手中。
                     <div className="mt-4">
                         <PurificationLogicAccordion />
                     </div>
