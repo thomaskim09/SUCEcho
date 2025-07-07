@@ -468,3 +468,20 @@ body {
     box-shadow: 0 0 0 0 rgba(159, 112, 253, 0.22);
   }
 }
+
+/* Share Invitation Popup Styles */
+.share-modal-card {
+  background-color: #0d1b2a; /* Midnight Blue */
+  border: 1px solid rgba(159, 112, 253, 0.3);
+  box-shadow: 0 8px 32px rgba(159, 112, 253, 0.2);
+}
+
+.share-button {
+  background-color: #9F70FD; /* Electric Purple */
+  color: white;
+}
+
+.share-button:hover {
+  background-color: #8b5cf6; /* A slightly darker purple for hover */
+  transform: scale(1.05);
+}

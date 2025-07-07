@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { addMyEcho } from '@/hooks/useMyEchoes';
 import { motion, AnimatePresence } from 'motion/react';
+import { useShareModal } from "@/context/ModalContext";
 
 // Examples for creating a new echo (Main Echo)
 const mainEchoPlaceholders = [
@@ -48,6 +49,7 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
     const [isSent, setIsSent] = useState(false);
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const router = useRouter();
+    const { triggerShareModal } = useShareModal();
     const charLimit = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_POST_CHAR_LIMIT
         ? parseInt(process.env.NEXT_PUBLIC_POST_CHAR_LIMIT, 10)
         : 200;
@@ -65,12 +67,10 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (isFingerprintLoading || !fingerprint) {
             setError("指纹尚未准备好，请稍后再试。");
             return;
         }
-
         setIsSubmitting(true);
         setError(null);
 
@@ -91,8 +91,11 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
                 addMyEcho(newPost);
             }
 
-            setIsSent(true);
+            if (!parentPostId) {
+                triggerShareModal();
+            }
 
+            setIsSent(true);
             setTimeout(() => {
                 if (parentPostId) {
                     router.replace(`/post/${parentPostId}`);
