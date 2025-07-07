@@ -27,6 +27,7 @@ interface PostCardProps {
     onPurificationComplete?: (postId: number) => void;
     onDeletionComplete?: (postId: number) => void;
     onAutoPurify: (postId: number) => void;
+    onCommentNavigate?: (parentPostId: number) => void;
 }
 
 interface Ripple {
@@ -60,7 +61,7 @@ const renderContentWithLinks = (content: string) => {
     });
 };
 
-export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const isAdmin = useAdminSession();
     const router = useRouter();
@@ -184,7 +185,11 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const handleCommentClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
-        router.push(`/compose?parentPostId=${post.id}`);
+        if (onCommentNavigate) {
+            onCommentNavigate(post.id);
+        } else {
+            router.push(`/compose?parentPostId=${post.id}`);
+        }
     };
 
     const closeUpvoteTooltip = () => { if (upvoteTooltipTimer.current) clearTimeout(upvoteTooltipTimer.current); setShowUpvoteTooltip(false); };

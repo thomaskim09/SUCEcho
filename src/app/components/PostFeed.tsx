@@ -209,6 +209,28 @@ export default function PostFeed() {
         router.push(`/post/${postId}`);
     }, [router, posts]);
 
+    // Save feed state and scroll position before navigating to compose (comment)
+    const handleCommentNavigate = useCallback((parentPostId: number) => {
+        sessionStorage.setItem('postFeedScroll', window.scrollY.toString());
+        const postDivs = Array.from(document.querySelectorAll('[data-post-id]'));
+        let lastVisibleId = null;
+        for (let i = 0; i < postDivs.length; i++) {
+            const el = postDivs[i] as HTMLElement;
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                lastVisibleId = el.getAttribute('data-post-id');
+            }
+        }
+        if (lastVisibleId) {
+            sessionStorage.setItem('postFeedLastVisibleId', lastVisibleId);
+        }
+        sessionStorage.setItem('postFeedReturnExpected', 'true');
+        try {
+            sessionStorage.setItem('postFeedCache', JSON.stringify(posts));
+        } catch { }
+        router.push(`/compose?parentPostId=${parentPostId}`);
+    }, [router, posts]);
+
     useLayoutEffect(() => {
         if (!isLoading && sessionStorage.getItem('postFeedReturnExpected') === 'true' && !hasRestoredFromCache.current) {
             const cached = sessionStorage.getItem('postFeedCache');
@@ -314,6 +336,7 @@ export default function PostFeed() {
                                 onDelete={handleDelete}
                                 userVote={userVotes[post.id]}
                                 onAutoPurify={handlePostPurified}
+                                onCommentNavigate={handleCommentNavigate}
                             />
                         </motion.div>
                     );
