@@ -1,7 +1,7 @@
 // src/app/components/PostFeed.tsx
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import PostCard from './PostCard';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -58,6 +58,8 @@ export default function PostFeed() {
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(
         new Set()
     );
+    const hasFetchedInitialPosts = useRef(false);
+    const hasRestoredFromCache = useRef(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -200,32 +202,43 @@ export default function PostFeed() {
         if (lastVisibleId) {
             sessionStorage.setItem('postFeedLastVisibleId', lastVisibleId);
         }
+        sessionStorage.setItem('postFeedReturnExpected', 'true');
+        try {
+            sessionStorage.setItem('postFeedCache', JSON.stringify(posts));
+        } catch { }
         router.push(`/post/${postId}`);
-    }, [router]);
+    }, [router, posts]);
 
-    useEffect(() => {
-        if (!isLoading) {
-            const savedId = sessionStorage.getItem('postFeedLastVisibleId');
-            if (savedId) {
-                const el = document.querySelector(`[data-post-id="${savedId}"]`);
-                if (el) {
-                    (el as HTMLElement).scrollIntoView({ block: 'center' });
-                    window.scrollBy(0, -150);
-                    sessionStorage.removeItem('postFeedLastVisibleId');
-                    sessionStorage.removeItem('postFeedScroll');
-                } else if (nextCursor) {
-                    loadMorePosts();
+    useLayoutEffect(() => {
+        if (!isLoading && sessionStorage.getItem('postFeedReturnExpected') === 'true' && !hasRestoredFromCache.current) {
+            const cached = sessionStorage.getItem('postFeedCache');
+            if (cached) {
+                try {
+                    const cachedPosts: PostWithStats[] = JSON.parse(cached);
+                    setPosts(cachedPosts);
+                    setTimeout(() => {
+                        const savedScroll = sessionStorage.getItem('postFeedScroll');
+                        if (savedScroll) {
+                            window.scrollTo(0, parseInt(savedScroll, 10));
+                        }
+                        sessionStorage.removeItem('postFeedCache');
+                        sessionStorage.removeItem('postFeedScroll');
+                        sessionStorage.removeItem('postFeedLastVisibleId');
+                        sessionStorage.removeItem('postFeedReturnExpected');
+                        hasRestoredFromCache.current = true;
+                        hasFetchedInitialPosts.current = true;
+                    }, 0);
+                } catch {
+                    hasRestoredFromCache.current = true;
+                    hasFetchedInitialPosts.current = true;
                 }
-                return;
-            }
-            const savedScroll = sessionStorage.getItem('postFeedScroll');
-            if (savedScroll) {
-                window.scrollTo(0, parseInt(savedScroll, 10));
-                sessionStorage.removeItem('postFeedScroll');
+            } else {
+                hasRestoredFromCache.current = true;
+                hasFetchedInitialPosts.current = true;
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isLoading, posts]);
+    }, [isLoading, setPosts]);
 
     if (status === 'checking')
         return (
