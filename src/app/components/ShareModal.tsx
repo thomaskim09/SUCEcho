@@ -17,13 +17,13 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                 await navigator.share({
                     title: 'SUC Echo | 南方回音壁',
                     text: '发现一个神秘的地方，所有声音只存在一天。',
-                    url: 'https://suc.campusecho.net',
+                    url: 'https://sucecho.vercel.app/',
                 });
             } catch {
                 // Handle share cancellation or error if needed
             }
         } else {
-            navigator.clipboard.writeText('https://suc.campusecho.net');
+            navigator.clipboard.writeText('https://sucecho.vercel.app/');
             alert('网站链接已复制！快去分享吧！');
         }
     };
