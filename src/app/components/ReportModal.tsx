@@ -10,7 +10,7 @@ const commonReasons = [
     "仇恨或歧视言论",
     "校外商业广告或诈骗信息",
     "露骨或色情内容",
-    "泄露他人隐私（电话、住址等）",
+    "泄露他人隐私（名字，电话、住址等）",
 ];
 
 interface ReportModalProps {
