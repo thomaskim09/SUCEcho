@@ -397,6 +397,8 @@ export default function PostDetailPage() {
                                 )}
                             </div>
                         </div>
+                        {/* Add spacer below replies to prevent floating button overlap */}
+                        <div className="h-24" />
                     </>
                 )}
             </motion.div>
