@@ -79,12 +79,14 @@ export default function PostDetailPage() {
     const dataFetched = useRef(false);
     const [nextReplyCursor, setNextReplyCursor] = useState<number | null>(null);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
     const isVisible = usePageVisibility();
 
     useEffect(() => {
+        setPurifiedPostIds(getPurifiedPostIds());
         const postId = parseInt(id, 10);
         if (!isNaN(postId)) {
             const purifiedIds = getPurifiedPostIds();
@@ -195,7 +197,6 @@ export default function PostDetailPage() {
 
     const handleAutoPurify = (postIdToPurify: number) => {
         logger.log(`Auto-purification triggered for post ${postIdToPurify}`);
-        addPurifiedPostId(postIdToPurify);
         setPost(currentThread => {
             if (!currentThread) return null;
             if (currentThread.id === postIdToPurify) {
@@ -210,7 +211,6 @@ export default function PostDetailPage() {
 
     const handlePurification = (postIdToPurify: number) => {
         logger.log(`Purification process starting for post ${postIdToPurify}`);
-        addPurifiedPostId(postIdToPurify); // Add to store immediately
         setPost(currentThread => {
             if (!currentThread) return null;
             if (currentThread.id === postIdToPurify) {
@@ -225,10 +225,11 @@ export default function PostDetailPage() {
 
     const handleAnimationEnd = (postId: number) => {
         logger.log(`Animation finished for post ${postId}.`);
+        addPurifiedPostId(postId);
+        setPurifiedPostIds(prev => new Set([...prev, postId]));
         if (post && postId === post.id) {
             setShowFinalMessage(true);
         } else {
-            // A reply's animation finished, filter it out from the state.
             setPost(current => {
                 if (!current) return null;
                 const updatedReplies = current.replies.filter(reply => reply.id !== postId);
@@ -322,6 +323,11 @@ export default function PostDetailPage() {
             return <p className="text-gray-400 text-center p-8">这回音已消散.</p>;
         }
 
+        // Filter out purified replies
+        const filteredReplies = post.replies.filter(
+            reply => !purifiedPostIds.has(reply.id)
+        );
+
         return (
             <motion.div
                 key="content"
@@ -346,11 +352,11 @@ export default function PostDetailPage() {
                 {(!post.isPurifying && !post.isDeleting) && (
                     <>
                         <div className="mt-8">
-                            <h2 className="text-xl font-mono text-gray-400 mb-2">回复 ({post.replies.filter(r => !r.isDeleting).length})</h2>
+                            <h2 className="text-xl font-mono text-gray-400 mb-2">回复 ({filteredReplies.filter(r => !r.isDeleting).length})</h2>
                             <div className="space-y-2 border-l-2 border-accent/30 pl-4 ml-4">
-                                {post.replies.length > 0 ? (
+                                {filteredReplies.length > 0 ? (
                                     <AnimatePresence>
-                                        {post.replies.map(reply => (
+                                        {filteredReplies.map(reply => (
                                             <motion.div
                                                 key={reply.id}
                                                 layout
