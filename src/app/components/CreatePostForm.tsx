@@ -91,10 +91,7 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
                 addMyEcho(newPost);
             }
 
-            if (!parentPostId) {
-                triggerShareModal();
-            }
-
+            triggerShareModal();
             setIsSent(true);
             setTimeout(() => {
                 if (parentPostId) {

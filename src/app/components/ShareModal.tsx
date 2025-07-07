@@ -19,7 +19,7 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                     text: '发现一个神秘的地方，所有声音只存在一天。',
                     url: 'https://suc.campusecho.net',
                 });
-            } catch (err) {
+            } catch {
                 // Handle share cancellation or error if needed
             }
         } else {

@@ -259,7 +259,7 @@ export default function PostFeed() {
                 hasFetchedInitialPosts.current = true;
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // react-hooks/exhaustive-deps
     }, [isLoading, setPosts]);
 
     if (status === 'checking')

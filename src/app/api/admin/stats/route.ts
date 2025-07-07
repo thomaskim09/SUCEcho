@@ -16,31 +16,44 @@ export async function GET(request: Request) {
     try {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-        const [totalUsers, totalPosts, postsWithin24h, expiredPostsCount] =
-            await prisma.$transaction([
-                prisma.userAnonymizedProfile.count(),
-                prisma.post.count(),
-                prisma.post.count({
-                    where: {
-                        createdAt: {
-                            gte: twentyFourHoursAgo,
-                        },
+        const [
+            totalUsers,
+            totalPosts,
+            postsWithin24h,
+            expiredPostsCount,
+            activeUsers24h,
+        ] = await prisma.$transaction([
+            prisma.userAnonymizedProfile.count(),
+            prisma.post.count(),
+            prisma.post.count({
+                where: {
+                    createdAt: {
+                        gte: twentyFourHoursAgo,
                     },
-                }),
-                prisma.post.count({
-                    where: {
-                        createdAt: {
-                            lt: twentyFourHoursAgo,
-                        },
+                },
+            }),
+            prisma.post.count({
+                where: {
+                    createdAt: {
+                        lt: twentyFourHoursAgo,
                     },
-                }),
-            ]);
+                },
+            }),
+            prisma.userAnonymizedProfile.count({
+                where: {
+                    lastSeenAt: {
+                        gte: twentyFourHoursAgo,
+                    },
+                },
+            }),
+        ]);
 
         return NextResponse.json({
             totalUsers,
             totalPosts,
             postsWithin24h,
             expiredPostsCount,
+            activeUsers24h,
         });
     } catch (error) {
         logger.error('Error fetching admin stats:', error);

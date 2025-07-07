@@ -10,6 +10,7 @@ import LocalStorageManager from '@/app/components/LocalStorageManager';
 
 interface AdminStats {
     totalUsers: number;
+    activeUsers24h: number;
     totalPosts: number;
     postsWithin24h: number;
     expiredPostsCount: number;
@@ -26,7 +27,6 @@ export default function AdminDashboardPage() {
     const [postType, setPostType] = useState<'ANNOUNCEMENT' | 'ADVERTISEMENT'>('ANNOUNCEMENT');
     const [adUrl, setAdUrl] = useState('');
     const [isCreatingPost, setIsCreatingPost] = useState(false);
-
 
     const fetchDashboardData = async () => {
         try {
@@ -131,7 +131,6 @@ export default function AdminDashboardPage() {
         }
     };
 
-
     return (
         <div className="container mx-auto max-w-6xl p-4 text-white">
             <header className="py-4 flex justify-between items-center">
@@ -202,18 +201,6 @@ export default function AdminDashboardPage() {
                 </form>
             </section>
 
-            {/* LocalStorage Management Section */}
-            <section
-                className="mt-8 p-6 rounded-lg"
-                style={{
-                    backgroundColor: 'var(--card-background)',
-                    border: '1px solid #14b8a6'
-                }}
-            >
-                <h2 className="text-2xl font-bold text-teal-400 mb-4">本地存储管理</h2>
-                <LocalStorageManager />
-            </section>
-
             <section className="mt-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: `1px solid ${reportCount && reportCount > 0 ? '#ef4444' : '#22c55e'}` }}>
@@ -237,11 +224,12 @@ export default function AdminDashboardPage() {
 
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #3b82f6' }}>
                         <div>
-                            <h2 className="text-2xl font-bold text-blue-400">用户总数</h2>
+                            <h2 className="text-2xl font-bold text-blue-400">用户统计</h2>
+                            <p className="text-sm text-gray-400 mt-1 mb-4">查看社区用户增长和活跃度。</p>
                             {stats ? (
-                                <div className="mt-2">
-                                    <p className="text-5xl font-mono">{stats.totalUsers}</p>
-                                    <p className="text-sm text-gray-400">位用户曾来过这里</p>
+                                <div className="space-y-2 font-mono">
+                                    <p>24小时活跃: <span className="font-bold text-xl text-green-400">{stats.activeUsers24h}</span></p>
+                                    <p>历史总用户: <span className="font-bold text-xl text-white">{stats.totalUsers}</span></p>
                                 </div>
                             ) : (
                                 <p className="text-lg text-gray-500 mt-2">加载中...</p>
@@ -258,9 +246,9 @@ export default function AdminDashboardPage() {
                             <p className="text-sm text-gray-400 mt-1 mb-4">手动运行日常或深度数据清理任务。</p>
                             {stats ? (
                                 <div className="space-y-2 font-mono">
-                                    <p>总数: <span className="font-bold text-xl text-white">{stats.totalPosts}</span></p>
                                     <p>24小时内: <span className="font-bold text-xl text-green-400">{stats.postsWithin24h}</span></p>
                                     <p>已过期: <span className="font-bold text-xl text-yellow-400">{stats.expiredPostsCount}</span></p>
+                                    <p>总数: <span className="font-bold text-xl text-white">{stats.totalPosts}</span></p>
                                 </div>
                             ) : (
                                 <p className="text-lg text-gray-500 mt-2">加载中...</p>
@@ -276,6 +264,17 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <section
+                className="mt-8 p-6 rounded-lg"
+                style={{
+                    backgroundColor: 'var(--card-background)',
+                    border: '1px solid #14b8a6'
+                }}
+            >
+                <h2 className="text-2xl font-bold text-teal-400 mb-4">本地存储管理</h2>
+                <LocalStorageManager />
             </section>
         </div>
     );
