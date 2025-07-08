@@ -28,6 +28,7 @@ interface PostCardProps {
     onDeletionComplete?: (postId: number) => void;
     onAutoPurify: (postId: number) => void;
     onCommentNavigate?: (parentPostId: number) => void;
+    parentFingerprintHash?: string;
 }
 
 interface Ripple {
@@ -61,7 +62,7 @@ const renderContentWithLinks = (content: string) => {
     });
 };
 
-export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate, parentFingerprintHash }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const { isAdmin, isVerifying } = useAdmin();
     const router = useRouter();
@@ -84,12 +85,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isEnlarged, setIsEnlarged] = useState(false);
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
-
     const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
     const fifteenMinutesInMs = 15 * 60 * 1000;
     const postAgeInMs = new Date().getTime() - new Date(post.createdAt).getTime();
     const timeRemainingInMs = twentyFourHoursInMs - postAgeInMs;
     const showCountdownForReply = isChildEcho && timeRemainingInMs <= fifteenMinutesInMs;
+    const isOwner = isChildEcho && parentFingerprintHash && post.fingerprintHash === parentFingerprintHash;
 
     const cardVariants = {
         visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.5 } },
@@ -281,18 +282,27 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         </div>
                     )}
 
-                    {(!isVerifying && isAdmin || isChildEcho) && (
-                        <div className="absolute top-2 right-2 z-20">
-                            <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">
-                                <Icon name="menu" className="w-4 h-4" />
-                            </button>
-                        </div>
-                    )}
                     <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-                        {!isVerifying && isAdmin && post.type !== 'ANNOUNCEMENT' ? (
-                            <span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>
-                        ) : (
-                            <span></span>
+                        <div className="flex items-center gap-2">
+                            {isOwner && (
+                                <div className="flex items-center gap-1 text-xs font-bold opacity-50" title="Original Poster">
+                                    <Icon name="award" className="w-4 h-4" />
+                                    <span>回音贴主</span>
+                                </div>
+                            )}
+                            {!isVerifying && isAdmin && post.type !== 'ANNOUNCEMENT' && (
+                                <span className="font-mono text-xs opacity-50">
+                                    {isOwner ? `(${generateCodename(post.fingerprintHash)})` : `发布者: ${generateCodename(post.fingerprintHash)}`}
+                                </span>
+                            )}
+                        </div>
+
+                        {(!isVerifying && isAdmin || isChildEcho) && (
+                            <div className="absolute top-2 right-2 z-20">
+                                <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">
+                                    <Icon name="menu" className="w-4 h-4" />
+                                </button>
+                            </div>
                         )}
                     </div>
 
@@ -408,4 +418,4 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             </div>
         </motion.div>
     );
-} 
+}

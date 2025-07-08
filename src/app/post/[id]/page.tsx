@@ -376,6 +376,7 @@ export default function PostDetailPage() {
                                                     onDelete={handleDelete}
                                                     onDeletionComplete={() => handleAnimationEnd(reply.id)}
                                                     onAutoPurify={handleAutoPurify}
+                                                    parentFingerprintHash={post.fingerprintHash}
                                                 />
                                             </motion.div>
                                         ))}
