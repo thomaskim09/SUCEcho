@@ -10,7 +10,6 @@ import { generateCodename } from '@/lib/codename';
 import { useState, useEffect, useRef, MouseEvent, useLayoutEffect } from 'react';
 import { Icon } from './Icon';
 import { checkPurificationStatus } from "@/lib/purification";
-import { timeSince } from "@/lib/time-helpers";
 import { useCountdown } from '@/hooks/useCountdown';
 import Tooltip from './Tooltip';
 import { addPurifiedPostId } from "@/lib/purifiedStore";
@@ -339,7 +338,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
                     {post.type !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
-                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : showCountdownForReply ? colorClass : 'text-gray-400'}`}
+                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
                                 style={{ textAlign: 'left', display: 'inline-block' }}>
                                 <AnimatePresence mode="wait">
                                     {isPurifying ? (
@@ -361,9 +360,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             transition={{ duration: 0.3 }}
                                             style={{ display: 'inline-block', width: '100%' }}
                                         >
-                                            {showCountdownForReply || !isChildEcho
-                                                ? countdownText
-                                                : timeSince(new Date(post.createdAt))}
+                                            {countdownText}
                                         </motion.span>
                                     ) : (
                                         <motion.span
