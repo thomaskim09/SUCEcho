@@ -84,11 +84,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isEnlarged, setIsEnlarged] = useState(false);
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
-    const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
-    const fifteenMinutesInMs = 15 * 60 * 1000;
-    const postAgeInMs = new Date().getTime() - new Date(post.createdAt).getTime();
-    const timeRemainingInMs = twentyFourHoursInMs - postAgeInMs;
-    const showCountdownForReply = isChildEcho && timeRemainingInMs <= fifteenMinutesInMs;
     const isOwner = isChildEcho && parentFingerprintHash && post.fingerprintHash === parentFingerprintHash;
 
     const cardVariants = {
