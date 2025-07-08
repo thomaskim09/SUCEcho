@@ -74,7 +74,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        let { content, fingerprintHash, parentPostId } = body;
+        let { content } = body;
+        const { fingerprintHash, parentPostId } = body;
 
         if (content && typeof content === 'string') {
             content = content.trim();
