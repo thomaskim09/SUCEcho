@@ -5,7 +5,7 @@ import type { PostWithStats } from "@/lib/types";
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
-import { useAdminSession } from '@/hooks/useAdminSession';
+import { useAdmin } from '@/context/AdminContext';
 import { generateCodename } from '@/lib/codename';
 import { useState, useEffect, useRef, MouseEvent, useLayoutEffect } from 'react';
 import { Icon } from './Icon';
@@ -63,7 +63,7 @@ const renderContentWithLinks = (content: string) => {
 
 export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
-    const isAdmin = useAdminSession();
+    const { isAdmin, isVerifying } = useAdmin();
     const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showUpvoteTooltip, setShowUpvoteTooltip] = useState(false);
@@ -281,7 +281,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         </div>
                     )}
 
-                    {(isAdmin || isChildEcho) && (
+                    {(!isVerifying && isAdmin || isChildEcho) && (
                         <div className="absolute top-2 right-2 z-20">
                             <button onClick={handleToggleMenu} className="p-2 rounded-full hover:bg-gray-700">
                                 <Icon name="menu" className="w-4 h-4" />
@@ -289,7 +289,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         </div>
                     )}
                     <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-                        {isAdmin && post.type !== 'ANNOUNCEMENT' ? (
+                        {!isVerifying && isAdmin && post.type !== 'ANNOUNCEMENT' ? (
                             <span className="font-mono text-xs opacity-50">发布者: {generateCodename(post.fingerprintHash)}</span>
                         ) : (
                             <span></span>
@@ -392,7 +392,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                 {isMenuOpen && (
                     <div className="absolute top-12 right-2 bg-gray-900 rounded-lg shadow-lg p-2 z-10 w-48">
                         <ul>
-                            {isAdmin && (
+                            {!isVerifying && isAdmin && (
                                 <>
                                     <li><button onClick={handleDelete} className="w-full text-left p-2 rounded hover:bg-red-800/50">🗑️ 立即删除</button></li>
                                     <li><button onClick={handleViewProfile} className="block w-full text-left p-2 rounded hover:bg-gray-700">👤 查看用户档案</button></li>

@@ -9,11 +9,11 @@ import { Icon } from "./Icon";
 import { useRef } from 'react';
 
 export default function AdminShield() {
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isVerifying } = useAdmin();
   const pathname = usePathname();
   const buttonRef = useRef<HTMLAnchorElement>(null);
 
-  if (!isAdmin) return null;
+  if (isVerifying || !isAdmin) return null;
 
   // Don't show the shield on the dashboard itself
   if (pathname.startsWith('/admin')) {
