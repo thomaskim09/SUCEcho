@@ -1,4 +1,4 @@
-// src/app/api/posts/route.ts (Optimized)
+// src/app/api/posts/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import supabase, {
@@ -74,7 +74,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { content, fingerprintHash, parentPostId } = body;
+        let { content, fingerprintHash, parentPostId } = body;
+
+        if (content && typeof content === 'string') {
+            content = content.trim();
+            content = content.replace(/\n{3,}/g, '\n\n');
+        }
 
         if (!content || !fingerprintHash) {
             return NextResponse.json(
