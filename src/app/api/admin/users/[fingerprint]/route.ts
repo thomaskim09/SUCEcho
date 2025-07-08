@@ -9,8 +9,9 @@ interface Params {
 }
 
 /**
- * Handles GET requests to fetch details for a specific user profile based on their fingerprint.
- * The function signature has been updated to correctly destructure params.
+ * Handles GET requests to fetch details, logs, and recent posts for a specific user profile.
+ * This version uses separate database calls to avoid schema relation requirements,
+ * preserving data integrity by not requiring a migration.
  */
 export async function GET(
     request: NextRequest,
@@ -32,6 +33,9 @@ export async function GET(
             );
         }
 
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        // 1. Fetch the user profile
         const user = await prisma.userAnonymizedProfile.findUnique({
             where: { fingerprintHash: userFingerprint },
         });
@@ -43,7 +47,40 @@ export async function GET(
             );
         }
 
-        return NextResponse.json(user, { status: 200 });
+        // 2. Fetch recent posts for that user in a separate query
+        const posts = await prisma.post.findMany({
+            where: {
+                fingerprintHash: userFingerprint,
+                createdAt: {
+                    gte: twentyFourHoursAgo,
+                },
+            },
+            include: {
+                stats: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        // 3. Fetch admin logs for that user in a separate query
+        const adminLogs = await prisma.adminLog.findMany({
+            where: {
+                targetFingerprintHash: userFingerprint,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        // 4. Combine the results into a single response object
+        const userProfile = {
+            ...user,
+            posts,
+            adminLogs,
+        };
+
+        return NextResponse.json(userProfile, { status: 200 });
     } catch (error) {
         logger.error('Error fetching user details:', error);
         return NextResponse.json(

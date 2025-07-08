@@ -408,4 +408,4 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             </div>
         </motion.div>
     );
-}
+} 

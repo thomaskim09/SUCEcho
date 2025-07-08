@@ -1,18 +1,12 @@
+// sucecho/src/app/admin/users/[fingerprint]/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-
-interface UserProfile {
-    fingerprintHash: string;
-    codename: string;
-    purifiedPostCount: number;
-    isBanned: boolean;
-    banExpiresAt: string | null;
-    firstSeenAt: string;
-    lastSeenAt: string;
-}
+import type { PostWithStats } from '@/lib/types';
+import PostCard from '@/app/components/PostCard';
+import logger from '@/lib/logger';
 
 interface AdminLogEntry {
     id: number;
@@ -23,12 +17,23 @@ interface AdminLogEntry {
     isAcknowledged: boolean;
 }
 
+interface UserProfile {
+    fingerprintHash: string;
+    codename: string;
+    purifiedPostCount: number;
+    isBanned: boolean;
+    banExpiresAt: string | null;
+    firstSeenAt: string;
+    lastSeenAt: string;
+    posts: PostWithStats[];
+    adminLogs: AdminLogEntry[];
+}
+
 export default function UserProfilePage() {
     const params = useParams();
     const fingerprint = params.fingerprint as string;
 
     const [user, setUser] = useState<UserProfile | null>(null);
-    const [logs, setLogs] = useState<AdminLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,16 +45,13 @@ export default function UserProfilePage() {
             setLoading(true);
             setError(null);
             try {
-                const [userRes, logsRes] = await Promise.all([
-                    fetch(`/api/admin/users/${fingerprint}`),
-                    fetch(`/api/admin/users/${fingerprint}/logs`)
-                ]);
-
-                if (!userRes.ok) throw new Error('Failed to fetch user profile');
-                if (!logsRes.ok) throw new Error('Failed to fetch moderation logs');
-
-                setUser(await userRes.json());
-                setLogs(await logsRes.json());
+                const res = await fetch(`/api/admin/users/${fingerprint}`);
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || 'Failed to fetch user data');
+                }
+                const data: UserProfile = await res.json();
+                setUser(data);
             } catch (e) {
                 setError((e as Error).message);
             } finally {
@@ -58,7 +60,7 @@ export default function UserProfilePage() {
         };
 
         fetchAllData();
-    }, [fingerprint]);
+    }, [fingerprint, isSubmitting]);
 
     const handleAdminAction = async (action: 'BAN' | 'UNBAN' | 'WARN', durationDays: number | null = null) => {
         const reason = prompt(`可选：为此${action}操作提供一个理由。`);
@@ -68,19 +70,11 @@ export default function UserProfilePage() {
 
         setIsSubmitting(true);
         try {
-            let url: string;
-            let method: string;
-
-            if (action === 'WARN') {
-                url = `/api/admin/users/${fingerprint}/warn`;
-                method = 'POST';
-            } else {
-                url = `/api/admin/users/${fingerprint}/ban`;
-                method = action === 'BAN' ? 'POST' : 'DELETE';
-            }
+            const url = action === 'WARN' ? `/api/admin/users/${fingerprint}/warn` : `/api/admin/users/${fingerprint}/ban`;
+            const method = action === 'UNBAN' ? 'DELETE' : 'POST';
 
             const res = await fetch(url, {
-                method: method,
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason, durationDays }),
             });
@@ -89,21 +83,15 @@ export default function UserProfilePage() {
                 const errorData = await res.json();
                 throw new Error(errorData.message || `Failed to perform ${action}`);
             }
-
-            // Refetch all data to ensure UI is perfectly in sync
-            const userRes = await fetch(`/api/admin/users/${fingerprint}`);
-            const logsRes = await fetch(`/api/admin/users/${fingerprint}/logs`);
-            setUser(await userRes.json());
-            setLogs(await logsRes.json());
-
             alert(`${action} 操作成功。`);
-
         } catch (err) {
             alert((err as Error).message);
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    const handleDummyAction = () => { };
 
     const renderBanStatus = () => {
         if (!user) return null;
@@ -115,42 +103,21 @@ export default function UserProfilePage() {
     };
 
     const renderContent = () => {
-        if (loading) {
-            return <div className="text-center p-8">正在加载用户资料...</div>;
-        }
-        if (error) {
-            return <div className="text-center p-8 text-red-500">Error: {error}</div>;
-        }
-        if (!user) {
-            return <div className="text-center p-8">User not found.</div>;
-        }
+        if (loading) return <div className="text-center p-8">正在加载用户资料...</div>;
+        if (error) return <div className="text-center p-8 text-red-500">Error: {error}</div>;
+        if (!user) return <div className="text-center p-8">User not found.</div>;
 
         return (
             <>
+                {/* User Info, Actions, and Logs sections remain the same... */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-400">代号</h2>
-                        <p className="text-2xl font-mono">{user.codename}</p>
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-400">状态</h2>
-                        <p className="text-2xl">{renderBanStatus()}</p>
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-400">社区声誉</h2>
-                        <p className="text-2xl">{user.purifiedPostCount} 条净化帖子</p>
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-400">上次活跃</h2>
-                        <p className="text-xl">{new Date(user.lastSeenAt).toLocaleString()}</p>
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-400">首次活跃</h2>
-                        <p className="text-xl">{new Date(user.firstSeenAt).toLocaleString()}</p>
-                    </div>
+                    <div><h2 className="text-lg font-bold text-gray-400">代号</h2><p className="text-2xl font-mono">{user.codename}</p></div>
+                    <div><h2 className="text-lg font-bold text-gray-400">状态</h2><p className="text-2xl">{renderBanStatus()}</p></div>
+                    <div><h2 className="text-lg font-bold text-gray-400">社区声誉</h2><p className="text-2xl">{user.purifiedPostCount} 条净化帖子</p></div>
+                    <div><h2 className="text-lg font-bold text-gray-400">上次活跃</h2><p className="text-xl">{new Date(user.lastSeenAt).toLocaleString()}</p></div>
+                    <div><h2 className="text-lg font-bold text-gray-400">首次活跃</h2><p className="text-xl">{new Date(user.firstSeenAt).toLocaleString()}</p></div>
                 </div>
 
-                {/* Moderation Actions (now use single handler) */}
                 <div className="mt-8 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
                     <h2 className="text-xl font-bold mb-4">管理操作</h2>
                     <div className="flex flex-wrap gap-4">
@@ -162,36 +129,45 @@ export default function UserProfilePage() {
                     </div>
                 </div>
 
-                {/* Moderation History */}
                 <div className="mt-8 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
                     <h2 className="text-xl font-bold mb-4">管理历史</h2>
-                    {logs.length > 0 ? (
+                    {user.adminLogs.length > 0 ? (
                         <ul className="space-y-3">
-                            {logs.map(log => (
+                            {user.adminLogs.map(log => (
                                 <li key={log.id} className="text-sm p-3 bg-gray-800 rounded-md">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`font-bold ${log.action === 'WARN' ? 'text-yellow-400' :
-                                                log.action === 'BAN' ? 'text-red-400' : 'text-green-400'
-                                                }`}>
-                                                {log.action}
-                                            </span>
-                                            {/* --- FIX: Correctly placed badge --- */}
-                                            {log.action === 'WARN' && log.isAcknowledged && (
-                                                <span className="px-2 py-0.5 text-xs font-semibold text-gray-800 bg-gray-300 rounded-full">
-                                                    已确认
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className="text-xs text-gray-500 flex-shrink-0">{new Date(log.createdAt).toLocaleString()}</span>
-                                    </div>
+                                    <div className="flex justify-between items-start"><div className="flex items-center gap-2"><span className={`font-bold ${log.action === 'WARN' ? 'text-yellow-400' : log.action === 'BAN' ? 'text-red-400' : 'text-green-400'}`}>{log.action}</span>{log.action === 'WARN' && log.isAcknowledged && (<span className="px-2 py-0.5 text-xs font-semibold text-gray-800 bg-gray-300 rounded-full">已确认</span>)}</div><span className="text-xs text-gray-500 flex-shrink-0">{new Date(log.createdAt).toLocaleString()}</span></div>
                                     <p className="mt-2 text-gray-300">原因: {log.reason || <span className="italic text-gray-500">未提供原因。</span>}</p>
                                     <p className="text-xs text-gray-500 mt-1">管理员: {log.adminId}</p>
                                 </li>
                             ))}
                         </ul>
+                    ) : <p className="text-gray-400">此用户没有管理历史记录。</p>}
+                </div>
+
+                {/* --- MODIFIED SECTION: Recent User Activity --- */}
+                <div className="mt-8 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
+                    <h2 className="text-xl font-bold mb-4">最近动态 (24小时内)</h2>
+                    {user.posts.length > 0 ? (
+                        <div className="space-y-4">
+                            {user.posts.map(post => {
+                                const isChildEcho = !!post.parentPostId;
+                                const wrapperClass = isChildEcho ? "border-l-2 border-accent/30 pl-4 ml-4" : "";
+                                return (
+                                    <div key={post.id} className={wrapperClass}>
+                                        <PostCard
+                                            post={post}
+                                            isLink={!isChildEcho}
+                                            onVote={handleDummyAction}
+                                            onDelete={handleDummyAction}
+                                            onReport={handleDummyAction}
+                                            onAutoPurify={handleDummyAction}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
                     ) : (
-                        <p className="text-gray-400">此用户没有管理历史记录。</p>
+                        <p className="text-gray-400">该用户在过去24小时内没有发布任何回音。</p>
                     )}
                 </div>
             </>
@@ -202,12 +178,8 @@ export default function UserProfilePage() {
         <div className="container mx-auto max-w-4xl p-4 text-white">
             <header className="py-4">
                 <div className="flex justify-between items-center mb-4">
-                    <Link href="/" className="text-accent hover:underline">
-                        &larr; 回到主页
-                    </Link>
-                    <Link href="/admin/users" className="text-accent hover:underline">
-                        回到用户管理 &rarr;
-                    </Link>
+                    <Link href="/" className="text-accent hover:underline">&larr; 回到主页</Link>
+                    <Link href="/admin/users" className="text-accent hover:underline">回到用户管理 &rarr;</Link>
                 </div>
                 <h1 className="text-2xl font-bold font-mono text-accent mb-2">用户匿名个资</h1>
                 <p className="font-mono text-sm opacity-70 break-all">指纹: {fingerprint}</p>
