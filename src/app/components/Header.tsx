@@ -139,7 +139,7 @@ export default function Header() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                             transition={{ duration: 0.2 }}
-                            className="md:hidden absolute top-full left-0 right-0 p-4 z-20 rounded-b-lg glass-card bg-gray-900/90"
+                            className="md:hidden absolute top-full left-0 right-0 p-4 z-20 rounded-b-lg glass-card bg-gray-900/98"
                         >
                             <nav className="flex flex-col items-center gap-4 font-mono text-xl">
                                 {navLinks.map(link => (
