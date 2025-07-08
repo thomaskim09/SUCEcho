@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import type { PostWithStats } from '@/lib/types';
 import PostCard from '@/app/components/PostCard';
-import logger from '@/lib/logger';
 
 interface AdminLogEntry {
     id: number;
