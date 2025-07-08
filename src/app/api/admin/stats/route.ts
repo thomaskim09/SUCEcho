@@ -22,30 +22,24 @@ export async function GET(request: Request) {
             postsWithin24h,
             expiredPostsCount,
             activeUsers24h,
+            totalVotes,
+            totalUpvotes,
+            totalDownvotes,
         ] = await prisma.$transaction([
             prisma.userAnonymizedProfile.count(),
             prisma.post.count(),
             prisma.post.count({
-                where: {
-                    createdAt: {
-                        gte: twentyFourHoursAgo,
-                    },
-                },
+                where: { createdAt: { gte: twentyFourHoursAgo } },
             }),
             prisma.post.count({
-                where: {
-                    createdAt: {
-                        lt: twentyFourHoursAgo,
-                    },
-                },
+                where: { createdAt: { lt: twentyFourHoursAgo } },
             }),
             prisma.userAnonymizedProfile.count({
-                where: {
-                    lastSeenAt: {
-                        gte: twentyFourHoursAgo,
-                    },
-                },
+                where: { lastSeenAt: { gte: twentyFourHoursAgo } },
             }),
+            prisma.vote.count(),
+            prisma.vote.count({ where: { voteType: 1 } }),
+            prisma.vote.count({ where: { voteType: -1 } }),
         ]);
 
         return NextResponse.json({
@@ -54,6 +48,9 @@ export async function GET(request: Request) {
             postsWithin24h,
             expiredPostsCount,
             activeUsers24h,
+            totalVotes,
+            totalUpvotes,
+            totalDownvotes,
         });
     } catch (error) {
         logger.error('Error fetching admin stats:', error);

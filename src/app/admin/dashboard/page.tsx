@@ -14,6 +14,9 @@ interface AdminStats {
     totalPosts: number;
     postsWithin24h: number;
     expiredPostsCount: number;
+    totalVotes: number;
+    totalUpvotes: number;
+    totalDownvotes: number;
 }
 
 export default function AdminDashboardPage() {
@@ -146,6 +149,7 @@ export default function AdminDashboardPage() {
                 </button>
             </header>
 
+            {/* Special Post Section */}
             <section
                 className="mt-8 p-6 rounded-lg"
                 style={{
@@ -201,8 +205,10 @@ export default function AdminDashboardPage() {
                 </form>
             </section>
 
+            {/* Stats Grid */}
             <section className="mt-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Reports Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: `1px solid ${reportCount && reportCount > 0 ? '#ef4444' : '#22c55e'}` }}>
                         <div>
                             <h2 className={`text-2xl font-bold ${reportCount && reportCount > 0 ? 'text-red-400' : 'text-green-400'}`}>
@@ -222,6 +228,7 @@ export default function AdminDashboardPage() {
                         </Link>
                     </div>
 
+                    {/* User Stats Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #3b82f6' }}>
                         <div>
                             <h2 className="text-2xl font-bold text-blue-400">用户统计</h2>
@@ -240,6 +247,26 @@ export default function AdminDashboardPage() {
                         </Link>
                     </div>
 
+                    {/* Vote Management Card */}
+                    <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #a78bfa' }}>
+                        <div>
+                            <h2 className="text-2xl font-bold text-purple-400">投票统计</h2>
+                            <p className="text-sm text-gray-400 mt-1 mb-4">审查用户投票行为，维护社区平衡。</p>
+                            {stats ? (
+                                <div className="space-y-2 font-mono">
+                                    <p>总赞同: <span className="font-bold text-xl text-green-400">{stats.totalUpvotes}</span></p>
+                                    <p>总倒赞: <span className="font-bold text-xl text-red-400">{stats.totalDownvotes}</span></p>
+                                </div>
+                            ) : (
+                                <p className="text-lg text-gray-500 mt-2">加载中...</p>
+                            )}
+                        </div>
+                        <Link href="/admin/votes" className="mt-4 block text-center bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                            审查投票
+                        </Link>
+                    </div>
+
+                    {/* Echo Management Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #f97316' }}>
                         <div>
                             <h2 className="text-2xl font-bold text-orange-400">回音管理</h2>
@@ -266,6 +293,7 @@ export default function AdminDashboardPage() {
                 </div>
             </section>
 
+            {/* Local Storage Manager */}
             <section
                 className="mt-8 p-6 rounded-lg"
                 style={{
