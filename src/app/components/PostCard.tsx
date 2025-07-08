@@ -85,6 +85,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
 
+    const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
+    const fifteenMinutesInMs = 15 * 60 * 1000;
+    const postAgeInMs = new Date().getTime() - new Date(post.createdAt).getTime();
+    const timeRemainingInMs = twentyFourHoursInMs - postAgeInMs;
+    const showCountdownForReply = isChildEcho && timeRemainingInMs <= fifteenMinutesInMs;
+
     const cardVariants = {
         visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.5 } },
         enlarged: { scale: 1.05, transition: { duration: 0.18 } },
@@ -323,7 +329,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
                     {post.type !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
-                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
+                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : showCountdownForReply ? colorClass : 'text-gray-400'}`}
                                 style={{ textAlign: 'left', display: 'inline-block' }}>
                                 <AnimatePresence mode="wait">
                                     {isPurifying ? (
@@ -345,9 +351,9 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             transition={{ duration: 0.3 }}
                                             style={{ display: 'inline-block', width: '100%' }}
                                         >
-                                            {isChildEcho
-                                                ? timeSince(new Date(post.createdAt))
-                                                : countdownText}
+                                            {showCountdownForReply || !isChildEcho
+                                                ? countdownText
+                                                : timeSince(new Date(post.createdAt))}
                                         </motion.span>
                                     ) : (
                                         <motion.span
