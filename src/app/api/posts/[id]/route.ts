@@ -63,6 +63,12 @@ export async function GET(
                                 replyCount: true,
                             },
                         },
+                        parentReply: {
+                            select: {
+                                id: true,
+                                content: true,
+                            },
+                        },
                     },
                 },
             },

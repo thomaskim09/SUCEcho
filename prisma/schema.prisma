@@ -28,6 +28,11 @@ model Post {
   parent          Post?      @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
   replies         Post[]     @relation("Thread")
 
+  // --- NEW RELATIONSHIP FOR THREADED REPLIES ---
+  parentReplyId    Int?
+  parentReply      Post?     @relation("ReplyToReply", fields: [parentReplyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  threadedReplies  Post[]    @relation("ReplyToReply")
+
   // Relation to other models
   stats           PostStats?
   votes           Vote[]

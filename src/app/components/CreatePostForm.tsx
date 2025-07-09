@@ -26,8 +26,18 @@ const replyEchoPlaceholders = [
     "加油，你可以的…"
 ];
 
+// Examples for replying to another reply
+const threadedReplyPlaceholders = [
+    "加入这场对话...",
+    "我同意你的看法！",
+    "让讨论继续！",
+    "说得好，补充一点...",
+    "原来不止我一个人这么想。"
+];
+
 interface CreatePostFormProps {
     parentPostId?: number;
+    parentReplyId?: number;
 }
 
 // Animated loading dots component
@@ -42,7 +52,7 @@ function LoadingDots() {
     return <span>{'.'.repeat(dotCount)}</span>;
 }
 
-export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
+export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePostFormProps) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -54,7 +64,11 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
         ? parseInt(process.env.NEXT_PUBLIC_POST_CHAR_LIMIT, 10)
         : 200;
 
-    const placeholderExamples = parentPostId ? replyEchoPlaceholders : mainEchoPlaceholders;
+    const placeholderExamples = parentReplyId
+        ? threadedReplyPlaceholders
+        : parentPostId
+            ? replyEchoPlaceholders
+            : mainEchoPlaceholders;
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
     useEffect(() => {
@@ -78,7 +92,12 @@ export default function CreatePostForm({ parentPostId }: CreatePostFormProps) {
             const response = await fetch('/api/posts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, fingerprintHash: fingerprint, parentPostId: parentPostId }),
+                body: JSON.stringify({
+                    content,
+                    fingerprintHash: fingerprint,
+                    parentPostId: parentPostId,
+                    parentReplyId: parentReplyId
+                }),
             });
 
             if (!response.ok) {

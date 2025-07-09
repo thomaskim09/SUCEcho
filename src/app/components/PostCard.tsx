@@ -27,6 +27,7 @@ interface PostCardProps {
     onDeletionComplete?: (postId: number) => void;
     onAutoPurify: (postId: number) => void;
     onCommentNavigate?: (parentPostId: number) => void;
+    onReplyClick?: (parentPostId: number, replyToId: number) => void;
     parentFingerprintHash?: string;
 }
 
@@ -61,7 +62,7 @@ const renderContentWithLinks = (content: string) => {
     });
 };
 
-export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate, parentFingerprintHash }: PostCardProps) {
+export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate, onReplyClick, parentFingerprintHash }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const { isAdmin, isVerifying } = useAdmin();
     const router = useRouter();
@@ -154,6 +155,19 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             if (downvoteTooltipTimer.current) clearTimeout(downvoteTooltipTimer.current);
         };
     }, []);
+
+    const handleReply = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (post.parentPostId && onReplyClick) {
+            onReplyClick(post.parentPostId, post.id);
+        }
+    };
+
+    const truncate = (text: string, length: number) => {
+        if (text.length <= length) return text;
+        return text.substring(0, length) + '...';
+    };
 
     const handleVote = (e: React.MouseEvent, voteType: 1 | -1) => {
         e.stopPropagation();
@@ -300,6 +314,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         )}
                     </div>
 
+                    {post.parentReply && post.parentReply.content && (
+                        <div className="text-xs text-gray-400 border-l-2 border-gray-600 pl-2 mb-2 italic opacity-80 whitespace-nowrap overflow-hidden text-ellipsis">
+                            {`回复: "${truncate(post.parentReply.content, 50)}"`}
+                        </div>
+                    )}
+
                     <div
                         ref={contentRef}
                         className={
@@ -380,6 +400,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                     <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
                                     <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
                                 </div>
+                                {isChildEcho && onReplyClick && (
+                                    <div className="relative">
+                                        <button onClick={handleReply} className="press-animation icon-base icon-comment">
+                                            <Icon name="comment" />
+                                        </button>
+                                    </div>
+                                )}
                                 {!isChildEcho && (
                                     <div className="relative">
                                         <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>

@@ -15,4 +15,8 @@ export interface PostWithStats {
     } | null;
     isPurifying?: boolean;
     isDeleting?: boolean;
+    parentReply?: {
+        id: number;
+        content: string | null;
+    } | null;
 }

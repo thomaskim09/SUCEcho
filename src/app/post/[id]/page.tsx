@@ -310,6 +310,10 @@ export default function PostDetailPage() {
         setShowFinalMessage(true);
     };
 
+    const handleReplyToComment = (parentPostId: number, replyToId: number) => {
+        router.push(`/compose?parentPostId=${parentPostId}&parentReplyId=${replyToId}`);
+    };
+
     const renderMainContent = () => {
         if (showFinalMessage) {
             return <ExpiredPostMessage />;
@@ -376,6 +380,7 @@ export default function PostDetailPage() {
                                                     onDelete={handleDelete}
                                                     onDeletionComplete={() => handleAnimationEnd(reply.id)}
                                                     onAutoPurify={handleAutoPurify}
+                                                    onReplyClick={handleReplyToComment}
                                                     parentFingerprintHash={post.fingerprintHash}
                                                 />
                                             </motion.div>

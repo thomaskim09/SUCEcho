@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
         let { content } = body;
-        const { fingerprintHash, parentPostId } = body;
+        const { fingerprintHash, parentPostId, parentReplyId } = body;
 
         if (content && typeof content === 'string') {
             content = content.trim();
@@ -235,6 +235,7 @@ export async function POST(request: Request) {
                     content,
                     fingerprintHash,
                     parentPostId: parentPostId ? Number(parentPostId) : null,
+                    parentReplyId: parentReplyId ? Number(parentReplyId) : null,
                 },
             });
 
