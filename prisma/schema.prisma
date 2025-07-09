@@ -22,13 +22,13 @@ model Post {
   createdAt       DateTime   @default(now())
 
   type            PostType   @default(DEFAULT)
-  advertisementUrl String?   @db.Text // For advertisement links
+  advertisementUrl String?   @db.Text
 
   // Defines the self-relation for threaded replies
   parent          Post?      @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
   replies         Post[]     @relation("Thread")
 
-  // --- NEW RELATIONSHIP FOR THREADED REPLIES ---
+  // RELATIONSHIP FOR THREADED REPLIES
   parentReplyId    Int?
   parentReply      Post?     @relation("ReplyToReply", fields: [parentReplyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   threadedReplies  Post[]    @relation("ReplyToReply")
