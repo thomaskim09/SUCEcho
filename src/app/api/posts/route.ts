@@ -74,8 +74,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        let {
-            content,
+        let { content } = body;
+        const {
             fingerprintHash,
             parentPostId,
             parentReplyId,
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
             }
             if (
                 pollOptions.some(
-                    (opt: any) =>
+                    (opt: string) =>
                         typeof opt !== 'string' ||
                         opt.trim().length === 0 ||
                         opt.length > 50

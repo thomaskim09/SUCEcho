@@ -2,10 +2,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useFingerprint } from '@/context/FingerprintContext';
 import logger from '@/lib/logger';
-import { Icon } from './Icon';
 
 // This should match the type inferred from your Prisma schema
 interface PollOption {
