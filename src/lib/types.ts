@@ -1,4 +1,11 @@
-// sucecho/src/lib/types.ts
+// src/lib/types.ts
+
+export interface PollOption {
+    id: number;
+    text: string;
+    votes: number;
+    postId: number;
+}
 
 export interface PostWithStats {
     id: number;
@@ -6,7 +13,8 @@ export interface PostWithStats {
     createdAt: Date;
     fingerprintHash: string;
     parentPostId?: number | null;
-    type: 'DEFAULT' | 'ANNOUNCEMENT' | 'ADVERTISEMENT';
+    parentReplyId?: number | null; // Added for consistency
+    type: 'DEFAULT' | 'ANNOUNCEMENT' | 'ADVERTISEMENT' | 'POLL'; // Added POLL
     advertisementUrl?: string | null;
     stats: {
         upvotes: number;
@@ -19,4 +27,5 @@ export interface PostWithStats {
         id: number;
         content: string | null;
     } | null;
+    pollOptions?: PollOption[];
 }

@@ -74,8 +74,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        let { content } = body;
-        const { fingerprintHash, parentPostId, parentReplyId } = body;
+        let {
+            content,
+            fingerprintHash,
+            parentPostId,
+            parentReplyId,
+            type,
+            pollOptions,
+        } = body;
 
         if (content && typeof content === 'string') {
             content = content.trim();
@@ -88,6 +94,7 @@ export async function POST(request: Request) {
                 { status: 400 }
             );
         }
+
         const postCharLimit = parseInt(
             process.env.NEXT_PUBLIC_POST_CHAR_LIMIT || '400'
         );
@@ -96,6 +103,32 @@ export async function POST(request: Request) {
                 { error: `内容超过${postCharLimit}个字符` },
                 { status: 400 }
             );
+        }
+
+        if (type === 'POLL') {
+            if (
+                !Array.isArray(pollOptions) ||
+                pollOptions.length < 2 ||
+                pollOptions.length > 5
+            ) {
+                return NextResponse.json(
+                    { error: '投票必须包含2到5个选项。' },
+                    { status: 400 }
+                );
+            }
+            if (
+                pollOptions.some(
+                    (opt: any) =>
+                        typeof opt !== 'string' ||
+                        opt.trim().length === 0 ||
+                        opt.length > 50
+                )
+            ) {
+                return NextResponse.json(
+                    { error: '投票选项无效或过长。' },
+                    { status: 400 }
+                );
+            }
         }
 
         const urls = content.match(urlRegex);
@@ -181,7 +214,7 @@ export async function POST(request: Request) {
             }
         }
 
-        const newPostWithStats = await prisma.$transaction(async (tx) => {
+        const newPostWithRelations = await prisma.$transaction(async (tx) => {
             const userProfile = await tx.userAnonymizedProfile.upsert({
                 where: { fingerprintHash },
                 update: { lastSeenAt: new Date() },
@@ -236,8 +269,18 @@ export async function POST(request: Request) {
                     fingerprintHash,
                     parentPostId: parentPostId ? Number(parentPostId) : null,
                     parentReplyId: parentReplyId ? Number(parentReplyId) : null,
+                    type: type || 'DEFAULT',
                 },
             });
+
+            if (type === 'POLL' && pollOptions) {
+                await tx.pollOption.createMany({
+                    data: pollOptions.map((optionText: string) => ({
+                        text: optionText,
+                        postId: createdPost.id,
+                    })),
+                });
+            }
 
             if (parentPostId) {
                 await tx.postStats.upsert({
@@ -247,7 +290,7 @@ export async function POST(request: Request) {
                 });
             }
 
-            const createdStats = await tx.postStats.create({
+            await tx.postStats.create({
                 data: {
                     postId: createdPost.id,
                     upvotes: 0,
@@ -257,7 +300,16 @@ export async function POST(request: Request) {
                 },
             });
 
-            return { ...createdPost, stats: createdStats };
+            // Refetch to include relations
+            const finalPost = await tx.post.findUnique({
+                where: { id: createdPost.id },
+                include: {
+                    stats: true,
+                    pollOptions: type === 'POLL',
+                },
+            });
+
+            return finalPost;
         });
 
         if (parentPostId) {
@@ -304,14 +356,14 @@ export async function POST(request: Request) {
                 .send({
                     type: 'broadcast',
                     event: 'new_post',
-                    payload: newPostWithStats,
+                    payload: newPostWithRelations,
                 })
                 .then(() => {
                     supabase.removeChannel(channel);
                 });
         }
 
-        return NextResponse.json(newPostWithStats, { status: 201 });
+        return NextResponse.json(newPostWithRelations, { status: 201 });
     } catch (error: unknown) {
         if (error instanceof Error) {
             if (error.message === 'BANNED') {

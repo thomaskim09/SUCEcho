@@ -82,6 +82,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
     const isAnnouncement = post.type === 'ANNOUNCEMENT';
+    const isPoll = post.type === 'POLL';
     const [isEnlarged, setIsEnlarged] = useState(false);
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
@@ -353,8 +354,19 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
                     {post.type !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
-                            <div className={`font-mono flex-shrink-0 min-w-[120px] text-left ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
-                                style={{ textAlign: 'left', display: 'inline-block' }}>
+                            <div
+                                className={`font-mono text-left ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
+                                style={{
+                                    textAlign: 'left',
+                                    display: 'inline-block',
+                                    minWidth: isExpired ? 120 : 0,
+                                    width: isExpired ? 220 : 'auto',
+                                    maxWidth: isExpired ? 220 : 160,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}
+                            >
                                 <AnimatePresence mode="wait">
                                     {isPurifying ? (
                                         <motion.span
@@ -363,6 +375,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.3 }}
+                                            style={{ width: '100%' }}
                                         >
                                             社区自治，自主净化
                                         </motion.span>
@@ -373,7 +386,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.3 }}
-                                            style={{ display: 'inline-block', width: '100%' }}
+                                            style={{ display: 'inline-block', minWidth: '0', width: 'auto', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                                         >
                                             {countdownText}
                                         </motion.span>
@@ -384,37 +397,53 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.5 }}
-                                            style={{ display: 'inline-block', width: '100%' }}
+                                            style={{ display: 'inline-block', width: '220px', textAlign: 'left' }}
                                         >
                                             心间回音，限定消散。
                                         </motion.span>
                                     )}
                                 </AnimatePresence>
                             </div>
-                            <div className="flex items-center gap-4 flex-shrink-0 items-center">
-                                <div className="relative">
-                                    <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
-                                    <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
-                                </div>
-                                <div className="relative">
-                                    <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
-                                    <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
-                                </div>
-                                {isChildEcho && onReplyClick && (
-                                    <div className="relative">
-                                        <button onClick={handleReply} className="press-animation icon-base icon-comment">
-                                            <Icon name="comment" />
-                                        </button>
-                                    </div>
+                            <AnimatePresence>
+                                {!isExpired && (
+                                    <motion.div
+                                        key="button-group"
+                                        className="flex items-center justify-center gap-4 flex-shrink-0"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                    >
+                                        {isPoll && !isChildEcho && (
+                                            <div className="flex items-center gap-1 text-gray-400">
+                                                <Icon name="bar-chart" className="w-5 h-5" />
+                                                <span className="ml-1 text-gray-400">投票</span>
+                                            </div>
+                                        )}
+                                        <div className="relative flex items-center">
+                                            <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
+                                            <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
+                                        </div>
+                                        <div className="relative flex items-center">
+                                            <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
+                                            <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
+                                        </div>
+                                        {isChildEcho && onReplyClick ? (
+                                            <div className="relative flex items-center">
+                                                <button onClick={handleReply} className="press-animation icon-base icon-comment">
+                                                    <Icon name="comment" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="relative flex items-center">
+                                                <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
+                                                    <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </motion.div>
                                 )}
-                                {!isChildEcho && (
-                                    <div className="relative">
-                                        <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                                            <Icon name="comment" value={post.stats?.replyCount ?? 0} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            </AnimatePresence>
                         </div>
                     )}
                 </div>

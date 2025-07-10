@@ -83,6 +83,7 @@ const icons = {
             <polyline points="8.21 13.89 7 22 12 17 17 22 15.79 13.88"></polyline>
         </>
     ),
+    'bar-chart': <path d="M12 20V10M18 20V4M6 20V16" />,
 };
 
 export interface IconProps {

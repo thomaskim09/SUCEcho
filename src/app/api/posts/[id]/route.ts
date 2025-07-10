@@ -28,19 +28,11 @@ export async function GET(
 
         const post = await prisma.post.findUnique({
             where: { id: postId },
-            select: {
-                id: true,
-                content: true,
-                createdAt: true,
-                parentPostId: true,
-                fingerprintHash: true,
-                type: true,
-                advertisementUrl: true,
-                stats: {
-                    select: {
-                        upvotes: true,
-                        downvotes: true,
-                        replyCount: true,
+            include: {
+                stats: true,
+                pollOptions: {
+                    orderBy: {
+                        id: 'asc',
                     },
                 },
                 replies: {
@@ -50,19 +42,8 @@ export async function GET(
                         cursor: { id: parseInt(cursor, 10) },
                     }),
                     orderBy: { createdAt: 'asc' },
-                    select: {
-                        id: true,
-                        content: true,
-                        createdAt: true,
-                        parentPostId: true,
-                        fingerprintHash: true,
-                        stats: {
-                            select: {
-                                upvotes: true,
-                                downvotes: true,
-                                replyCount: true,
-                            },
-                        },
+                    include: {
+                        stats: true,
                         parentReply: {
                             select: {
                                 id: true,

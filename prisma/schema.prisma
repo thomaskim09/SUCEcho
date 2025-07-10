@@ -12,6 +12,7 @@ enum PostType {
   DEFAULT
   ANNOUNCEMENT
   ADVERTISEMENT
+  POLL
 }
 
 model Post {
@@ -37,11 +38,36 @@ model Post {
   stats           PostStats?
   votes           Vote[]
   reports         Report[]  
+  pollOptions PollOption[]
 
   @@index([createdAt])
   @@index([type]) 
   @@index([fingerprintHash])
 }
+
+model PollOption {
+  id      Int    @id @default(autoincrement())
+  text    String
+  votes   Int    @default(0)
+  postId  Int
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  pollVotes PollVote[]
+
+  @@index([postId])
+}
+
+model PollVote {
+  id              Int    @id @default(autoincrement())
+  pollOptionId    Int
+  fingerprintHash String
+  createdAt       DateTime @default(now())
+
+  pollOption PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
+  
+  @@unique([pollOptionId, fingerprintHash])
+  @@index([fingerprintHash])
+}
+
 
 model Report {
   id              Int      @id @default(autoincrement())

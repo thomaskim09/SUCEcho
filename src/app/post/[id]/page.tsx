@@ -18,6 +18,7 @@ import { useFingerprint } from '@/context/FingerprintContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import { getPurifiedPostIds, addPurifiedPostId } from '@/lib/purifiedStore';
+import Poll from '@/app/components/Poll';
 
 // Use the same limit as the post feed
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
@@ -327,6 +328,8 @@ export default function PostDetailPage() {
             return <p className="text-gray-400 text-center p-8">这回音已消散.</p>;
         }
 
+        const isPoll = post.type === 'POLL' && post.pollOptions && post.pollOptions.length > 0;
+
         // Filter out purified replies
         const filteredReplies = post.replies.filter(
             reply => !purifiedPostIds.has(reply.id)
@@ -353,6 +356,12 @@ export default function PostDetailPage() {
                         onAutoPurify={handleAutoPurify}
                     />
                 </div>
+
+                {isPoll && (
+                    <div className="mb-6">
+                        <Poll postId={post.id} options={post.pollOptions!} />
+                    </div>
+                )}
                 {(!post.isPurifying && !post.isDeleting) && (
                     <>
                         <div className="mt-8">
