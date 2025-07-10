@@ -67,7 +67,7 @@ export default function AboutPage() {
                     {showDonationSection && (
                         <div className="glass-card p-6 rounded-lg text-center flex flex-col items-center">
                             <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-accent/20 text-accent">
-                                <Icon name="coffee" className="w-8 h-8" />
+                                <Icon name="coffee" />
                             </div>
                             <h3 className="text-xl font-bold mb-2">成为守护者</h3>
                             <p className="text-gray-300 mb-4 flex-grow">如果认同这个空间的价值，欢迎支持我们，让回音持续。你的支持将帮助我们覆盖服务器成本。</p>
@@ -83,7 +83,7 @@ export default function AboutPage() {
                     )}
                     <div className="glass-card p-6 rounded-lg text-center flex flex-col items-center">
                         <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-accent/20 text-accent">
-                            <Icon name="mail" className="w-8 h-8" />
+                            <Icon name="mail" />
                         </div>
                         <h3 className="text-xl font-bold mb-2">联系与合作</h3>
                         <p className="text-gray-300 mb-4 flex-grow">如果您有任何商业合作、功能建议、技术报错或媒体问询，请通过邮件与我们取得联系。</p>

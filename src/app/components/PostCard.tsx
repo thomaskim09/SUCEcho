@@ -355,17 +355,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     {post.type !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
                             <div
-                                className={`font-mono text-left ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
-                                style={{
-                                    textAlign: 'left',
-                                    display: 'inline-block',
-                                    minWidth: isExpired ? 120 : 0,
-                                    width: isExpired ? 220 : 'auto',
-                                    maxWidth: isExpired ? 220 : 160,
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                }}
+                                className={`font-mono text-left max-w-[160px] whitespace-nowrap overflow-hidden text-ellipsis ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
                             >
                                 <AnimatePresence mode="wait">
                                     {isPurifying ? (
@@ -375,7 +365,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.3 }}
-                                            style={{ width: '100%' }}
                                         >
                                             社区自治，自主净化
                                         </motion.span>
@@ -386,7 +375,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.3 }}
-                                            style={{ display: 'inline-block', minWidth: '0', width: 'auto', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                                         >
                                             {countdownText}
                                         </motion.span>
@@ -397,7 +385,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.5 }}
-                                            style={{ display: 'inline-block', width: '220px', textAlign: 'left' }}
                                         >
                                             心间回音，限定消散。
                                         </motion.span>
@@ -405,7 +392,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                 </AnimatePresence>
                             </div>
                             <AnimatePresence>
-                                {!isExpired && (
+                                {!isExpired && !isPurifying && (
                                     <motion.div
                                         key="button-group"
                                         className="flex items-center justify-center gap-4 flex-shrink-0"
@@ -421,11 +408,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             </div>
                                         )}
                                         <div className="relative flex items-center">
-                                            <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
+                                            <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}>
+                                                <Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
                                             <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
                                         </div>
                                         <div className="relative flex items-center">
-                                            <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}><Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
+                                            <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}>
+                                                <Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
                                             <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
                                         </div>
                                         {isChildEcho && onReplyClick ? (

@@ -8,7 +8,7 @@ import { useState, useRef, useLayoutEffect } from 'react';
 const FeatureCard = ({ iconName, title, children }: { iconName: React.ComponentProps<typeof Icon>['name'], title: string, children: React.ReactNode }) => (
     <div className="glass-card p-6 rounded-lg flex flex-col items-center text-center">
         <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-accent/20 text-accent">
-            <Icon name={iconName} className="w-8 h-8" />
+            <Icon name={iconName} />
         </div>
         <h2 className="text-2xl font-bold mb-2">{title}</h2>
         <div className="text-lg text-gray-300 leading-relaxed">

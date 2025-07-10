@@ -44,7 +44,10 @@ const icons = {
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
     ),
     'plus': (
-        <><path d="M12 5v14" /><path d="M5 12h14" /></>
+        <>
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+        </>
     ),
     'timer': (
         <path d="M10 2h4M12 14v-4M4 14a8 8 0 1 1 16 0A8 8 0 0 1 4 14z" />
@@ -96,7 +99,7 @@ export const Icon: React.FC<IconProps> = ({ name, className, value }) => {
     const path = icons[name];
 
     return (
-        <div className={`flex items-center gap-2 font-mono ${className}`}>
+        <div className={`flex items-center justify-center font-mono ${className}`}>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -111,7 +114,12 @@ export const Icon: React.FC<IconProps> = ({ name, className, value }) => {
                 {path}
             </svg>
             {typeof value !== 'undefined' && (
-                <motion.span key={value} animate={{ scale: [1, 1.25, 1] }} transition={{ duration: 0.2 }}>
+                <motion.span
+                    key={value}
+                    className="ml-1"
+                    animate={{ scale: [1, 1.25, 1] }}
+                    transition={{ duration: 0.2 }}
+                >
                     {value}
                 </motion.span>
             )}
