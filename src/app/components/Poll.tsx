@@ -27,7 +27,7 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
     const [options, setOptions] = useState(initialOptions);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [ripples, setRipples] = useState<{ id: number, x: number, y: number, optionId: number }[]>([]);
+    const [ripples, setRipples] = useState<{ id: number, x: number, y: number, optionId: number, width: number, height: number }[]>([]);
     const optionRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
 
     useEffect(() => {
@@ -49,11 +49,13 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
             const rect = btn.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+            const width = rect.width;
+            const height = rect.height;
             const rippleId = Date.now() + Math.random();
-            setRipples((prev) => [...prev, { id: rippleId, x, y, optionId }]);
+            setRipples((prev) => [...prev, { id: rippleId, x, y, optionId, width, height }]);
             setTimeout(() => {
                 setRipples((prev) => prev.filter(r => r.id !== rippleId));
-            }, 600);
+            }, 900);
         }
 
         setIsSubmitting(true);
@@ -102,7 +104,7 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
                             disabled={!!votedOptionId || isSubmitting}
                             className={`w-full text-left p-3 rounded-lg border-2 transition-all duration-300 ease-in-out overflow-hidden relative
                                 ${isMyVote ? 'border-accent' : 'border-gray-600 hover:border-accent'}
-                                ${votedOptionId && !isMyVote ? 'opacity-60' : ''}
+                                ${votedOptionId && !isMyVote ? 'opacity-80' : ''}
                                 ${isSubmitting ? 'cursor-wait' : 'cursor-pointer'}
                                 ${!votedOptionId ? 'bg-gray-800/50' : 'bg-transparent'}`
                             }
@@ -117,20 +119,27 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
                                 />
                             }
                             {/* Ripple effect */}
-                            {ripples.filter(r => r.optionId === option.id).map(ripple => (
-                                <span
-                                    key={ripple.id}
-                                    className="absolute rounded-full pointer-events-none z-10"
-                                    style={{
-                                        left: ripple.x - 60,
-                                        top: ripple.y - 60,
-                                        width: 120,
-                                        height: 120,
-                                        background: 'rgba(159,112,253,0.45)',
-                                        animation: 'poll-ripple-strong 0.9s linear',
-                                    }}
-                                />
-                            ))}
+                            <span className="ripple-container">
+                                {ripples.filter(r => r.optionId === option.id).map(ripple => {
+                                    // Calculate the farthest corner distance for full coverage
+                                    const dx = Math.max(ripple.x, ripple.width - ripple.x);
+                                    const dy = Math.max(ripple.y, ripple.height - ripple.y);
+                                    const radius = Math.sqrt(dx * dx + dy * dy);
+                                    const size = radius * 2;
+                                    return (
+                                        <span
+                                            key={ripple.id}
+                                            className="poll-ripple"
+                                            style={{
+                                                left: ripple.x - size / 2,
+                                                top: ripple.y - size / 2,
+                                                width: size,
+                                                height: size,
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </span>
                             <div className="relative z-20 flex justify-between items-center">
                                 <span className="font-semibold">{option.text}</span>
                                 {votedOptionId && (
