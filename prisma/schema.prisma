@@ -103,13 +103,12 @@ model Vote {
 }
 
 model UserAnonymizedProfile {
-  fingerprintHash   String    @id
-  codename          String
-  purifiedPostCount Int       @default(0)
-  isBanned          Boolean   @default(false)
-  banExpiresAt      DateTime?
-  firstSeenAt       DateTime  @default(now())
-  lastSeenAt        DateTime  @default(now())
+  fingerprintHash String    @id
+  codename        String
+  isBanned        Boolean   @default(false)
+  banExpiresAt    DateTime?
+  firstSeenAt     DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
 }
 
 model AdminLog {

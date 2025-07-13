@@ -12,7 +12,6 @@ export async function GET() {
             select: {
                 fingerprintHash: true,
                 codename: true,
-                purifiedPostCount: true,
                 isBanned: true,
                 banExpiresAt: true,
                 firstSeenAt: true,

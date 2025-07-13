@@ -19,7 +19,6 @@ interface AdminLogEntry {
 interface UserProfile {
     fingerprintHash: string;
     codename: string;
-    purifiedPostCount: number;
     isBanned: boolean;
     banExpiresAt: string | null;
     firstSeenAt: string;
@@ -112,7 +111,6 @@ export default function UserProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-lg" style={{ backgroundColor: 'var(--card-background)' }}>
                     <div><h2 className="text-lg font-bold text-gray-400">代号</h2><p className="text-2xl font-mono">{user.codename}</p></div>
                     <div><h2 className="text-lg font-bold text-gray-400">状态</h2><p className="text-2xl">{renderBanStatus()}</p></div>
-                    <div><h2 className="text-lg font-bold text-gray-400">社区声誉</h2><p className="text-2xl">{user.purifiedPostCount} 条净化帖子</p></div>
                     <div><h2 className="text-lg font-bold text-gray-400">上次活跃</h2><p className="text-xl">{new Date(user.lastSeenAt).toLocaleString()}</p></div>
                     <div><h2 className="text-lg font-bold text-gray-400">首次活跃</h2><p className="text-xl">{new Date(user.firstSeenAt).toLocaleString()}</p></div>
                 </div>
