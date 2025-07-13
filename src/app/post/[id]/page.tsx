@@ -89,7 +89,7 @@ export default function PostDetailPage() {
     useEffect(() => {
         if (post && sessionStorage.getItem('postFeedReturnExpected') === 'true') {
             try {
-                const { replies, ...postWithoutReplies } = post; // Don't need to store all replies
+                const { ...postWithoutReplies } = post;
                 sessionStorage.setItem('updatedPostDetails', JSON.stringify(postWithoutReplies));
             } catch (e) {
                 logger.error('Failed to save updated post details to sessionStorage', e);
