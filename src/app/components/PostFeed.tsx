@@ -237,6 +237,17 @@ export default function PostFeed() {
             if (cached) {
                 try {
                     const cachedPosts: PostWithStats[] = JSON.parse(cached);
+                    const updatedPostDetailsJSON = sessionStorage.getItem('updatedPostDetails');
+                    if (updatedPostDetailsJSON) {
+                        const updatedPostDetails: PostWithStats = JSON.parse(updatedPostDetailsJSON);
+                        const postIndex = cachedPosts.findIndex(p => p.id === updatedPostDetails.id);
+                        if (postIndex !== -1) {
+                            cachedPosts[postIndex].stats = updatedPostDetails.stats;
+                            logger.log(`Updated post #${updatedPostDetails.id} stats from sessionStorage.`);
+                        }
+                        sessionStorage.removeItem('updatedPostDetails'); // Clean up
+                    }
+
                     setPosts(cachedPosts);
                     setTimeout(() => {
                         const savedScroll = sessionStorage.getItem('postFeedScroll');
