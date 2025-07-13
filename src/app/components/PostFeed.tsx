@@ -26,6 +26,7 @@ export default function PostFeed() {
     const [initialPosts] = useState<PostWithStats[]>([]);
     const postsRef = useRef<PostWithStats[]>(initialPosts);
     const router = useRouter();
+    const hasFetchedInitialPosts = useRef(false);
 
     function handleNewPost(newPost: PostWithStats) {
         const postExists = postsRef.current.some(p => p.id === newPost.id) || pendingPosts.some(p => p.id === newPost.id);
@@ -58,7 +59,6 @@ export default function PostFeed() {
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(
         new Set()
     );
-    const hasFetchedInitialPosts = useRef(false);
     const hasRestoredFromCache = useRef(false);
 
     useEffect(() => {
@@ -87,8 +87,10 @@ export default function PostFeed() {
     };
 
     const fetchInitialPosts = useCallback(async (isRefreshing = false) => {
+        if (hasFetchedInitialPosts.current && !isRefreshing) return;
         if (status !== 'leader') return;
         if (!isRefreshing) setIsLoading(true);
+        hasFetchedInitialPosts.current = true;
 
         try {
             const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
@@ -174,7 +176,7 @@ export default function PostFeed() {
     );
 
     useEffect(() => {
-        if (status === 'leader') {
+        if (status === 'leader' && !hasRestoredFromCache.current && !hasFetchedInitialPosts.current) {
             fetchInitialPosts(false);
         }
     }, [status, fetchInitialPosts]);
@@ -249,6 +251,9 @@ export default function PostFeed() {
                     }
 
                     setPosts(cachedPosts);
+                    hasRestoredFromCache.current = true;
+                    hasFetchedInitialPosts.current = true;
+                    setIsLoading(false);
                     setTimeout(() => {
                         const savedScroll = sessionStorage.getItem('postFeedScroll');
                         if (savedScroll) {
@@ -258,20 +263,18 @@ export default function PostFeed() {
                         sessionStorage.removeItem('postFeedScroll');
                         sessionStorage.removeItem('postFeedLastVisibleId');
                         sessionStorage.removeItem('postFeedReturnExpected');
-                        hasRestoredFromCache.current = true;
-                        hasFetchedInitialPosts.current = true;
                     }, 0);
                 } catch {
                     hasRestoredFromCache.current = true;
-                    hasFetchedInitialPosts.current = true;
+                    fetchInitialPosts();
                 }
             } else {
                 hasRestoredFromCache.current = true;
-                hasFetchedInitialPosts.current = true;
+                fetchInitialPosts();
             }
         }
         // react-hooks/exhaustive-deps
-    }, [isLoading, setPosts]);
+    }, [isLoading, setPosts, fetchInitialPosts]);
 
     if (status === 'checking')
         return (
