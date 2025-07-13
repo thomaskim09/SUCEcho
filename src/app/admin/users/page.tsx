@@ -9,7 +9,6 @@ import { timeSince } from '@/lib/time-helpers';
 interface UserProfile {
     fingerprintHash: string;
     codename: string;
-    purifiedPostCount: number;
     isBanned: boolean;
     banExpiresAt: Date | null;
     firstSeenAt: string;
@@ -74,7 +73,6 @@ export default function AdminUsersPage() {
                                 </Link>
                             </div>
                             <div className="mt-3 pt-3 border-t border-gray-700 text-sm flex justify-between">
-                                <span><span className="font-semibold text-gray-400">净化:</span> {user.purifiedPostCount}</span>
                                 <span><span className="font-semibold text-gray-400">活跃:</span> {timeSince(new Date(user.lastSeenAt))}</span>
                             </div>
                         </div>
@@ -88,7 +86,6 @@ export default function AdminUsersPage() {
                             <tr className="text-left text-gray-400 font-mono border-b border-gray-700">
                                 <th className="p-4">代号</th>
                                 <th className="p-4">状态</th>
-                                <th className="p-4">净化帖子</th>
                                 <th className="p-4">上次活跃</th>
                                 <th className="p-4">操作</th>
                             </tr>
@@ -102,7 +99,6 @@ export default function AdminUsersPage() {
                                             {user.isBanned ? 'Banned' : 'Active'}
                                         </span>
                                     </td>
-                                    <td className="p-4">{user.purifiedPostCount}</td>
                                     <td className="p-4">{timeSince(new Date(user.lastSeenAt))}</td>
                                     <td className="p-4">
                                         <Link href={`/admin/users/${user.fingerprintHash}`} className="bg-blue-600 text-white py-1 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm">
