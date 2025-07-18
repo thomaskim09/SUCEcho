@@ -13,9 +13,9 @@ export interface PostWithStats {
     createdAt: Date;
     fingerprintHash: string;
     parentPostId?: number | null;
-    parentReplyId?: number | null; // Added for consistency
-    type: 'DEFAULT' | 'ANNOUNCEMENT' | 'ADVERTISEMENT' | 'POLL'; // Added POLL
-    advertisementUrl?: string | null;
+    parentReplyId?: number | null;
+    type: 'DEFAULT' | 'ANNOUNCEMENT' | 'ADVERTISEMENT' | 'POLL' | 'LINK';
+    url?: string | null;
     stats: {
         upvotes: number;
         downvotes: number;

@@ -45,6 +45,15 @@ const pollPlaceholders = [
     "心目中的社团干部人选是哪位？"
 ];
 
+// Examples for creating a link post
+const linkPlaceholders = [
+    "分享一个链接，并写下你的看法...",
+    "这个问卷调查很重要，希望大家帮忙填写！",
+    "这是最新的歌唱比赛，大家一起踊跃报名！",
+    "这次的问卷是关于..., 希望能得到你的反馈",
+    "大家这次的活动还开心吗，有什么想告诉我们的可以在这..."
+];
+
 // Animated loading dots component
 function LoadingDots() {
     const [dotCount, setDotCount] = useState(0);
@@ -79,13 +88,22 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
     const [pollOptions, setPollOptions] = useState(['', '']);
     const [pollError, setPollError] = useState<string | null>(null);
 
-    const placeholderExamples = isPoll
-        ? pollPlaceholders
-        : parentReplyId
-            ? threadedReplyPlaceholders
-            : parentPostId
-                ? replyEchoPlaceholders
-                : mainEchoPlaceholders;
+    const [isUrl, setIsUrl] = useState(false);
+    const [url, setUrl] = useState("");
+    const [urlError, setUrlError] = useState<string | null>(null);
+
+    const whitelistedDomains = (process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || '').split(',').map(d => d.trim().toLowerCase());
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    const placeholderExamples = isUrl
+        ? linkPlaceholders
+        : isPoll
+            ? pollPlaceholders
+            : parentReplyId
+                ? threadedReplyPlaceholders
+                : parentPostId
+                    ? replyEchoPlaceholders
+                    : mainEchoPlaceholders;
 
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
@@ -96,6 +114,65 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
 
         return () => clearInterval(interval);
     }, [placeholderExamples.length]);
+
+    useEffect(() => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const foundUrls = content.match(urlRegex);
+        if (foundUrls && foundUrls.length > 0) {
+            const firstUrl = foundUrls[0];
+            setUrl(firstUrl);
+            setIsUrl(true);
+            setContent(content.replace(urlRegex, '').trim());
+        }
+    }, [content]);
+
+    const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newUrl = e.target.value;
+        setUrl(newUrl);
+        try {
+            const urlObj = new URL(newUrl);
+            const domain = urlObj.hostname.replace(/^www\./, '').toLowerCase();
+            if (!whitelistedDomains.includes(domain)) {
+                setUrlError(`域名 ${urlObj.hostname} 不被允许。`);
+            } else {
+                setUrlError(null);
+            }
+        } catch {
+            if (newUrl.trim() !== '') {
+                setUrlError("无效的链接格式。");
+            } else {
+                setUrlError(null);
+            }
+        }
+    };
+
+    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const text = e.target.value;
+
+        if (isUrl) {
+            setContent(text);
+            return;
+        }
+
+        const foundUrls = text.match(urlRegex);
+        if (foundUrls && foundUrls.length > 0) {
+            const firstUrl = foundUrls[0];
+            try {
+                const urlObj = new URL(firstUrl);
+                const domain = urlObj.hostname.replace(/^www\./, '').toLowerCase();
+                if (whitelistedDomains.includes(domain)) {
+                    setUrl(firstUrl);
+                    setIsUrl(true);
+                    setContent(text.replace(urlRegex, '').trim());
+                    setUrlError(null);
+                    return;
+                }
+            } catch {
+                // Not a valid URL, treat as normal text
+            }
+        }
+        setContent(text);
+    };
 
     const handlePollOptionChange = (index: number, value: string) => {
         const newOptions = [...pollOptions];
@@ -137,6 +214,11 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
             }
         }
 
+        if (isUrl && (!url.trim() || !!urlError)) {
+            setError("请提供一个有效的、允许的链接。");
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
 
@@ -149,7 +231,8 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                     fingerprintHash: fingerprint,
                     parentPostId: parentPostId,
                     parentReplyId: parentReplyId,
-                    type: isPoll && !parentPostId ? 'POLL' : 'DEFAULT',
+                    type: isUrl ? 'LINK' : isPoll ? 'POLL' : 'DEFAULT',
+                    url: isUrl ? url : undefined,
                     pollOptions: isPoll && !parentPostId ? pollOptions.filter(opt => opt.trim()) : undefined,
                 }),
             });
@@ -220,13 +303,37 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                         )}
                         <textarea
                             value={content}
-                            onChange={(e) => setContent(e.target.value)}
+                            onChange={handleContentChange}
                             className="w-full bg-transparent border-b border-gray-600 focus:outline-none focus:border-accent p-2 relative z-10"
                             rows={5}
                             maxLength={charLimit}
                             autoFocus
                             disabled={isSubmitting}
                         />
+
+                        <AnimatePresence>
+                            {isUrl && !parentPostId && (
+                                <motion.div
+                                    className="mt-4 space-y-2"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                                >
+                                    <h3 className="font-bold text-gray-300">分享链接</h3>
+                                    <input
+                                        type="text"
+                                        value={url}
+                                        onChange={handleUrlChange}
+                                        placeholder="在此处粘贴链接..."
+                                        className={`w-full bg-gray-800 border rounded-lg p-2 focus:outline-none transition-colors ${urlError ? 'border-red-500' : 'border-gray-600 focus:border-accent'}`}
+                                        required
+                                    />
+                                    {urlError && <p className="text-red-500 text-sm mt-1">{urlError}</p>}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <AnimatePresence>
                             {isPoll && !parentPostId && (
                                 <motion.div
@@ -284,35 +391,32 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                                     <label className="flex items-center gap-2 cursor-pointer group select-none">
                                         <input
                                             type="checkbox"
+                                            checked={isUrl}
+                                            onChange={() => { setIsUrl(!isUrl); if (isUrl) setUrl(""); if (!isUrl) setIsPoll(false); }}
+                                            className="sr-only peer"
+                                            aria-checked={isUrl}
+                                        />
+                                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors duration-200 ${isUrl ? 'border-accent bg-accent' : 'border-gray-600 bg-gray-800'} peer-focus:ring-2 peer-focus:ring-accent group-hover:border-accent`}>
+                                            {isUrl && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                        </span>
+                                        <span className={`transition-colors duration-200 ${isUrl ? 'text-accent' : 'text-gray-400'} group-hover:text-accent`}>
+                                            链接
+                                        </span>
+                                    </label>
+                                )}
+                                {!parentPostId && (
+                                    <label className="flex items-center gap-2 cursor-pointer group select-none">
+                                        <input
+                                            type="checkbox"
                                             checked={isPoll}
-                                            onChange={() => setIsPoll(!isPoll)}
+                                            onChange={() => { setIsPoll(!isPoll); if (!isPoll) setIsUrl(false); }}
                                             className="sr-only peer"
                                             aria-checked={isPoll}
                                         />
-                                        <span
-                                            className={`
-                                                w-5 h-5 rounded border-2 flex items-center justify-center
-                                                transition-colors duration-200
-                                                ${isPoll ? '' : 'border-gray-600 bg-gray-800'}
-                                                peer-focus:ring-2 peer-focus:ring-[var(--accent)]
-                                                group-hover:border-[var(--accent)]
-                                            `}
-                                            style={isPoll ? { borderColor: 'var(--accent)', backgroundColor: 'var(--accent)' } : {}}
-                                        >
-                                            {isPoll && (
-                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
+                                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors duration-200 ${isPoll ? 'border-accent bg-accent' : 'border-gray-600 bg-gray-800'} peer-focus:ring-2 peer-focus:ring-accent group-hover:border-accent`}>
+                                            {isPoll && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                                         </span>
-                                        <span
-                                            className={`
-                                                transition-colors duration-200
-                                                ${isPoll ? '' : 'text-gray-400'}
-                                                group-hover:text-[var(--accent)]
-                                            `}
-                                            style={isPoll ? { color: 'var(--accent)' } : {}}
-                                        >
+                                        <span className={`transition-colors duration-200 ${isPoll ? 'text-accent' : 'text-gray-400'} group-hover:text-accent`}>
                                             投票
                                         </span>
                                     </label>
@@ -320,7 +424,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                                 <button
                                     type="submit"
                                     className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                                    disabled={!content.trim() || isSubmitting || isFingerprintLoading || !fingerprint || (isPoll && !parentPostId && pollOptions.filter(opt => opt.trim()).length < 2)}
+                                    disabled={!fingerprint || isSubmitting || isFingerprintLoading || (isUrl && (!url.trim() || !!urlError)) || (!isUrl && !content.trim() && !isPoll) || (isPoll && pollOptions.filter(opt => opt.trim()).length < 2)}
                                 >
                                     {parentPostId ? "发布回应" : "发布回音"}
                                 </button>

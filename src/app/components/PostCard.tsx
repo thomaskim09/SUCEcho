@@ -83,6 +83,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
     const isAnnouncement = post.type === 'ANNOUNCEMENT';
     const isPoll = post.type === 'POLL';
+    const isLinkPost = post.type === 'LINK';
     const [isEnlarged, setIsEnlarged] = useState(false);
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
@@ -401,6 +402,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                         exit={{ opacity: 0 }}
                                         transition={{ duration: 0.4 }}
                                     >
+                                        {isLinkPost && !isChildEcho && (
+                                            <div className="flex items-center gap-1 text-gray-400">
+                                                <Icon name="share" className="w-5 h-5" />
+                                                <span className="ml-1 text-gray-400">链接</span>
+                                            </div>
+                                        )}
+
                                         {isPoll && !isChildEcho && (
                                             <div className="flex items-center gap-1 text-gray-400">
                                                 <Icon name="bar-chart" className="w-5 h-5" />

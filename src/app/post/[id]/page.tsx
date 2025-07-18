@@ -19,6 +19,7 @@ import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import { getPurifiedPostIds, addPurifiedPostId } from '@/lib/purifiedStore';
 import Poll from '@/app/components/Poll';
+import LinkPreviewCard from '@/app/components/LinkPreviewCard';
 
 // Use the same limit as the post feed
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
@@ -340,6 +341,7 @@ export default function PostDetailPage() {
         }
 
         const isPoll = post.type === 'POLL' && post.pollOptions && post.pollOptions.length > 0;
+        const isLinkPost = post.type === 'LINK' && post.url;
 
         // Filter out purified replies
         const filteredReplies = post.replies.filter(
@@ -367,6 +369,12 @@ export default function PostDetailPage() {
                         onAutoPurify={handleAutoPurify}
                     />
                 </div>
+
+                {isLinkPost && (
+                    <div className="my-6">
+                        <LinkPreviewCard url={post.url} />
+                    </div>
+                )}
 
                 {isPoll && (
                     <div className="mb-6">

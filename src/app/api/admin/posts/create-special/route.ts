@@ -1,4 +1,4 @@
-// sucecho/src/app/api/admin/posts/create-special/route.ts
+// src/app/api/admin/posts/create-special/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { content, type, advertisementUrl } = body;
+        const { content, type, url } = body;
 
         // 2. Validate the input
         if (!content || !type) {
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
-        if (type === 'ADVERTISEMENT' && !advertisementUrl) {
+        if (type === 'ADVERTISEMENT' && !url) {
             return NextResponse.json(
                 {
-                    error: 'Advertisement URL is required for ADVERTISEMENT type',
+                    error: 'URL is required for ADVERTISEMENT type',
                 },
                 { status: 400 }
             );
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
                 data: {
                     content,
                     type,
-                    advertisementUrl,
+                    url,
                     // Admin posts use a system fingerprint to distinguish them
                     fingerprintHash: 'system-admin-post',
                 },

@@ -13,6 +13,7 @@ enum PostType {
   ANNOUNCEMENT
   ADVERTISEMENT
   POLL
+  LINK
 }
 
 model Post {
@@ -23,7 +24,7 @@ model Post {
   createdAt       DateTime   @default(now())
 
   type            PostType   @default(DEFAULT)
-  advertisementUrl String?   @db.Text
+  url             String?   @db.Text
 
   // Defines the self-relation for threaded replies
   parent          Post?      @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)

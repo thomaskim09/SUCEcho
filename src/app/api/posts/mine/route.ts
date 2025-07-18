@@ -31,7 +31,7 @@ export async function POST(request: Request) {
                 parentPostId: true,
                 fingerprintHash: true,
                 type: true,
-                advertisementUrl: true,
+                url: true,
                 stats: {
                     select: {
                         upvotes: true,

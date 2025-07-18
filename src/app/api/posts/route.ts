@@ -14,9 +14,6 @@ const commentCooldown = new Map<string, number>();
 const replyCooldown = new Map<string, Map<number, number>>();
 const replyCounts = new Map<string, Map<number, number>>();
 
-const whitelistedDomains = (process.env.WHITELISTED_DOMAINS || '').split(',');
-const urlRegex = /(https?:\/\/[^\s]+)/g;
-
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -42,7 +39,7 @@ export async function GET(request: Request) {
                 parentPostId: true,
                 fingerprintHash: true,
                 type: true,
-                advertisementUrl: true,
+                url: true,
                 stats: {
                     select: {
                         upvotes: true,
@@ -76,6 +73,7 @@ export async function POST(request: Request) {
         const body = await request.json();
         let { content } = body;
         const {
+            url,
             fingerprintHash,
             parentPostId,
             parentReplyId,
@@ -88,9 +86,20 @@ export async function POST(request: Request) {
             content = content.replace(/\n{3,}/g, '\n\n');
         }
 
-        if (!content || !fingerprintHash) {
+        if (
+            (!content || content.length === 0) &&
+            type !== 'LINK' &&
+            type !== 'POLL'
+        ) {
             return NextResponse.json(
-                { error: '缺少内容或指纹信息' },
+                { error: '内容不能为空' },
+                { status: 400 }
+            );
+        }
+
+        if (!fingerprintHash) {
+            return NextResponse.json(
+                { error: '缺少指纹信息' },
                 { status: 400 }
             );
         }
@@ -98,11 +107,40 @@ export async function POST(request: Request) {
         const postCharLimit = parseInt(
             process.env.NEXT_PUBLIC_POST_CHAR_LIMIT || '400'
         );
-        if (content.length > postCharLimit) {
+        if (content && content.length > postCharLimit) {
             return NextResponse.json(
                 { error: `内容超过${postCharLimit}个字符` },
                 { status: 400 }
             );
+        }
+
+        if (type === 'LINK') {
+            if (!url) {
+                return NextResponse.json(
+                    { error: '链接帖子必须包含一个链接。' },
+                    { status: 400 }
+                );
+            }
+            try {
+                const urlObj = new URL(url);
+                const domain = urlObj.hostname.replace(/^www\./, '');
+                const whitelistedDomains = (
+                    process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || ''
+                ).split(',');
+                if (!whitelistedDomains.includes(domain)) {
+                    return NextResponse.json(
+                        {
+                            error: `链接 ${urlObj.hostname} 不在允许的域名列表中。`,
+                        },
+                        { status: 400 }
+                    );
+                }
+            } catch {
+                return NextResponse.json(
+                    { error: '无效的链接格式。' },
+                    { status: 400 }
+                );
+            }
         }
 
         if (type === 'POLL') {
@@ -128,26 +166,6 @@ export async function POST(request: Request) {
                     { error: '投票选项无效或过长。' },
                     { status: 400 }
                 );
-            }
-        }
-
-        const urls = content.match(urlRegex);
-        if (urls) {
-            for (const urlStr of urls) {
-                try {
-                    const url = new URL(urlStr);
-                    const domain = url.hostname.replace(/^www\./, '');
-                    if (!whitelistedDomains.includes(domain)) {
-                        return NextResponse.json(
-                            {
-                                error: `链接 ${url.hostname} 不在允许的域名列表中。`,
-                            },
-                            { status: 400 }
-                        );
-                    }
-                } catch {
-                    // Ignore invalid URLs
-                }
             }
         }
 
@@ -270,6 +288,7 @@ export async function POST(request: Request) {
                     parentPostId: parentPostId ? Number(parentPostId) : null,
                     parentReplyId: parentReplyId ? Number(parentReplyId) : null,
                     type: type || 'DEFAULT',
+                    url: type === 'LINK' ? url : null,
                 },
             });
 
@@ -300,13 +319,9 @@ export async function POST(request: Request) {
                 },
             });
 
-            // Refetch to include relations
             const finalPost = await tx.post.findUnique({
                 where: { id: createdPost.id },
-                include: {
-                    stats: true,
-                    pollOptions: type === 'POLL',
-                },
+                include: { stats: true, pollOptions: type === 'POLL' },
             });
 
             return finalPost;
@@ -381,7 +396,6 @@ export async function POST(request: Request) {
                 );
             }
         }
-
         logger.error('Error creating post:', error);
         if ((error as { code?: string }).code === 'P2025') {
             return NextResponse.json(

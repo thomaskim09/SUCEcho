@@ -1,4 +1,4 @@
-// sucecho/src/app/components/AdvertisementCard.tsx
+// src/app/components/AdvertisementCard.tsx
 "use client";
 
 import type { PostWithStats } from "@/lib/types";
@@ -41,7 +41,7 @@ export default function AdvertisementCard({ post, onFaded, onDelete, onDeletionC
         }
     }, [isExpired]);
 
-    if (!post.advertisementUrl) return null;
+    if (!post.url) return null;
 
     const handleToggleMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -83,8 +83,8 @@ export default function AdvertisementCard({ post, onFaded, onDelete, onDeletionC
                     if ((e.target as HTMLElement).closest('button, a')) return;
                     setIsEnlarged(true);
                     setTimeout(() => {
-                        if (typeof post.advertisementUrl === 'string') {
-                            window.open(post.advertisementUrl, '_blank', 'noopener,noreferrer');
+                        if (typeof post.url === 'string') {
+                            window.open(post.url, '_blank', 'noopener,noreferrer');
                         }
                     }, 180);
                 }}
@@ -99,7 +99,7 @@ export default function AdvertisementCard({ post, onFaded, onDelete, onDeletionC
                             </div>
                         )}
 
-                        <Link href={post.advertisementUrl} target="_blank" rel="noopener noreferrer">
+                        <Link href={post.url} target="_blank" rel="noopener noreferrer">
                             <div className="flex justify-between items-center mb-3">
                                 <span className="text-sm font-mono text-yellow-400">特约赞助</span>
                             </div>

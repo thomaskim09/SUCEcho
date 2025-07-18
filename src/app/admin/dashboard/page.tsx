@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
                 body: JSON.stringify({
                     content: specialPostContent,
                     type: postType,
-                    advertisementUrl: postType === 'ADVERTISEMENT' ? adUrl : null,
+                    url: postType === 'ADVERTISEMENT' ? adUrl : null,
                 }),
             });
             if (!res.ok) {
