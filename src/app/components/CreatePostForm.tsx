@@ -2,14 +2,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { addMyEcho } from '@/hooks/useMyEchoes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShareModal } from "@/context/ModalContext";
 import { Icon } from './Icon';
+import StarRating from './StarRating';
 
-// Examples for creating a new echo (Main Echo)
+// 维持原有占位符
 const mainEchoPlaceholders = [
     "此刻你想说什么？",
     "那个戴白色耳机的男生，你的侧脸很好看… #暗恋",
@@ -54,7 +55,26 @@ const linkPlaceholders = [
     "这个新闻说的是真的吗，我是在小红书看到的，你们看看..."
 ];
 
-// Animated loading dots component
+
+// 新增：校内工坊（招聘）占位符
+const jobPlaceholders = [
+    "发布一个职位或实习机会...",
+    "我们的社团正在招新！需要一位有创意的设计师。",
+    "寻找一位校园代理，时间灵活，待遇从优。",
+    "毕业设计项目急需一位会剪辑的伙伴！",
+    "咖啡厅招聘兼职，有兴趣的同学请联系！"
+];
+
+// 新增：时光档案（永久）占位符
+const permanentPlaceholders = [
+    "写下一些希望被永远记住的话...",
+    "致2025届的毕业生们，愿你们前程似锦！",
+    "这首歌，是我们那年夏天共同的回忆。",
+    "记录下南院的这个角落，希望它永远都在。",
+    "给未来的自己留一段话吧！"
+];
+
+
 function LoadingDots() {
     const [dotCount, setDotCount] = useState(0);
     useEffect(() => {
@@ -70,7 +90,6 @@ interface CreatePostFormProps {
     parentPostId?: number;
     parentReplyId?: number;
 }
-
 
 export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePostFormProps) {
     const [content, setContent] = useState("");
@@ -92,6 +111,12 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
     const [url, setUrl] = useState("");
     const [urlError, setUrlError] = useState<string | null>(null);
 
+    const [isPermanent, setIsPermanent] = useState(false);
+    const [jobRating, setJobRating] = useState(0);
+    const pathname = usePathname();
+    const isJobFeed = pathname.startsWith('/jobs');
+    const isPermanentFeed = pathname.startsWith('/permanent');
+
     const whitelistedDomains = (process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || '').split(',').map(d => d.trim().toLowerCase());
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
@@ -99,11 +124,15 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
         ? linkPlaceholders
         : isPoll
             ? pollPlaceholders
-            : parentReplyId
-                ? threadedReplyPlaceholders
-                : parentPostId
-                    ? replyEchoPlaceholders
-                    : mainEchoPlaceholders;
+            : isJobFeed
+                ? jobPlaceholders
+                : isPermanentFeed
+                    ? permanentPlaceholders
+                    : parentReplyId
+                        ? threadedReplyPlaceholders
+                        : parentPostId
+                            ? replyEchoPlaceholders
+                            : mainEchoPlaceholders;
 
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
@@ -231,9 +260,11 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                     fingerprintHash: fingerprint,
                     parentPostId: parentPostId,
                     parentReplyId: parentReplyId,
-                    type: isUrl ? 'LINK' : isPoll ? 'POLL' : 'DEFAULT',
+                    contentType: isUrl ? 'LINK' : isPoll ? 'POLL' : 'TEXT',
+                    feed: isJobFeed ? 'JOB' : isPermanent ? 'PERMANENT' : 'EPHEMERAL',
                     url: isUrl ? url : undefined,
                     pollOptions: isPoll && !parentPostId ? pollOptions.filter(opt => opt.trim()) : undefined,
+                    jobRating: isJobFeed && parentPostId && jobRating > 0 ? jobRating : undefined,
                 }),
             });
 
@@ -252,6 +283,10 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
             setTimeout(() => {
                 if (parentPostId) {
                     router.replace(`/post/${parentPostId}`);
+                } else if (isJobFeed) {
+                    router.push('/jobs');
+                } else if (isPermanent) {
+                    router.push('/permanent');
                 } else {
                     router.push('/');
                 }
@@ -271,8 +306,12 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
         <AnimatePresence>
             {!isSent && (
                 <motion.div
-                    className="p-4 rounded-lg relative"
-                    style={{ backgroundColor: 'var(--card-background)' }}
+                    className="p-4 rounded-lg relative transition-colors duration-500"
+                    style={{
+                        background: isPermanent
+                            ? 'radial-gradient(ellipse at bottom, #2d1b35 0%, #0f0913 100%)'
+                            : (isJobFeed ? 'radial-gradient(ellipse at bottom, #0B192F 0%, #020a17 100%)' : 'var(--card-background)')
+                    }}
                     initial={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{
                         y: [0, 20, -250],
@@ -286,6 +325,19 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                     }}
                 >
                     <form onSubmit={handleSubmit} className="relative">
+                        {!parentPostId && !isJobFeed && !isPermanentFeed && (
+                            <div className="absolute top-0 right-0 z-20">
+                                <label className="flex items-center cursor-pointer p-2">
+                                    <span className="mr-2 text-sm font-semibold text-gray-400">永久保存</span>
+                                    <div className="relative">
+                                        <input type="checkbox" checked={isPermanent} onChange={() => setIsPermanent(!isPermanent)} className="sr-only" />
+                                        <div className={`block w-12 h-6 rounded-full transition ${isPermanent ? 'bg-accent' : 'bg-gray-600'}`}></div>
+                                        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isPermanent ? 'transform translate-x-6' : ''}`}></div>
+                                    </div>
+                                </label>
+                            </div>
+                        )}
+
                         {content.length === 0 && (
                             <div className="absolute top-0 left-0 p-2 text-gray-500 pointer-events-none">
                                 <AnimatePresence mode="wait">
@@ -301,6 +353,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                                 </AnimatePresence>
                             </div>
                         )}
+
                         <textarea
                             value={content}
                             onChange={handleContentChange}
@@ -310,6 +363,13 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                             autoFocus
                             disabled={isSubmitting}
                         />
+
+                        {isJobFeed && parentPostId && (
+                            <div className="my-4">
+                                <h3 className="text-center font-semibold text-gray-300 mb-2">为这个职位发布评分</h3>
+                                <StarRating onRating={setJobRating} isSubmitting={isSubmitting} />
+                            </div>
+                        )}
 
                         <AnimatePresence>
                             {isUrl && !parentPostId && (
@@ -333,7 +393,6 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                                 </motion.div>
                             )}
                         </AnimatePresence>
-
                         <AnimatePresence>
                             {isPoll && !parentPostId && (
                                 <motion.div
@@ -430,6 +489,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                                 </button>
                             </div>
                         </div>
+
                         {error && <p className="text-red-500 mt-2">{error}</p>}
                         {isFingerprintLoading && !error && <p className="text-gray-400 mt-2">初始化中...</p>}
                         {isSubmitting && (

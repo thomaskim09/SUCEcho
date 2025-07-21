@@ -19,6 +19,7 @@ export async function GET(request: Request) {
                 createdAt: {
                     lt: timeAgo,
                 },
+                feed: 'EPHEMERAL',
             },
             select: {
                 id: true,

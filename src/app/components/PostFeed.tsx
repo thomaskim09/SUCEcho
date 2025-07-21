@@ -20,7 +20,7 @@ const POST_FEED_LIMIT = parseInt(
     10
 );
 
-export default function PostFeed() {
+export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB' }) {
     const [pendingPosts, setPendingPosts] = useState<PostWithStats[]>([]);
     const isNearTopRef = useRef(true);
     const [initialPosts] = useState<PostWithStats[]>([]);
@@ -93,7 +93,7 @@ export default function PostFeed() {
         hasFetchedInitialPosts.current = true;
 
         try {
-            const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}`);
+            const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&feed=${feedType}`);
             if (!res.ok) throw new Error('Failed to fetch posts');
             const { posts: fetchedPosts, nextCursor: initialNextCursor } = await res.json();
 
@@ -111,7 +111,7 @@ export default function PostFeed() {
         } finally {
             if (!isRefreshing) setIsLoading(false);
         }
-    }, [status, setPosts]);
+    }, [status, setPosts, feedType]);
 
 
     const prevIsVisibleRef = useRef<boolean>(true);
@@ -138,7 +138,7 @@ export default function PostFeed() {
 
         try {
             const res = await fetch(
-                `/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}`
+                `/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}&feed=${feedType}`
             );
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
@@ -159,7 +159,7 @@ export default function PostFeed() {
         } finally {
             setIsFetchingMore(false);
         }
-    }, [nextCursor, isFetchingMore, status, setPosts]);
+    }, [nextCursor, isFetchingMore, status, setPosts, feedType]);
 
     const sentinelRef = useCallback(
         (node: HTMLDivElement | null) => {
@@ -313,7 +313,7 @@ export default function PostFeed() {
 
             <AnimatePresence>
                 {displayablePosts.map((post) => {
-                    if (post.type === 'ADVERTISEMENT') {
+                    if (post.contentType === 'ADVERTISEMENT') {
                         return (
                             <AdvertisementCard
                                 key={post.id}

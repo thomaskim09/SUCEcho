@@ -8,101 +8,104 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum PostType {
-  DEFAULT
-  ANNOUNCEMENT
-  ADVERTISEMENT
+enum ContentType {
+  TEXT
   POLL
   LINK
+  ANNOUNCEMENT
+  ADVERTISEMENT
+}
+
+enum FeedType {
+  EPHEMERAL 
+  PERMANENT 
+  JOB       
 }
 
 model Post {
-  id              Int        @id @default(autoincrement())
+  id              Int         @id @default(autoincrement())
   content         String?
   fingerprintHash String
   parentPostId    Int?
-  createdAt       DateTime   @default(now())
+  createdAt       DateTime    @default(now())
+  
+  contentType     ContentType @default(TEXT) 
+  feed            FeedType    @default(EPHEMERAL)
 
-  type            PostType   @default(DEFAULT)
-  url             String?   @db.Text
-
-  // Defines the self-relation for threaded replies
-  parent          Post?      @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
-  replies         Post[]     @relation("Thread")
-
-  // RELATIONSHIP FOR THREADED REPLIES
-  parentReplyId    Int?
-  parentReply      Post?     @relation("ReplyToReply", fields: [parentReplyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  threadedReplies  Post[]    @relation("ReplyToReply")
-
-  // Relation to other models
+  url             String?     @db.Text
+  parent          Post?       @relation("Thread", fields: [parentPostId], references: [id], onDelete: Cascade)
+  replies         Post[]      @relation("Thread")
+  parentReplyId   Int?
+  parentReply     Post?       @relation("ReplyToReply", fields: [parentReplyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  threadedReplies Post[]      @relation("ReplyToReply")
   stats           PostStats?
   votes           Vote[]
-  reports         Report[]  
-  pollOptions PollOption[]
+  reports         Report[]
+  pollOptions     PollOption[]
+  jobRatings      JobRating[]
 
+  @@index([feed]) // Add index to the new column for faster queries
+  @@index([contentType])
   @@index([createdAt])
-  @@index([type]) 
   @@index([fingerprintHash])
+}
+
+model JobRating {
+  id              Int      @id @default(autoincrement())
+  postId          Int
+  fingerprintHash String
+  rating          Int
+  createdAt       DateTime @default(now())
+  post            Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([postId, fingerprintHash])
+}
+
+model PostStats {
+  postId        Int    @id
+  upvotes       Int    @default(0)
+  downvotes     Int    @default(0)
+  replyCount    Int    @default(0)
+  hotnessScore  Int    @default(0)
+  averageRating Float  @default(0)
+  ratingCount   Int    @default(0)
+  post          Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model PollOption {
-  id      Int    @id @default(autoincrement())
-  text    String
-  votes   Int    @default(0)
-  postId  Int
-  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  text      String
+  votes     Int      @default(0)
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   pollVotes PollVote[]
-
   @@index([postId])
 }
-
 model PollVote {
-  id              Int    @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   pollOptionId    Int
   fingerprintHash String
   createdAt       DateTime @default(now())
-
-  pollOption PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
-  
+  pollOption      PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
   @@unique([pollOptionId, fingerprintHash])
   @@index([fingerprintHash])
 }
-
-
 model Report {
   id              Int      @id @default(autoincrement())
   postId          Int
   fingerprintHash String
   reason          String?
   createdAt       DateTime @default(now())
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@unique([postId, fingerprintHash]) 
-}
-
-model PostStats {
-  postId      Int      @id
-  upvotes     Int      @default(0)
-  downvotes   Int      @default(0)
-  replyCount  Int      @default(0)
-  hotnessScore Int     @default(0)
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
-model Vote {
-  id              Int      @id @default(autoincrement())
-  postId          Int
-  fingerprintHash String
-  voteType        Int // 1 for upvote, -1 for downvote
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
+  post            Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   @@unique([postId, fingerprintHash])
 }
-
+model Vote {
+  id              Int    @id @default(autoincrement())
+  postId          Int
+  fingerprintHash String
+  voteType        Int
+  post            Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([postId, fingerprintHash])
+}
 model UserAnonymizedProfile {
   fingerprintHash String    @id
   codename        String
@@ -111,13 +114,12 @@ model UserAnonymizedProfile {
   firstSeenAt     DateTime  @default(now())
   lastSeenAt      DateTime  @default(now())
 }
-
 model AdminLog {
-  id                    Int       @id @default(autoincrement())
+  id                    Int      @id @default(autoincrement())
   targetFingerprintHash String
   action                String
   adminId               String
   reason                String?
-  createdAt             DateTime  @default(now())
-  isAcknowledged        Boolean   @default(false) 
+  createdAt             DateTime @default(now())
+  isAcknowledged        Boolean  @default(false)
 }

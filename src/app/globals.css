@@ -522,3 +522,11 @@ body {
   background-color: #8b5cf6; /* A slightly darker purple for hover */
   transform: scale(1.05);
 }
+
+body.jobs-bg {
+  background: radial-gradient(ellipse at bottom, #0B192F 0%, #020a17 100%); /* Professional Dark Blue */
+}
+
+body.permanent-bg {
+  background: radial-gradient(ellipse at bottom, #2d1b35 0%, #0f0913 100%); /* Permanent/Archive Purple */
+}

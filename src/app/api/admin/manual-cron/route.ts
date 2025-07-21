@@ -27,6 +27,7 @@ export async function POST(request: Request) {
                 createdAt: {
                     lt: timeAgo,
                 },
+                type: 'DEFAULT',
             },
             select: {
                 id: true,

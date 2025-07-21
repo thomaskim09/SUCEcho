@@ -14,18 +14,18 @@ export interface PostWithStats {
     fingerprintHash: string;
     parentPostId?: number | null;
     parentReplyId?: number | null;
-    type: 'DEFAULT' | 'ANNOUNCEMENT' | 'ADVERTISEMENT' | 'POLL' | 'LINK';
+    contentType: 'TEXT' | 'ANNOUNCEMENT' | 'ADVERTISEMENT' | 'POLL' | 'LINK';
+    feed: 'EPHEMERAL' | 'PERMANENT' | 'JOB';
     url?: string | null;
     stats: {
         upvotes: number;
         downvotes: number;
         replyCount: number;
+        averageRating?: number;
+        ratingCount?: number;
     } | null;
     isPurifying?: boolean;
     isDeleting?: boolean;
-    parentReply?: {
-        id: number;
-        content: string | null;
-    } | null;
+    parentReply?: { id: number; content: string | null } | null;
     pollOptions?: PollOption[];
 }

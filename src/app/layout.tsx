@@ -13,6 +13,7 @@ import FabContainer from "./components/FabContainer";
 import { TabLeaderProvider } from "./components/TabLeaderProvider";
 import { RealtimeStatusProvider } from "@/context/RealtimeStatusContext";
 import { ModalProvider } from "@/context/ModalContext";
+import BottomNavBar from "./components/BottomNavBar";
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
                     <Header />
                     <FramerWrapper>{children}</FramerWrapper>
                     <FabContainer />
+                    <BottomNavBar />
                   </OnboardingWrapper>
                 </ModalProvider>
               </RealtimeStatusProvider>

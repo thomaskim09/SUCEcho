@@ -62,6 +62,20 @@ const renderContentWithLinks = (content: string) => {
     });
 };
 
+const DisplayRating = ({ rating }: { rating: number }) => {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 !== 0;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+    return (
+        <div className="flex items-center">
+            {[...Array(fullStars)].map((_, i) => <Icon key={`full-${i}`} name="star" className="w-4 h-4 text-yellow-400 fill-current" />)}
+            {halfStar && <Icon name="star-half" className="w-4 h-4 text-yellow-400 fill-current" />}
+            {[...Array(emptyStars)].map((_, i) => <Icon key={`empty-${i}`} name="star" className="w-4 h-4 text-gray-600" />)}
+        </div>
+    );
+};
+
 export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate, onReplyClick, parentFingerprintHash }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const { isAdmin, isVerifying } = useAdmin();
@@ -84,6 +98,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const isAnnouncement = post.type === 'ANNOUNCEMENT';
     const isPoll = post.type === 'POLL';
     const isLinkPost = post.type === 'LINK';
+    const isJobPost = post.type === 'JOB';
     const [isEnlarged, setIsEnlarged] = useState(false);
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
@@ -413,6 +428,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                             <div className="flex items-center gap-1 text-gray-400">
                                                 <Icon name="bar-chart" className="w-5 h-5" />
                                                 <span className="ml-1 text-gray-400">投票</span>
+                                            </div>
+                                        )}
+                                        {isJobPost && post.stats?.averageRating != null && (
+                                            <div className="flex items-center gap-1">
+                                                <DisplayRating rating={post.stats.averageRating} />
+                                                <span className="text-xs text-gray-400">({post.stats.ratingCount})</span>
                                             </div>
                                         )}
                                         <div className="relative flex items-center">

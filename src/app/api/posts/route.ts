@@ -19,6 +19,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const limit = parseInt(searchParams.get('limit') || '10', 10);
         const cursor = searchParams.get('cursor');
+        const feed = searchParams.get('feed') || 'EPHEMERAL'; // Updated to filter by 'feed'
 
         const posts = await prisma.post.findMany({
             take: limit,
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
             where: {
                 content: { not: null },
                 parentPostId: null,
+                feed: feed as any,
             },
             select: {
                 id: true,
@@ -38,13 +40,16 @@ export async function GET(request: Request) {
                 createdAt: true,
                 parentPostId: true,
                 fingerprintHash: true,
-                type: true,
+                contentType: true,
+                feed: true,
                 url: true,
                 stats: {
                     select: {
                         upvotes: true,
                         downvotes: true,
                         replyCount: true,
+                        averageRating: true,
+                        ratingCount: true,
                     },
                 },
             },
@@ -73,12 +78,14 @@ export async function POST(request: Request) {
         const body = await request.json();
         let { content } = body;
         const {
-            url,
             fingerprintHash,
             parentPostId,
             parentReplyId,
-            type,
+            contentType,
+            feed,
+            url,
             pollOptions,
+            jobRating,
         } = body;
 
         if (content && typeof content === 'string') {
@@ -88,8 +95,8 @@ export async function POST(request: Request) {
 
         if (
             (!content || content.length === 0) &&
-            type !== 'LINK' &&
-            type !== 'POLL'
+            contentType !== 'LINK' &&
+            contentType !== 'POLL'
         ) {
             return NextResponse.json(
                 { error: '内容不能为空' },
@@ -114,7 +121,7 @@ export async function POST(request: Request) {
             );
         }
 
-        if (type === 'LINK') {
+        if (contentType === 'LINK') {
             if (!url) {
                 return NextResponse.json(
                     { error: '链接帖子必须包含一个链接。' },
@@ -143,7 +150,7 @@ export async function POST(request: Request) {
             }
         }
 
-        if (type === 'POLL') {
+        if (contentType === 'POLL') {
             if (
                 !Array.isArray(pollOptions) ||
                 pollOptions.length < 2 ||
@@ -242,14 +249,12 @@ export async function POST(request: Request) {
                     lastSeenAt: new Date(),
                 },
             });
-
             if (userProfile.isBanned) {
                 const expires = userProfile.banExpiresAt;
                 if (!expires || new Date(expires) > new Date()) {
                     throw new Error('BANNED');
                 }
             }
-
             if (
                 process.env.SIMILARITY_CHECK_ENABLED === 'true' &&
                 !parentPostId
@@ -287,12 +292,13 @@ export async function POST(request: Request) {
                     fingerprintHash,
                     parentPostId: parentPostId ? Number(parentPostId) : null,
                     parentReplyId: parentReplyId ? Number(parentReplyId) : null,
-                    type: type || 'DEFAULT',
-                    url: type === 'LINK' ? url : null,
+                    contentType: contentType || 'TEXT',
+                    feed: feed || 'EPHEMERAL',
+                    url: contentType === 'LINK' ? url : null,
                 },
             });
 
-            if (type === 'POLL' && pollOptions) {
+            if (contentType === 'POLL' && pollOptions) {
                 await tx.pollOption.createMany({
                     data: pollOptions.map((optionText: string) => ({
                         text: optionText,
@@ -309,6 +315,38 @@ export async function POST(request: Request) {
                 });
             }
 
+            // Handle job rating submission for replies to job posts
+            if (parentPostId && feed === 'JOB' && jobRating > 0) {
+                await tx.jobRating.upsert({
+                    where: {
+                        postId_fingerprintHash: {
+                            postId: parentPostId,
+                            fingerprintHash,
+                        },
+                    },
+                    update: { rating: jobRating },
+                    create: {
+                        postId: parentPostId,
+                        rating: jobRating,
+                        fingerprintHash,
+                    },
+                });
+
+                const aggregate = await tx.jobRating.aggregate({
+                    _avg: { rating: true },
+                    _count: { id: true },
+                    where: { postId: parentPostId },
+                });
+
+                await tx.postStats.update({
+                    where: { postId: parentPostId },
+                    data: {
+                        averageRating: aggregate._avg.rating || 0,
+                        ratingCount: aggregate._count.id || 0,
+                    },
+                });
+            }
+
             await tx.postStats.create({
                 data: {
                     postId: createdPost.id,
@@ -319,12 +357,10 @@ export async function POST(request: Request) {
                 },
             });
 
-            const finalPost = await tx.post.findUnique({
+            return tx.post.findUnique({
                 where: { id: createdPost.id },
-                include: { stats: true, pollOptions: type === 'POLL' },
+                include: { stats: true, pollOptions: contentType === 'POLL' },
             });
-
-            return finalPost;
         });
 
         if (parentPostId) {
