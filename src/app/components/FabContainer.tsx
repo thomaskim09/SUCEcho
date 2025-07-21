@@ -20,6 +20,7 @@ export default function FabContainer() {
     const isPostPage = pathname.startsWith('/post/');
     const isJobsPage = pathname.startsWith('/jobs');
     const isPermanentPage = pathname.startsWith('/permanent');
+    const isMyEchoesPage = pathname.startsWith("/my-echoes");
 
     // Tooltip state and localStorage keys
     const [showFabTip, setShowFabTip] = useState(false);
@@ -79,11 +80,11 @@ export default function FabContainer() {
     }
 
     const FabToShow = () => {
-        if (isHomePage) {
+        if (isHomePage || isMyEchoesPage) {
             return (
                 <div className="relative flex items-center">
                     <FloatingActionButton
-                        href="/compose"
+                        href="/compose?feedType=EPHEMERAL"
                         iconName="plus"
                         ariaLabel="发布新回音"
                     />
@@ -138,7 +139,7 @@ export default function FabContainer() {
     };
 
     const fab = FabToShow();
-    const hasBottomNav = isHomePage || isJobsPage || isPermanentPage || pathname === "/my-echoes";
+    const hasBottomNav = isHomePage || isJobsPage || isPermanentPage;
     const fabContainerClass = `fixed right-6 z-50 flex flex-col-reverse items-center gap-4 ${hasBottomNav ? "bottom-20" : "bottom-6"}`;
 
     if (fab || isAdmin) {
