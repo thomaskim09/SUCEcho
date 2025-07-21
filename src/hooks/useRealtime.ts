@@ -12,7 +12,12 @@ import { useRealtimeStatus } from '@/context/RealtimeStatusContext';
 import { useTabLeaderContext } from '@/app/components/TabLeaderProvider';
 
 function isLivePage(pathname: string) {
-    return pathname === '/' || pathname.startsWith('/post/');
+    return (
+        pathname === '/' ||
+        pathname.startsWith('/post/') ||
+        pathname === '/jobs' ||
+        pathname === '/permanent'
+    );
 }
 
 interface LiveEventData {
@@ -41,7 +46,10 @@ interface LiveCallbacks {
     onDeleteParentPost?: (data: LiveEventData['delete_parent_post']) => void;
 }
 
-export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
+export const useRealtime = (
+    channelName: string | null,
+    callbacks: LiveCallbacks
+) => {
     const { setIsSubscribed } = useRealtimeStatus();
     const { status } = useTabLeaderContext();
     const isVisible = usePageVisibility();
@@ -55,6 +63,7 @@ export const useRealtime = (channelName: string, callbacks: LiveCallbacks) => {
 
     useEffect(() => {
         if (
+            !channelName ||
             status !== 'leader' ||
             !isVisible ||
             isIdle ||

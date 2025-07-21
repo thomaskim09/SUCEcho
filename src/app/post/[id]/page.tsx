@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import { useLivePostThreadUpdates } from '@/hooks/useLivePostThreadUpdates';
 import PostCard from '@/app/components/PostCard';
@@ -68,6 +68,8 @@ export default function PostDetailPage() {
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
+    const searchParams = useSearchParams();
+    const feedType = searchParams.get('feedType') as 'JOB' | 'PERMANENT' | 'EPHEMERAL' | null;
 
     const [initialPost, setInitialPost] = useState<PostThread | null>(null);
     const [post, setPost] = useLivePostThreadUpdates(initialPost);
@@ -85,26 +87,23 @@ export default function PostDetailPage() {
     const [isSubmittingRating, setIsSubmittingRating] = useState(false);
     const [userRating, setUserRating] = useState<number | null>(null);
     const [isFetchingRating, setIsFetchingRating] = useState(true);
-
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
     const isVisible = usePageVisibility();
 
     useLayoutEffect(() => {
-        if (post) {
-            if (post.feed === 'JOB') {
-                document.body.classList.add('jobs-bg');
-            } else if (post.feed === 'PERMANENT') {
-                document.body.classList.add('permanent-bg');
-            } else {
-                document.body.classList.remove('jobs-bg', 'permanent-bg');
-            }
+        document.body.classList.remove('jobs-bg', 'permanent-bg');
+
+        if (feedType === 'JOB') {
+            document.body.classList.add('jobs-bg');
+        } else if (feedType === 'PERMANENT') {
+            document.body.classList.add('permanent-bg');
         }
 
         return () => {
             document.body.classList.remove('jobs-bg', 'permanent-bg');
         };
-    }, [post]);
+    }, [feedType]);
 
     useEffect(() => {
         if (post) {
@@ -383,7 +382,7 @@ export default function PostDetailPage() {
     };
 
     const handleReplyToComment = (parentPostId: number, replyToId: number) => {
-        router.push(`/compose?parentPostId=${parentPostId}&parentReplyId=${replyToId}`);
+        router.push(`/compose?parentPostId=${parentPostId}&parentReplyId=${replyToId}&feedType=${post?.feed}`);
     };
 
     const handleRatingSubmit = async (rating: number) => {

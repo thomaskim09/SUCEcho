@@ -46,7 +46,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         handleDelete,
         handlePostFaded,
         handlePostPurified,
-    } = usePostListManager(initialPosts, handleNewPost);
+    } = usePostListManager(initialPosts, handleNewPost, feedType);
 
     useEffect(() => { postsRef.current = posts; }, [posts]);
 
@@ -198,7 +198,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         return lastVisibleId;
     };
 
-    const handlePostClick = useCallback((postId: number) => {
+    const handlePostClick = useCallback((postId: number, feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB') => {
         sessionStorage.setItem('postFeedScroll', window.scrollY.toString());
         const lastVisibleId = getLastVisiblePostId();
         if (lastVisibleId) {
@@ -208,11 +208,11 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         try {
             sessionStorage.setItem('postFeedCache', JSON.stringify(posts));
         } catch { }
-        router.push(`/post/${postId}`);
+        router.push(`/post/${postId}?feedType=${feedType}`);
     }, [router, posts]);
 
     // Save feed state and scroll position before navigating to compose (comment)
-    const handleCommentNavigate = useCallback((parentPostId: number) => {
+    const handleCommentNavigate = useCallback((parentPostId: number, feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB') => {
         sessionStorage.setItem('postFeedScroll', window.scrollY.toString());
         const postDivs = Array.from(document.querySelectorAll('[data-post-id]'));
         let lastVisibleId = null;
@@ -230,7 +230,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         try {
             sessionStorage.setItem('postFeedCache', JSON.stringify(posts));
         } catch { }
-        router.push(`/compose?parentPostId=${parentPostId}`);
+        router.push(`/compose?parentPostId=${parentPostId}&feedType=${feedType}`);
     }, [router, posts]);
 
     useLayoutEffect(() => {
@@ -293,9 +293,18 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
     const twentyFourHours = 24 * 60 * 60 * 1000;
 
     const displayablePosts = posts.filter((post) => {
+        if (post.feed === 'PERMANENT' || post.feed === 'JOB') {
+            return !purifiedPostIds.has(post.id);
+        }
         const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
         return postAge < twentyFourHours && !purifiedPostIds.has(post.id);
     });
+
+    const feedEndLabels = {
+        EPHEMERAL: '--- 回音壁尽头 ---',
+        JOB: '--- 谋生墙尽头 ---',
+        PERMANENT: '--- 时光档尽头 ---',
+    };
 
     const showEndLabel =
         !isLoading && !isFetchingMore && !nextCursor && displayablePosts.length > 0;
@@ -334,7 +343,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
                             initial="initial"
                             animate="animate"
                             layout
-                            onClick={() => handlePostClick(post.id)}
+                            onClick={() => handlePostClick(post.id, post.feed)}
                             style={{ cursor: 'pointer' }}
                         >
                             <PostCard
@@ -350,7 +359,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
                                 onDelete={handleDelete}
                                 userVote={userVotes[post.id]}
                                 onAutoPurify={handlePostPurified}
-                                onCommentNavigate={handleCommentNavigate}
+                                onCommentNavigate={() => handleCommentNavigate(post.id, post.feed)}
                             />
                         </motion.div>
                     );
@@ -362,7 +371,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
                 <p className="text-center text-gray-400 py-4">正在加载更多回音...</p>
             )}
             {showEndLabel && (
-                <p className="text-center text-gray-500 py-8">--- 回音壁尽头 ---</p>
+                <p className="text-center text-gray-500 py-8">{feedEndLabels[feedType]}</p>
             )}
             {!isLoading && displayablePosts.length === 0 && (
                 <p className="text-center text-gray-400 py-4">

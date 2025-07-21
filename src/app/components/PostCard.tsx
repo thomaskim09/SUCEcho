@@ -221,7 +221,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         if (onCommentNavigate) {
             onCommentNavigate(post.id);
         } else {
-            router.push(`/compose?parentPostId=${post.id}`);
+            router.push(`/compose?parentPostId=${post.id}&feedType=${post.feed}`);
         }
     };
 
@@ -245,7 +245,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         }
         setIsEnlarged(true);
         setTimeout(() => setIsEnlarged(false), 180);
-        setTimeout(() => router.push(`/post/${post.id}`), 180);
+        setTimeout(() => router.push(`/post/${post.id}?feedType=${post.feed}`), 180);
     };
 
     const { showMeter: showPurificationMeter, meterFillPercentage, shouldPurify } = checkPurificationStatus({

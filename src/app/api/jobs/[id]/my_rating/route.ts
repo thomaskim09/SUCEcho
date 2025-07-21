@@ -8,7 +8,8 @@ export async function POST(
     { params }: { params: { id: string } }
 ) {
     try {
-        const postId = parseInt(params.id, 10);
+        const { id } = await params;
+        const postId = parseInt(id, 10);
         const { fingerprintHash } = await request.json();
 
         if (isNaN(postId) || !fingerprintHash) {
@@ -33,8 +34,9 @@ export async function POST(
 
         return NextResponse.json({ rating: existingRating.rating });
     } catch (error) {
+        const awaitedParams = await params;
         logger.error(
-            `Error fetching user rating for job post #${params.id}:`,
+            `Error fetching user rating for job post #${awaitedParams.id}:`,
             error
         );
         return NextResponse.json(

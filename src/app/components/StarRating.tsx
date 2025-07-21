@@ -46,7 +46,7 @@ const RatedState = ({ userRating, averageRating }: { userRating: number; average
     );
 
     return (
-        <div className="grid grid-cols-[max-content_1fr_max-content] items-center gap-x-4 gap-y-2 p-4 w-full">
+        <div className="grid grid-cols-[max-content_1fr_max-content] items-center gap-x-4 gap-y-2 p-2 w-full">
             {starRow('我的评分', userRating, 'text-accent')}
             {starRow('总评均分', averageRating, 'text-yellow-400')}
         </div>
@@ -69,7 +69,7 @@ export default function StarRating({ onRating, isSubmitting, averageRating, rati
     };
 
     return (
-        <div className={`glass-card p-4 rounded-lg min-h-[128px] flex items-center justify-center relative ${isFetchingRating ? 'animate-shimmer' : ''}`}>
+        <div className={`glass-card p-2 rounded-lg min-h-[100px] flex items-center justify-center relative ${isFetchingRating ? 'animate-shimmer' : ''}`}>
             <AnimatePresence mode="wait">
                 {isFetchingRating ? (
                     <motion.div key="loading" variants={containerVariants} initial="hidden" animate="visible" exit="hidden">

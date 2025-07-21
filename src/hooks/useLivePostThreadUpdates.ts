@@ -128,13 +128,17 @@ export function useLivePostThreadUpdates(initialPost: PostThread | null) {
         });
     }, []);
 
+    const isDetailsRealtimeEnabled =
+        process.env.NEXT_PUBLIC_REALTIME_POST_DETAILS_ENABLED === 'true';
     const isGranularEnabled =
         process.env.NEXT_PUBLIC_GRANULAR_REALTIME_ENABLED === 'true';
 
     const channelName =
-        initialPost && isGranularEnabled
-            ? getPostRoomChannelName(initialPost.id)
-            : MAIN_CHANNEL;
+        initialPost && isDetailsRealtimeEnabled
+            ? isGranularEnabled
+                ? getPostRoomChannelName(initialPost.id)
+                : MAIN_CHANNEL
+            : null;
 
     useRealtime(channelName, {
         onNewPost: initialPost ? handleNewPost : undefined,

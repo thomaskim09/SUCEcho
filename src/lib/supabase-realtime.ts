@@ -15,6 +15,12 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const MAIN_CHANNEL =
     process.env.NEXT_PUBLIC_SUPABASE_CHANNEL_NAME || 'post_room';
 
+export const JOB_CHANNEL =
+    process.env.NEXT_PUBLIC_SUPABASE_JOB_CHANNEL_NAME || 'job_room';
+
+export const PERMANENT_CHANNEL =
+    process.env.NEXT_PUBLIC_SUPABASE_PERMANENT_CHANNEL_NAME || 'permanent_room';
+
 /**
  * Generates the channel name for a specific post thread.
  * @param postId The ID of the parent post.

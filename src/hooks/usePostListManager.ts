@@ -8,9 +8,14 @@ import { useOptimisticVote } from './useOptimisticVote';
 // Accept the onNewPost callback
 export const usePostListManager = (
     initialPosts: PostWithStats[] = [],
-    onNewPost: (newPost: PostWithStats) => void
+    onNewPost: (newPost: PostWithStats) => void,
+    feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB'
 ) => {
-    const [posts, setPosts] = useLivePostUpdates(initialPosts, onNewPost);
+    const [posts, setPosts] = useLivePostUpdates(
+        initialPosts,
+        onNewPost,
+        feedType
+    );
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
 
     const handlePostPurified = (postId: number) => {
@@ -33,8 +38,8 @@ export const usePostListManager = (
                 method: 'DELETE',
             });
             if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.message || 'Failed to delete post');
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to delete post');
             }
             setPosts((prevPosts) =>
                 prevPosts.map((p) =>

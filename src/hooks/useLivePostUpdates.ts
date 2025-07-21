@@ -5,11 +5,16 @@ import { useState, useEffect, useCallback } from 'react';
 import type { PostWithStats } from '@/lib/types';
 import logger from '@/lib/logger';
 import { useRealtime } from './useRealtime';
-import { MAIN_CHANNEL } from '@/lib/supabase-realtime';
+import {
+    MAIN_CHANNEL,
+    JOB_CHANNEL,
+    PERMANENT_CHANNEL,
+} from '@/lib/supabase-realtime';
 
 export function useLivePostUpdates(
     initialPosts: PostWithStats[] = [],
-    onNewPost: (newPost: PostWithStats) => void
+    onNewPost: (newPost: PostWithStats) => void,
+    feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB'
 ) {
     const [posts, setPosts] = useState<PostWithStats[]>(initialPosts);
 
@@ -68,7 +73,14 @@ export function useLivePostUpdates(
         );
     }, []);
 
-    useRealtime(MAIN_CHANNEL, {
+    let channelName = MAIN_CHANNEL;
+    if (feedType === 'JOB') {
+        channelName = JOB_CHANNEL;
+    } else if (feedType === 'PERMANENT') {
+        channelName = PERMANENT_CHANNEL;
+    }
+
+    useRealtime(channelName, {
         onNewPost: handleNewPost,
         onUpdateVote: handleVoteUpdate,
         onDeletePost: handleDeletePost,
