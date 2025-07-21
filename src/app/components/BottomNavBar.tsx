@@ -6,9 +6,9 @@ import { Icon } from './Icon';
 import { motion } from 'framer-motion';
 
 const navLinks = [
-    { href: "/jobs", label: "谋生墙", iconName: "briefcase" as const },
-    { href: "/", label: "回音壁", iconName: "zap" as const },
-    { href: "/permanent", label: "时光档", iconName: "archive" as const },
+    { href: "/jobs", label: "谋生墙", iconName: "briefcase" as const, activeColor: 'var(--job-accent)' },
+    { href: "/", label: "回音壁", iconName: "zap" as const, activeColor: 'var(--ephemeral-accent)' },
+    { href: "/permanent", label: "时光档", iconName: "archive" as const, activeColor: 'var(--permanent-accent)' },
 ];
 
 export default function BottomNavBar() {
@@ -24,12 +24,15 @@ export default function BottomNavBar() {
             {navLinks.map(link => {
                 const isActive = pathname === link.href;
                 return (
-                    <Link key={link.href} href={link.href} className={`flex flex-col items-center justify-center w-full h-full transition-colors duration-200 ${isActive ? 'text-accent' : 'text-gray-400 hover:text-white'}`}>
+                    <Link key={link.href} href={link.href} className={`flex flex-col items-center justify-center w-full h-full transition-colors duration-200 ${isActive ? '' : 'text-gray-400 hover:text-white'}`}
+                        style={{ color: isActive ? link.activeColor : '' }}
+                    >
                         <div className="relative">
                             <Icon name={link.iconName} className="w-6 h-6 mb-1" />
                             {isActive && (
                                 <motion.div
-                                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full"
+                                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                                    style={{ backgroundColor: link.activeColor }}
                                     layoutId="active-indicator"
                                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                                 />
