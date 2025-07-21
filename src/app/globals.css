@@ -24,7 +24,7 @@ html {
 }
 
 body {
-  background: radial-gradient(ellipse at bottom, #374151 0%, #111827 100%); /* Light Gray */
+  background: radial-gradient(ellipse at bottom, #4C1D95 0%, #111827 100%); /* Darker Purple */
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
@@ -524,9 +524,9 @@ body {
 }
 
 body.jobs-bg {
-  background: radial-gradient(ellipse at bottom, #1E40AF 0%, #111827 100%); /* Less bright blue */
+  background: radial-gradient(ellipse at bottom, #1e3a8a 0%, #111827 100%); /* Darker Blue */
 }
 
 body.permanent-bg {
-  background: radial-gradient(ellipse at bottom, #4C1D95 0%, #111827 100%); /* Less bright purple */
+  background: radial-gradient(ellipse at bottom, #064e3b 0%, #111827 100%); /* Soothing Dark Green */
 }

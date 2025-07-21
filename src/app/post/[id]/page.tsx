@@ -1,7 +1,7 @@
 // src/app/post/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { PostWithStats } from "@/lib/types";
 import { useLivePostThreadUpdates } from '@/hooks/useLivePostThreadUpdates';
@@ -22,7 +22,6 @@ import Poll from '@/app/components/Poll';
 import LinkPreviewCard from '@/app/components/LinkPreviewCard';
 import StarRating from '@/app/components/StarRating';
 
-// Use the same limit as the post feed
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
 type PostThread = PostWithStats & {
@@ -84,12 +83,14 @@ export default function PostDetailPage() {
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
     const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+    const [userRating, setUserRating] = useState<number | null>(null);
+    const [isFetchingRating, setIsFetchingRating] = useState(true);
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
     const isVisible = usePageVisibility();
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (post) {
             if (post.feed === 'JOB') {
                 document.body.classList.add('jobs-bg');
@@ -107,7 +108,6 @@ export default function PostDetailPage() {
 
     useEffect(() => {
         if (post) {
-            // This is a bit of a hack, but necessary without a global state manager
             const fabLink = document.querySelector('a[aria-label="回复此回音"]');
             if (fabLink) {
                 fabLink.setAttribute('href', `/compose?parentPostId=${post.id}&feedType=${post.feed}`);
@@ -137,7 +137,6 @@ export default function PostDetailPage() {
             }
         }
     }, [id]);
-
 
     const handleBackClick = () => {
         if (typeof document !== 'undefined' && document.referrer.includes('/compose')) {
@@ -222,6 +221,35 @@ export default function PostDetailPage() {
             fetchPostDetails(true);
         }
     }, [isVisible, isLoading, fetchPostDetails]);
+
+    useEffect(() => {
+        const fetchUserRating = async () => {
+            if (post && post.feed === 'JOB' && fingerprint) {
+                setIsFetchingRating(true);
+                try {
+                    const res = await fetch(`/api/jobs/${post.id}/my-rating`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fingerprintHash: fingerprint }),
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setUserRating(data.rating);
+                    }
+                } catch (error) {
+                    logger.error("Failed to fetch user's rating", error);
+                } finally {
+                    setIsFetchingRating(false);
+                }
+            } else if (post && post.feed !== 'JOB') {
+                setIsFetchingRating(false);
+            }
+        };
+
+        if (post && fingerprint) {
+            fetchUserRating();
+        }
+    }, [post, fingerprint]);
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {
@@ -308,7 +336,6 @@ export default function PostDetailPage() {
                 const errorData = await res.json();
                 throw new Error(errorData.message || 'Failed to delete post');
             }
-            // The real-time event will handle the UI update, so no immediate state change here.
         } catch (err: unknown) {
             alert(`Error: ${(err as Error).message}`);
         }
@@ -365,14 +392,15 @@ export default function PostDetailPage() {
                 body: JSON.stringify({ rating, fingerprintHash: fingerprint }),
             });
             if (!res.ok) {
-                throw new Error('Failed to submit rating');
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to submit rating');
             }
             const updatedStats = await res.json();
             setPost(p => p ? { ...p, stats: { ...p.stats!, averageRating: updatedStats.averageRating, ratingCount: updatedStats.ratingCount } } : null);
-            alert('感谢您的评分！');
+            setUserRating(rating);
         } catch (error) {
             logger.error('Rating submission failed:', error);
-            alert('评分失败，请稍后再试。');
+            setError((error as Error).message);
         } finally {
             setIsSubmittingRating(false);
         }
@@ -395,7 +423,6 @@ export default function PostDetailPage() {
         const isLinkPost = post.contentType === 'LINK' && post.url;
         const isJobPost = post.feed === 'JOB';
 
-        // Filter out purified replies
         const filteredReplies = post.replies.filter(
             reply => !purifiedPostIds.has(reply.id)
         );
@@ -434,10 +461,16 @@ export default function PostDetailPage() {
                     </div>
                 )}
 
-                {isJobPost && (
-                    <div className="my-6 glass-card p-4 rounded-lg">
-                        <h3 className="text-center font-semibold text-gray-300 mb-2">为这个职位评分</h3>
-                        <StarRating onRating={handleRatingSubmit} isSubmitting={isSubmittingRating} />
+                {isJobPost && !isFetchingRating && (
+                    <div className="my-6">
+                        <StarRating
+                            onRating={handleRatingSubmit}
+                            isSubmitting={isSubmittingRating}
+                            averageRating={post.stats?.averageRating || 0}
+                            ratingCount={post.stats?.ratingCount || 0}
+                            userRating={userRating}
+                        />
+                        <p className="text-center text-xs text-gray-500 pt-2">共 {post.stats?.ratingCount || 0} 评价</p>
                     </div>
                 )}
 
@@ -491,7 +524,6 @@ export default function PostDetailPage() {
                                 )}
                             </div>
                         </div>
-                        {/* Add spacer below replies to prevent floating button overlap */}
                         <div className="h-24" />
                     </>
                 )}

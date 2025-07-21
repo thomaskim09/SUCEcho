@@ -19,7 +19,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const limit = parseInt(searchParams.get('limit') || '10', 10);
         const cursor = searchParams.get('cursor');
-        const feed = searchParams.get('feed') || 'EPHEMERAL'; // Updated to filter by 'feed'
+        const feed = searchParams.get('feed') || 'EPHEMERAL';
 
         const posts = await prisma.post.findMany({
             take: limit,
@@ -85,7 +85,6 @@ export async function POST(request: Request) {
             feed,
             url,
             pollOptions,
-            jobRating,
         } = body;
 
         if (content && typeof content === 'string') {
@@ -312,38 +311,6 @@ export async function POST(request: Request) {
                     where: { postId: Number(parentPostId) },
                     update: { replyCount: { increment: 1 } },
                     create: { postId: Number(parentPostId), replyCount: 1 },
-                });
-            }
-
-            // Handle job rating submission for replies to job posts
-            if (parentPostId && feed === 'JOB' && jobRating > 0) {
-                await tx.jobRating.upsert({
-                    where: {
-                        postId_fingerprintHash: {
-                            postId: parentPostId,
-                            fingerprintHash,
-                        },
-                    },
-                    update: { rating: jobRating },
-                    create: {
-                        postId: parentPostId,
-                        rating: jobRating,
-                        fingerprintHash,
-                    },
-                });
-
-                const aggregate = await tx.jobRating.aggregate({
-                    _avg: { rating: true },
-                    _count: { id: true },
-                    where: { postId: parentPostId },
-                });
-
-                await tx.postStats.update({
-                    where: { postId: parentPostId },
-                    data: {
-                        averageRating: aggregate._avg.rating || 0,
-                        ratingCount: aggregate._count.id || 0,
-                    },
                 });
             }
 

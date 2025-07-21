@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 const navLinks = [
     { href: "/jobs", label: "谋生墙", iconName: "briefcase" as const },
     { href: "/", label: "回音壁", iconName: "zap" as const },
-    { href: "/permanent", label: "时光档案", iconName: "archive" as const },
+    { href: "/permanent", label: "时光档", iconName: "archive" as const },
 ];
 
 export default function BottomNavBar() {

@@ -13,6 +13,7 @@ import { checkPurificationStatus } from "@/lib/purification";
 import { useCountdown } from '@/hooks/useCountdown';
 import Tooltip from './Tooltip';
 import { addPurifiedPostId } from "@/lib/purifiedStore";
+import { timeSince } from "@/lib/time-helpers";
 
 interface PostCardProps {
     post: PostWithStats;
@@ -95,10 +96,10 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isPurifyGlow, setIsPurifyGlow] = useState(false);
     const isChildEcho = !!post.parentPostId;
     const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
-    const isAnnouncement = post.type === 'ANNOUNCEMENT';
-    const isPoll = post.type === 'POLL';
-    const isLinkPost = post.type === 'LINK';
-    const isJobPost = post.type === 'JOB';
+    const isAnnouncement = post.contentType === 'ANNOUNCEMENT';
+    const isPoll = post.contentType === 'POLL';
+    const isLinkPost = post.contentType === 'LINK';
+    const isJobPost = post.feed === 'JOB';
     const [isEnlarged, setIsEnlarged] = useState(false);
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
@@ -142,14 +143,14 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     }, [isPurifying]);
 
     useEffect(() => {
-        if (isExpired) {
+        if (isExpired && post.feed === 'EPHEMERAL') {
             setIsCharging(true);
             const chargeTimer = setTimeout(() => {
                 setIsGlitching(true);
             }, 3000);
             return () => clearTimeout(chargeTimer);
         }
-    }, [isExpired]);
+    }, [isExpired, post.feed]);
 
     useLayoutEffect(() => {
         const checkOverflow = () => {
@@ -315,7 +316,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                     <span>回音贴主</span>
                                 </div>
                             )}
-                            {!isVerifying && isAdmin && post.type !== 'ANNOUNCEMENT' && (
+                            {!isVerifying && isAdmin && post.contentType !== 'ANNOUNCEMENT' && (
                                 <span className="font-mono text-xs opacity-50">
                                     {isOwner ? `(${generateCodename(post.fingerprintHash)})` : `发布者: ${generateCodename(post.fingerprintHash)}`}
                                 </span>
@@ -368,45 +369,51 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         )}
                     </AnimatePresence>
 
-                    {post.type !== 'ADVERTISEMENT' && (
+                    {post.contentType !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
-                            <div
-                                className={`font-mono text-left max-w-[160px] whitespace-nowrap overflow-hidden text-ellipsis ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
-                            >
-                                <AnimatePresence mode="wait">
-                                    {isPurifying ? (
-                                        <motion.span
-                                            key="purify-text"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            社区自治，自主净化
-                                        </motion.span>
-                                    ) : !isExpired ? (
-                                        <motion.span
-                                            key="countdown-text"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            {countdownText}
-                                        </motion.span>
-                                    ) : (
-                                        <motion.span
-                                            key="final-message"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.5 }}
-                                        >
-                                            心间回音，限定消散。
-                                        </motion.span>
-                                    )}
-                                </AnimatePresence>
-                            </div>
+                            {post.feed !== 'EPHEMERAL' ? (
+                                <div className="font-mono text-left text-gray-400">
+                                    {timeSince(new Date(post.createdAt))}
+                                </div>
+                            ) : (
+                                <div
+                                    className={`font-mono text-left max-w-[160px] whitespace-nowrap overflow-hidden text-ellipsis ${isPurifying ? 'purify-text-glow-red' : colorClass}`}
+                                >
+                                    <AnimatePresence mode="wait">
+                                        {isPurifying ? (
+                                            <motion.span
+                                                key="purify-text"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                            >
+                                                社区自治，自主净化
+                                            </motion.span>
+                                        ) : !isExpired ? (
+                                            <motion.span
+                                                key="countdown-text"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                            >
+                                                {countdownText}
+                                            </motion.span>
+                                        ) : (
+                                            <motion.span
+                                                key="final-message"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.5 }}
+                                            >
+                                                心间回音，限定消散。
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            )}
                             <AnimatePresence>
                                 {!isExpired && !isPurifying && (
                                     <motion.div
@@ -430,10 +437,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                                 <span className="ml-1 text-gray-400">投票</span>
                                             </div>
                                         )}
-                                        {isJobPost && post.stats?.averageRating != null && (
+                                        {isJobPost && post.stats?.averageRating != null && post.stats.averageRating > 0 && (
                                             <div className="flex items-center gap-1">
-                                                <DisplayRating rating={post.stats.averageRating} />
-                                                <span className="text-xs text-gray-400">({post.stats.ratingCount})</span>
+                                                <Icon name="star" className={`w-5 h-5 ${post.stats.averageRating >= 4 ? 'text-yellow-400' : post.stats.averageRating >= 2.5 ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                                                <span className={`font-bold text-sm ${post.stats.averageRating >= 4 ? 'text-yellow-300' : post.stats.averageRating >= 2.5 ? 'text-yellow-400' : 'text-yellow-500'}`}>
+                                                    {post.stats.averageRating.toFixed(1)}
+                                                </span>
                                             </div>
                                         )}
                                         <div className="relative flex items-center">

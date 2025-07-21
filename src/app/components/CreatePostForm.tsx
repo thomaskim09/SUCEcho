@@ -8,9 +8,7 @@ import { addMyEcho } from '@/hooks/useMyEchoes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShareModal } from "@/context/ModalContext";
 import { Icon } from './Icon';
-import StarRating from './StarRating';
 
-// 维持原有占位符
 const mainEchoPlaceholders = [
     "此刻你想说什么？",
     "那个戴白色耳机的男生，你的侧脸很好看… #暗恋",
@@ -19,7 +17,6 @@ const mainEchoPlaceholders = [
     "如果人生有回收站，你会删除哪段记忆？ #深夜思考"
 ];
 
-// Examples for replying to an echo (Child Echo)
 const replyEchoPlaceholders = [
     "写下你的回应...",
     "楼主冲啊！别让它成为下一个遗憾…",
@@ -28,7 +25,6 @@ const replyEchoPlaceholders = [
     "加油，你可以的…"
 ];
 
-// Examples for replying to another reply
 const threadedReplyPlaceholders = [
     "加入这场对话...",
     "我同意你的看法！",
@@ -37,7 +33,6 @@ const threadedReplyPlaceholders = [
     "原来不止我一个人这么想。"
 ];
 
-// Examples for creating a poll
 const pollPlaceholders = [
     "发起一个投票，看看大家怎么想...",
     "食堂的鸡饭和Mamak的Maggi Goreng，哪个是你的最爱？",
@@ -46,7 +41,6 @@ const pollPlaceholders = [
     "心目中的社团干部人选是哪位？"
 ];
 
-// Examples for creating a link post
 const linkPlaceholders = [
     "分享一个链接，并写下你的看法...",
     "这个问卷调查很重要，希望大家帮忙填写！",
@@ -55,8 +49,6 @@ const linkPlaceholders = [
     "这个新闻说的是真的吗，我是在小红书看到的，你们看看..."
 ];
 
-
-// 新增：校内工坊（招聘）占位符
 const jobPlaceholders = [
     "发布一个职位或实习机会...",
     "我们的社团正在招新！需要一位有创意的设计师。",
@@ -65,7 +57,14 @@ const jobPlaceholders = [
     "咖啡厅招聘兼职，有兴趣的同学请联系！"
 ];
 
-// 新增：时光档案（永久）占位符
+const jobReplyPlaceholders = [
+    "询问职位详情...",
+    "我对这个职位很感兴趣！",
+    "请问这个职位有什么要求？",
+    "这个实习提供什么学习机会？",
+    "如何申请？"
+];
+
 const permanentPlaceholders = [
     "写下一些希望被永远记住的话...",
     "致2025届的毕业生们，愿你们前程似锦！",
@@ -73,7 +72,6 @@ const permanentPlaceholders = [
     "记录下南院的这个角落，希望它永远都在。",
     "给未来的自己留一段话吧！"
 ];
-
 
 function LoadingDots() {
     const [dotCount, setDotCount] = useState(0);
@@ -113,8 +111,6 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
     const [url, setUrl] = useState("");
     const [urlError, setUrlError] = useState<string | null>(null);
 
-    const [jobRating, setJobRating] = useState(0);
-
     const whitelistedDomains = (process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || '').split(',').map(d => d.trim().toLowerCase());
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
@@ -122,15 +118,18 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
         ? linkPlaceholders
         : isPoll
             ? pollPlaceholders
-            : feedType === 'JOB'
-                ? jobPlaceholders
-                : feedType === 'PERMANENT'
-                    ? permanentPlaceholders
-                    : parentReplyId
-                        ? threadedReplyPlaceholders
-                        : parentPostId
-                            ? replyEchoPlaceholders
-                            : mainEchoPlaceholders;
+            : feedType === 'JOB' && parentPostId
+                ? jobReplyPlaceholders
+                : feedType === 'JOB'
+                    ? jobPlaceholders
+                    : feedType === 'PERMANENT'
+                        ? permanentPlaceholders
+                        : parentReplyId
+                            ? threadedReplyPlaceholders
+                            : parentPostId
+                                ? replyEchoPlaceholders
+                                : mainEchoPlaceholders;
+
 
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
@@ -264,7 +263,6 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
                     feed: finalFeedType,
                     url: isUrl ? url : undefined,
                     pollOptions: isPoll && !parentPostId ? pollOptions.filter(opt => opt.trim()) : undefined,
-                    jobRating: feedType === 'JOB' && parentPostId && jobRating > 0 ? jobRating : undefined,
                 }),
             });
 
@@ -348,13 +346,6 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
                             autoFocus
                             disabled={isSubmitting}
                         />
-
-                        {feedType === 'JOB' && parentPostId && (
-                            <div className="my-4">
-                                <h3 className="text-center font-semibold text-gray-300 mb-2">为这个职位发布评分</h3>
-                                <StarRating onRating={setJobRating} isSubmitting={isSubmitting} />
-                            </div>
-                        )}
 
                         <AnimatePresence>
                             {isUrl && !parentPostId && (
