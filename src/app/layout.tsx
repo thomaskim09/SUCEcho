@@ -1,4 +1,4 @@
-// sucecho/src/app/layout.tsx
+// SUCEcho_packaged/src/app/layout.tsx
 import type { Metadata } from "next";
 import { Noto_Sans_SC, Roboto_Mono } from "next/font/google";
 import "./globals.css";
@@ -15,6 +15,7 @@ import { RealtimeStatusProvider } from "@/context/RealtimeStatusContext";
 import { ModalProvider } from "@/context/ModalContext";
 import BottomNavBar from "./components/BottomNavBar";
 import PageThemeProvider from "./components/PageThemeProvider"; // Import the new component
+import { InfoModalProvider } from "@/context/InfoModalContext";
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -56,15 +57,17 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
             <TabLeaderProvider>
               <RealtimeStatusProvider>
                 <ModalProvider>
-                  <PageThemeProvider>
-                    <OnboardingWrapper>
-                      <UserStatusBanner />
-                      <Header />
-                      <FramerWrapper>{children}</FramerWrapper>
-                      <FabContainer />
-                      <BottomNavBar />
-                    </OnboardingWrapper>
-                  </PageThemeProvider>
+                  <InfoModalProvider>
+                    <PageThemeProvider>
+                      <OnboardingWrapper>
+                        <UserStatusBanner />
+                        <Header />
+                        <FramerWrapper>{children}</FramerWrapper>
+                        <FabContainer />
+                        <BottomNavBar />
+                      </OnboardingWrapper>
+                    </PageThemeProvider>
+                  </InfoModalProvider>
                 </ModalProvider>
               </RealtimeStatusProvider>
             </TabLeaderProvider>

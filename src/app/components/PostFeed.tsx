@@ -1,4 +1,4 @@
-// src/app/components/PostFeed.tsx
+// SUCEcho_packaged/src/app/components/PostFeed.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
@@ -15,6 +15,9 @@ import { getPurifiedPostIds } from '@/lib/purifiedStore';
 import FloatingNotification from './FloatingNotification';
 import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
+import InfoModal from './InfoModal';
+import { Icon } from './Icon';
+import { useInfoModal } from '@/context/InfoModalContext';
 
 
 const POST_FEED_LIMIT = parseInt(
@@ -30,7 +33,8 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
     const router = useRouter();
     const hasFetchedInitialPosts = useRef(false);
     const { fingerprint } = useFingerprint();
-
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const { showInfoModal } = useInfoModal();
 
     function handleNewPost(newPost: PostWithStats) {
         const postExists = postsRef.current.some(p => p.id === newPost.id) || pendingPosts.some(p => p.id === newPost.id);
@@ -64,6 +68,24 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
         new Set()
     );
     const hasRestoredFromCache = useRef(false);
+
+    useEffect(() => {
+        if (feedType === 'JOB') {
+            showInfoModal({
+                title: "欢迎来到谋生墙",
+                iconName: "briefcase",
+                content: "这里是为南院人量身打造的互助平台。无论是寻找项目伙伴、发布实习机会，还是招募社团干部，你都可以在这里找到归属。你的每一次分享，都在为这个社区添砖加瓦。",
+                storageKey: 'hasSeenJobFeedInfo',
+            });
+        } else if (feedType === 'PERMANENT') {
+            showInfoModal({
+                title: "欢迎来到时光档",
+                iconName: "archive",
+                content: "有些回忆，值得被永远珍藏。时光档是我们的数字纪念碑，专门用来记录那些对南院社群有特殊意义的人、事、物。在这里发布的内容将不会过期消散。",
+                storageKey: 'hasSeenPermanentFeedInfo',
+            });
+        }
+    }, [feedType, showInfoModal]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -413,4 +435,4 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
             )}
         </div>
     );
-}   
+}
