@@ -248,6 +248,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         setTimeout(() => router.push(`/post/${post.id}?feedType=${post.feed}`), 180);
     };
 
+    const getFeedBorderClass = () => {
+        if (post.feed === 'JOB') return 'border-job';
+        if (post.feed === 'PERMANENT') return 'border-permanent';
+        return 'border-ephemeral';
+    };
+
     const { showMeter: showPurificationMeter, meterFillPercentage, shouldPurify } = checkPurificationStatus({
         upvotes: post.stats?.upvotes ?? 0,
         downvotes: post.stats?.downvotes ?? 0,
@@ -284,7 +290,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
             className={`relative ${isMenuOpen ? 'z-10' : ''} ${isAnnouncement ? 'announcement-post' : ''} ${isPurifyGlow ? 'purify-glow' : ''} ${shouldPurifyVanish ? 'vanish-container' : ''} ${(isGlitching || isCharging) && !isPurifying ? 'charge-up' : ''} ${isGlitching && !isPurifying ? 'glitch' : ''} ${isCritical && !isPurifying && !isGlitching && !isCharging ? 'critical-glow' : ''}`}
         >
             <div
-                className={`glass-card rounded-lg p-4`}
+                className={`glass-card rounded-lg p-4 ${getFeedBorderClass()}`}
                 onClick={isLink && !isChildEcho ? handleCardClick : undefined}
             >
                 <div>
@@ -440,7 +446,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                         {isJobPost && post.stats?.averageRating != null && post.stats.averageRating > 0 && (
                                             <div className="flex items-center gap-1">
                                                 <Icon name="star" className={`w-5 h-5 ${post.stats.averageRating >= 4 ? 'text-yellow-400' : post.stats.averageRating >= 2.5 ? 'text-yellow-500' : 'text-yellow-600'}`} />
-                                                <span className={`font-bold text-sm ${post.stats.averageRating >= 4 ? 'text-yellow-300' : post.stats.averageRating >= 2.5 ? 'text-yellow-400' : 'text-yellow-500'}`}>
+                                                <span className={`text-sm ${post.stats.averageRating >= 4 ? 'text-yellow-300' : post.stats.averageRating >= 2.5 ? 'text-yellow-400' : 'text-yellow-500'}`}>
                                                     {post.stats.averageRating.toFixed(1)}
                                                 </span>
                                             </div>

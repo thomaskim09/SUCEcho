@@ -35,7 +35,7 @@ const RatedState = ({ userRating, averageRating }: { userRating: number; average
                         >
                             <Icon
                                 name="star"
-                                className={`w-6 h-6 ${starValue <= Math.round(rating) ? `${colorClass} fill-current` : 'text-gray-600'}`}
+                                className={`w-6 h-6 ${starValue <= Math.round(rating) ? `${colorClass}` : 'text-gray-600'}`}
                             />
                         </motion.div>
                     );

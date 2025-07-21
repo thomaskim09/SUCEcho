@@ -580,3 +580,13 @@ body.permanent-bg {
   );
   animation: shimmer 2s infinite;
 }
+
+.border-ephemeral {
+  border: 1.5px solid rgba(135, 73, 241, 0.5); /* var(--ephemeral-accent) with 25% opacity */
+}
+.border-job {
+  border: 1.5px solid rgba(49, 116, 224, 0.5); /* var(--job-accent) with 25% opacity */
+}
+.border-permanent {
+  border: 1.5px solid rgba(12, 160, 110, 0.5); /* var(--permanent-accent) with 25% opacity */
+}
