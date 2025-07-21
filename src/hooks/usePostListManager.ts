@@ -9,7 +9,7 @@ import { useOptimisticVote } from './useOptimisticVote';
 export const usePostListManager = (
     initialPosts: PostWithStats[] = [],
     onNewPost: (newPost: PostWithStats) => void,
-    feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB'
+    feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB' | 'ALL'
 ) => {
     const [posts, setPosts] = useLivePostUpdates(
         initialPosts,

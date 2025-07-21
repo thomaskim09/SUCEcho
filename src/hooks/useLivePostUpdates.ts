@@ -14,7 +14,7 @@ import {
 export function useLivePostUpdates(
     initialPosts: PostWithStats[] = [],
     onNewPost: (newPost: PostWithStats) => void,
-    feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB'
+    feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB' | 'ALL'
 ) {
     const [posts, setPosts] = useState<PostWithStats[]>(initialPosts);
 
@@ -73,8 +73,10 @@ export function useLivePostUpdates(
         );
     }, []);
 
-    let channelName = MAIN_CHANNEL;
-    if (feedType === 'JOB') {
+    let channelName: string | null = null;
+    if (feedType === 'EPHEMERAL') {
+        channelName = MAIN_CHANNEL;
+    } else if (feedType === 'JOB') {
         channelName = JOB_CHANNEL;
     } else if (feedType === 'PERMANENT') {
         channelName = PERMANENT_CHANNEL;

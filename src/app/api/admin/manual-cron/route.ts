@@ -27,7 +27,7 @@ export async function POST(request: Request) {
                 createdAt: {
                     lt: timeAgo,
                 },
-                type: 'DEFAULT',
+                feed: 'EPHEMERAL',
             },
             select: {
                 id: true,

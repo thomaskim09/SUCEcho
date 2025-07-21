@@ -14,19 +14,23 @@ import LoadingSpinner from './LoadingSpinner';
 import { getPurifiedPostIds } from '@/lib/purifiedStore';
 import FloatingNotification from './FloatingNotification';
 import { useRouter } from 'next/navigation';
+import { useFingerprint } from '@/context/FingerprintContext';
+
 
 const POST_FEED_LIMIT = parseInt(
     process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10',
     10
 );
 
-export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB' }) {
+export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB' | 'ALL', fetchMode?: 'feed' | 'my-echoes' }) {
     const [pendingPosts, setPendingPosts] = useState<PostWithStats[]>([]);
     const isNearTopRef = useRef(true);
     const [initialPosts] = useState<PostWithStats[]>([]);
     const postsRef = useRef<PostWithStats[]>(initialPosts);
     const router = useRouter();
     const hasFetchedInitialPosts = useRef(false);
+    const { fingerprint } = useFingerprint();
+
 
     function handleNewPost(newPost: PostWithStats) {
         const postExists = postsRef.current.some(p => p.id === newPost.id) || pendingPosts.some(p => p.id === newPost.id);
@@ -87,13 +91,24 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
     };
 
     const fetchInitialPosts = useCallback(async (isRefreshing = false) => {
-        if (hasFetchedInitialPosts.current && !isRefreshing) return;
-        if (status !== 'leader') return;
+        if ((fetchMode === 'my-echoes' && !fingerprint) || (hasFetchedInitialPosts.current && !isRefreshing) || status !== 'leader') {
+            return;
+        }
         if (!isRefreshing) setIsLoading(true);
         hasFetchedInitialPosts.current = true;
 
         try {
-            const res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&feed=${feedType}`);
+            let res;
+            if (fetchMode === 'my-echoes') {
+                res = await fetch(`/api/posts/mine`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fingerprintHash: fingerprint, limit: POST_FEED_LIMIT }),
+                });
+            } else {
+                res = await fetch(`/api/posts?limit=${POST_FEED_LIMIT}&feed=${feedType}`);
+            }
+
             if (!res.ok) throw new Error('Failed to fetch posts');
             const { posts: fetchedPosts, nextCursor: initialNextCursor } = await res.json();
 
@@ -111,7 +126,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         } finally {
             if (!isRefreshing) setIsLoading(false);
         }
-    }, [status, setPosts, feedType]);
+    }, [status, setPosts, feedType, fetchMode, fingerprint]);
 
 
     const prevIsVisibleRef = useRef<boolean>(true);
@@ -137,9 +152,19 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         setIsFetchingMore(true);
 
         try {
-            const res = await fetch(
-                `/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}&feed=${feedType}`
-            );
+            let res;
+            if (fetchMode === 'my-echoes') {
+                res = await fetch(`/api/posts/mine`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fingerprintHash: fingerprint, limit: POST_FEED_LIMIT, cursor: nextCursor }),
+                });
+            } else {
+                res = await fetch(
+                    `/api/posts?limit=${POST_FEED_LIMIT}&cursor=${nextCursor}&feed=${feedType}`
+                );
+            }
+
             if (!res.ok) throw new Error('Failed to fetch more posts');
             const { posts: newPosts, nextCursor: newNextCursor } = await res.json();
 
@@ -159,7 +184,8 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         } finally {
             setIsFetchingMore(false);
         }
-    }, [nextCursor, isFetchingMore, status, setPosts, feedType]);
+    }, [nextCursor, isFetchingMore, status, setPosts, feedType, fetchMode, fingerprint]);
+
 
     const sentinelRef = useCallback(
         (node: HTMLDivElement | null) => {
@@ -179,7 +205,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         if (status === 'leader' && !hasRestoredFromCache.current && !hasFetchedInitialPosts.current) {
             fetchInitialPosts(false);
         }
-    }, [status, fetchInitialPosts]);
+    }, [status, fetchInitialPosts, fingerprint]);
 
     const handleFloatingBarClick = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -293,17 +319,19 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
     const twentyFourHours = 24 * 60 * 60 * 1000;
 
     const displayablePosts = posts.filter((post) => {
-        if (post.feed === 'PERMANENT' || post.feed === 'JOB') {
+        if (fetchMode === 'my-echoes' || post.feed === 'PERMANENT' || post.feed === 'JOB') {
             return !purifiedPostIds.has(post.id);
         }
         const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
         return postAge < twentyFourHours && !purifiedPostIds.has(post.id);
     });
 
+
     const feedEndLabels = {
         EPHEMERAL: '--- 回音壁尽头 ---',
         JOB: '--- 谋生墙尽头 ---',
         PERMANENT: '--- 时光档尽头 ---',
+        ALL: '--- 我的回音尽头 ---',
     };
 
     const showEndLabel =
@@ -334,6 +362,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
                         );
                     }
                     const isNew = !posts.some((p) => p.id === post.id);
+                    const isChildEcho = !!post.parentPostId;
                     return (
                         <motion.div
                             key={post.id}
@@ -344,10 +373,12 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
                             animate="animate"
                             layout
                             onClick={() => handlePostClick(post.id, post.feed)}
+                            className={isChildEcho ? "border-l-2 border-accent/30 pl-4 ml-4" : ""}
                             style={{ cursor: 'pointer' }}
                         >
                             <PostCard
                                 post={post}
+                                isLink={!isChildEcho}
                                 isPurifying={post.isPurifying}
                                 onPurificationComplete={(postId) => {
                                     handlePostFaded(postId);
@@ -382,4 +413,4 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
             )}
         </div>
     );
-}
+}   

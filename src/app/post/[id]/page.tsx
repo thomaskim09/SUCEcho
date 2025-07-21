@@ -69,7 +69,7 @@ export default function PostDetailPage() {
     const router = useRouter();
     const id = params.id as string;
     const searchParams = useSearchParams();
-    const feedType = searchParams.get('feedType') as 'JOB' | 'PERMANENT' | 'EPHEMERAL' | null;
+    const feedType = searchParams.get('feedType') as 'JOB' | 'PERMANENT' | 'EPHEMERAL' | 'ALL' | null;
 
     const [initialPost, setInitialPost] = useState<PostThread | null>(null);
     const [post, setPost] = useLivePostThreadUpdates(initialPost);
@@ -138,11 +138,7 @@ export default function PostDetailPage() {
     }, [id]);
 
     const handleBackClick = () => {
-        if (typeof document !== 'undefined' && document.referrer.includes('/compose')) {
-            router.push('/');
-        } else {
-            router.back();
-        }
+        router.back();
     };
 
     const fetchPostDetails = useCallback(async (isRefreshing = false) => {

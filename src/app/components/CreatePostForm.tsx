@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
-import { addMyEcho } from '@/hooks/useMyEchoes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShareModal } from "@/context/ModalContext";
 import { Icon } from './Icon';
@@ -272,16 +271,11 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
                 throw new Error(errorData.error || "发布失败");
             }
 
-            const newPost = await response.json();
-            if (newPost && newPost.id) {
-                addMyEcho(newPost);
-            }
-
             triggerShareModal();
             setIsSent(true);
             setTimeout(() => {
                 if (parentPostId) {
-                    router.replace(`/post/${parentPostId}`);
+                    router.replace(`/post/${parentPostId}?feedType=${feedType}`);
                 } else if (feedType === 'JOB') {
                     router.push('/jobs');
                 } else if (feedType === 'PERMANENT' || isPermanent) {
