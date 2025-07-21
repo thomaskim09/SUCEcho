@@ -1,4 +1,4 @@
-// src/app/components/PageThemeProvider.tsx
+// sucecho/src/app/components/PageThemeProvider.tsx
 "use client";
 
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -10,13 +10,16 @@ export default function PageThemeProvider({ children }: { children: React.ReactN
 
     useLayoutEffect(() => {
         const feedType = searchParams.get('feedType');
-        document.body.classList.remove("ephemeral-bg", "jobs-bg", "permanent-bg");
+        const rootElement = document.documentElement;
+
+        rootElement.classList.remove("ephemeral-bg", "jobs-bg", "permanent-bg");
+
         if ((pathname === '/' || (pathname.startsWith('/post/') || pathname.startsWith('/compose')) && feedType === 'EPHEMERAL')) {
-            document.body.classList.add("ephemeral-bg");
+            rootElement.classList.add("ephemeral-bg");
         } else if ((pathname === '/jobs' || (pathname.startsWith('/post/') || pathname.startsWith('/compose')) && feedType === 'JOB')) {
-            document.body.classList.add("jobs-bg");
+            rootElement.classList.add("jobs-bg");
         } else if ((pathname === '/permanent' || (pathname.startsWith('/post/') || pathname.startsWith('/compose')) && feedType === 'PERMANENT')) {
-            document.body.classList.add("permanent-bg");
+            rootElement.classList.add("permanent-bg");
         }
     }, [pathname, searchParams]);
 

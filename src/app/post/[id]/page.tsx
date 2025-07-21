@@ -92,16 +92,17 @@ export default function PostDetailPage() {
     const isVisible = usePageVisibility();
 
     useLayoutEffect(() => {
-        document.body.classList.remove('jobs-bg', 'permanent-bg');
+        const rootElement = document.documentElement;
+        rootElement.classList.remove('jobs-bg', 'permanent-bg');
 
         if (feedType === 'JOB') {
-            document.body.classList.add('jobs-bg');
+            rootElement.classList.add('jobs-bg');
         } else if (feedType === 'PERMANENT') {
-            document.body.classList.add('permanent-bg');
+            rootElement.classList.add('permanent-bg');
         }
 
         return () => {
-            document.body.classList.remove('jobs-bg', 'permanent-bg');
+            rootElement.classList.remove('jobs-bg', 'permanent-bg');
         };
     }, [feedType]);
 

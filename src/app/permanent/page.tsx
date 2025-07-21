@@ -4,9 +4,10 @@ import PostFeed from "../components/PostFeed";
 
 export default function PermanentPage() {
     useEffect(() => {
-        document.body.classList.add('permanent-bg');
+        const rootElement = document.documentElement;
+        rootElement.classList.add('permanent-bg');
         return () => {
-            document.body.classList.remove('permanent-bg');
+            rootElement.classList.remove('permanent-bg');
         };
     }, []);
 

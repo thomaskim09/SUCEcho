@@ -4,9 +4,10 @@ import PostFeed from "../components/PostFeed";
 
 export default function JobsPage() {
     useEffect(() => {
-        document.body.classList.add('jobs-bg');
+        const rootElement = document.documentElement;
+        rootElement.classList.add('jobs-bg');
         return () => {
-            document.body.classList.remove('jobs-bg');
+            rootElement.classList.remove('jobs-bg');
         };
     }, []);
 
