@@ -7,13 +7,14 @@ import dynamic from 'next/dynamic';
 const AdminShield = dynamic(() => import('./AdminShield'), {
     ssr: false
 });
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import Tooltip from './Tooltip';
 import { useEffect, useState, useCallback } from 'react';
 
 export default function FabContainer() {
     const { isAdmin } = useAdmin();
     const pathname = usePathname();
+    const searchParams = useSearchParams();
 
     const isHomePage = pathname === '/';
     const isPostPage = pathname.startsWith('/post/');
@@ -97,10 +98,12 @@ export default function FabContainer() {
         }
         if (isPostPage) {
             const postId = pathname.split('/')[2];
+            const feedType = searchParams.get('feedType') || 'EPHEMERAL';
+
             return (
                 <div className="relative flex items-center">
                     <FloatingActionButton
-                        href={`/compose?parentPostId=${postId}`}
+                        href={`/compose?parentPostId=${postId}&feedType=${feedType}`}
                         iconName="comment"
                         ariaLabel="回复此回音"
                     />
@@ -135,10 +138,12 @@ export default function FabContainer() {
     };
 
     const fab = FabToShow();
+    const hasBottomNav = isHomePage || isJobsPage || isPermanentPage || pathname === "/my-echoes";
+    const fabContainerClass = `fixed right-6 z-50 flex flex-col-reverse items-center gap-4 ${hasBottomNav ? "bottom-20" : "bottom-6"}`;
 
     if (fab || isAdmin) {
         return (
-            <div className="fixed bottom-20 right-6 z-50 flex flex-col-reverse items-center gap-4">
+            <div className={fabContainerClass}>
                 {fab}
                 {isAdmin && <AdminShield />}
             </div>

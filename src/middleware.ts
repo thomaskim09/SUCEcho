@@ -4,35 +4,28 @@ import type { NextRequest } from 'next/server';
 import { verifySession } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
-    const { pathname, search } = request.nextUrl;
+    const sessionCookie = request.cookies.get('session')?.value;
 
-    // Create new headers so we can modify them
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-pathname', pathname);
-    requestHeaders.set('x-search', search);
-
-    // Admin route protection logic
-    if (pathname.startsWith('/admin')) {
-        const sessionCookie = request.cookies.get('session')?.value;
-
-        if (!sessionCookie || !(await verifySession(sessionCookie))) {
-            const url = request.nextUrl.clone();
-            url.pathname = '/admin-login';
-            const response = NextResponse.redirect(url);
-            response.cookies.set('session', '', { maxAge: -1 });
-            return response;
-        }
+    if (!sessionCookie) {
+        return NextResponse.redirect(new URL('/admin-login', request.url));
     }
 
-    // Pass the modified headers to the next middleware or page
-    return NextResponse.next({
-        request: {
-            headers: requestHeaders,
-        },
-    });
+    const payload = await verifySession(sessionCookie);
+
+    if (!payload) {
+        const response = NextResponse.redirect(
+            new URL('/admin-login', request.url)
+        );
+        response.cookies.set('session', '', { maxAge: -1 });
+        return response;
+    }
+
+    return NextResponse.next();
 }
 
-// Config to run the middleware on all pages except for static assets and API routes
+// This config specifies which paths the middleware should run on.
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|sw.js).*)'],
+    // We are now only protecting the front-end pages under /admin.
+    // The API routes will handle their own session verification internally.
+    matcher: ['/admin/:path*'],
 };
