@@ -26,7 +26,7 @@ export default function HowItWorksPage() {
             </header>
             <main className="mt-12 space-y-8 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
                 <FeatureCard iconName="zap" title="短暂存在">
-                    每一条回音及其所有回复将在创建24小时后自动、彻底地销毁。这种&quot;残酷美学&quot;保证了对话的新鲜感，让你无惧永久记录。
+                    在「回音壁」中，每一条声音都拥有24小时的生命。时限一到，它将连同所有回复，被彻底销毁。这种“阅后即焚”的设定，是为你卸下包袱，让你能在这里畅所欲言。
                 </FeatureCard>
                 <FeatureCard iconName="shield" title="绝对匿名">
                     无需注册，无需登录。系统仅用浏览器指纹防止刷屏和实现投票，但这个标识不会对其他用户可见，让你真正地畅所欲言。
@@ -38,7 +38,7 @@ export default function HowItWorksPage() {
                     </div>
                 </FeatureCard>
             </main>
-            <div className="text-center mt-12">
+            <div className="text-center mt-12 pb-12">
                 <Link href="/" className="text-accent hover:underline text-lg">
                     ← 返回回音壁
                 </Link>

@@ -52,13 +52,16 @@ export default function AboutPage() {
                 <section className="glass-card p-8 rounded-lg text-lg leading-relaxed">
                     <h2 className="text-2xl font-bold mb-4 text-center">守护者的故事</h2>
                     <p>
-                        大家好，我是SUC Echo的创建者。和许多人一样，我曾在主流社交网络上分享生活，但渐渐地，我发现每一个点赞、每一句评论、每一份永久存档的记录，都变成了一种无形的负担。我们开始在意人设，害怕说错话，慢慢地，我们变得越来越不像真实的自己。
+                        大家好，我是SUC Echo的创建者。和许多人一样，我曾在主流社交网络上分享生活，但渐渐地，我发现每一个对标人设的点赞，评论和记录，都变成了一种无形的负担。我们开始在意人设，害怕说错话，慢慢地，我们变得越来越不像真实的自己。
                     </p>
                     <p className="mt-4">
-                        这个回音壁的诞生，源于一个简单的想法：“我们能不能有一个地方，可以只为‘表达’本身而存在？”。在这里，没有身份，只有思想；没有永恒，只有瞬间。每一个声音都拥有平等的24小时生命，然后就会像风中的尘埃一样，干净利落地消散。
+                        这个平台的诞生，就是为了创造一个回归纯粹“表达”的空间。在这里，我们也开始意识到不同的声音需要不同的土壤：
                     </p>
                     <p className="mt-4">
-                        我希望在这种绝对的短暂面前，我们能找回最彻底的自由。祝你，玩得愉快。
+                        核心的「回音壁」保留了24小时后消逝的“残酷美学”，让你可以卸下包袱，畅所欲言。而当有些瞬间值得被铭记，有些机会理应被共享时，「时光档」为你沉淀回忆，「谋生墙」则为你连接校园内外的互助与可能。
+                    </p>
+                    <p className="mt-4">
+                        短暂与永恒，在这里并非矛盾，而是选择。愿你既能找到自由，也能发现归属。祝你，玩得愉快。
                     </p>
                 </section>
 
@@ -96,7 +99,7 @@ export default function AboutPage() {
                     </div>
                 </section>
 
-                <div className="text-center mt-12">
+                <div className="text-center mt-12 pb-12">
                     <Link href="/" className="text-accent hover:underline text-lg">
                         ← 返回回音壁
                     </Link>

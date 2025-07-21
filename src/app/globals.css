@@ -28,6 +28,7 @@
 
 html {
   scrollbar-gutter: stable;
+  background-color: var(--background-end);
 }
 
 @theme {
@@ -39,13 +40,24 @@ html {
 }
 
 body {
-  background: radial-gradient(ellipse at bottom, var(--ephemeral-bg-start) 0%, var(--background-end) 100%);
+  background: var(--background-end);
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
   min-height: 100vh;
-  transition: background 0.5s ease-in-out;
 }
+
+body.ephemeral-bg {
+  background: radial-gradient(ellipse at bottom, var(--ephemeral-bg-start) 0%, var(--background-end) 100%);
+}
+
+body.jobs-bg {
+  background: radial-gradient(ellipse at bottom, var(--job-bg-start) 0%, var(--background-end) 100%);
+}
+
+body.permanent-bg {
+  background: radial-gradient(ellipse at bottom, var(--permanent-bg-start) 0%, var(--background-end) 100%);
+} 
 
 @keyframes animStar {
   from {
@@ -537,14 +549,6 @@ body {
 .share-button:hover {
   background-color: #8b5cf6; /* A slightly darker purple for hover */
   transform: scale(1.05);
-}
-
-body.jobs-bg {
-  background: radial-gradient(ellipse at bottom, var(--job-bg-start) 0%, var(--background-end) 100%);
-}
-
-body.permanent-bg {
-  background: radial-gradient(ellipse at bottom, var(--permanent-bg-start) 0%, var(--background-end) 100%);
 }
 
 /* --- SHIMMER LOADING ANIMATION --- */

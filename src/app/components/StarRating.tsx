@@ -47,7 +47,7 @@ const RatedState = ({ userRating, averageRating }: { userRating: number; average
 
     return (
         <div className="grid grid-cols-[max-content_1fr_max-content] items-center gap-x-4 gap-y-2 p-2 w-full">
-            {starRow('我的评分', userRating, 'text-accent')}
+            {starRow('您的评分', userRating, 'text-accent')}
             {starRow('总评均分', averageRating, 'text-yellow-400')}
         </div>
     );

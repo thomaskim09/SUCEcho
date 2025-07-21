@@ -14,6 +14,7 @@ import { TabLeaderProvider } from "./components/TabLeaderProvider";
 import { RealtimeStatusProvider } from "@/context/RealtimeStatusContext";
 import { ModalProvider } from "@/context/ModalContext";
 import BottomNavBar from "./components/BottomNavBar";
+import PageThemeProvider from "./components/PageThemeProvider"; // Import the new component
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -55,13 +56,15 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
             <TabLeaderProvider>
               <RealtimeStatusProvider>
                 <ModalProvider>
-                  <OnboardingWrapper>
-                    <UserStatusBanner />
-                    <Header />
-                    <FramerWrapper>{children}</FramerWrapper>
-                    <FabContainer />
-                    <BottomNavBar />
-                  </OnboardingWrapper>
+                  <PageThemeProvider>
+                    <OnboardingWrapper>
+                      <UserStatusBanner />
+                      <Header />
+                      <FramerWrapper>{children}</FramerWrapper>
+                      <FabContainer />
+                      <BottomNavBar />
+                    </OnboardingWrapper>
+                  </PageThemeProvider>
                 </ModalProvider>
               </RealtimeStatusProvider>
             </TabLeaderProvider>

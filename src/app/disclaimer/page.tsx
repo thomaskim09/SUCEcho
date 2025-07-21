@@ -41,7 +41,7 @@ export default function DisclaimerPage() {
                     </p>
                 </section>
 
-                <div className="text-center mt-12">
+                <div className="text-center mt-12 pb-12">
                     <Link href="/" className="text-accent hover:underline text-lg">
                         ← 返回回音壁
                     </Link>

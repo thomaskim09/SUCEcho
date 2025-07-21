@@ -27,7 +27,7 @@ interface PostCardProps {
     onPurificationComplete?: (postId: number) => void;
     onDeletionComplete?: (postId: number) => void;
     onAutoPurify: (postId: number) => void;
-    onCommentNavigate?: (parentPostId: number) => void;
+    onCommentNavigate?: (parentPostId: number, feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB') => void;
     onReplyClick?: (parentPostId: number, replyToId: number) => void;
     parentFingerprintHash?: string;
 }
@@ -219,7 +219,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         e.stopPropagation();
         e.preventDefault();
         if (onCommentNavigate) {
-            onCommentNavigate(post.id);
+            onCommentNavigate(post.id, post.feed);
         } else {
             router.push(`/compose?parentPostId=${post.id}&feedType=${post.feed}`);
         }

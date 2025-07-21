@@ -310,7 +310,7 @@ export default function PostFeed({ feedType }: { feedType: 'EPHEMERAL' | 'PERMAN
         !isLoading && !isFetchingMore && !nextCursor && displayablePosts.length > 0;
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 pb-24">
             <AnimatePresence>
                 {pendingPosts.length > 0 && (
                     <FloatingNotification

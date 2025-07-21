@@ -4,29 +4,35 @@ import type { NextRequest } from 'next/server';
 import { verifySession } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
-    const sessionCookie = request.cookies.get('session')?.value;
+    const { pathname, search } = request.nextUrl;
 
-    if (!sessionCookie) {
-        return NextResponse.redirect(new URL('/admin-login', request.url));
+    // Create new headers so we can modify them
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-pathname', pathname);
+    requestHeaders.set('x-search', search);
+
+    // Admin route protection logic
+    if (pathname.startsWith('/admin')) {
+        const sessionCookie = request.cookies.get('session')?.value;
+
+        if (!sessionCookie || !(await verifySession(sessionCookie))) {
+            const url = request.nextUrl.clone();
+            url.pathname = '/admin-login';
+            const response = NextResponse.redirect(url);
+            response.cookies.set('session', '', { maxAge: -1 });
+            return response;
+        }
     }
 
-    const payload = await verifySession(sessionCookie);
-
-    if (!payload) {
-        const response = NextResponse.redirect(
-            new URL('/admin-login', request.url)
-        );
-        response.cookies.set('session', '', { maxAge: -1 });
-        return response;
-    }
-
-    return NextResponse.next();
+    // Pass the modified headers to the next middleware or page
+    return NextResponse.next({
+        request: {
+            headers: requestHeaders,
+        },
+    });
 }
 
-// This config specifies which paths the middleware should run on.
+// Config to run the middleware on all pages except for static assets and API routes
 export const config = {
-    // --- MODIFIED MATCHER ---
-    // We are now only protecting the front-end pages under /admin.
-    // The API routes will handle their own session verification internally.
-    matcher: ['/admin/:path*'],
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|sw.js).*)'],
 };
