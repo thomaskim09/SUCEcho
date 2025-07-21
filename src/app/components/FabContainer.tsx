@@ -17,6 +17,8 @@ export default function FabContainer() {
 
     const isHomePage = pathname === '/';
     const isPostPage = pathname.startsWith('/post/');
+    const isJobsPage = pathname.startsWith('/jobs');
+    const isPermanentPage = pathname.startsWith('/permanent');
 
     // Tooltip state and localStorage keys
     const [showFabTip, setShowFabTip] = useState(false);
@@ -111,6 +113,24 @@ export default function FabContainer() {
                 </div>
             );
         }
+        if (isJobsPage) {
+            return (
+                <FloatingActionButton
+                    href="/compose?feedType=JOB"
+                    iconName="plus"
+                    ariaLabel="发布新职位"
+                />
+            );
+        }
+        if (isPermanentPage) {
+            return (
+                <FloatingActionButton
+                    href="/compose?feedType=PERMANENT"
+                    iconName="plus"
+                    ariaLabel="发布新档案"
+                />
+            );
+        }
         return null;
     };
 
@@ -118,7 +138,7 @@ export default function FabContainer() {
 
     if (fab || isAdmin) {
         return (
-            <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-4">
+            <div className="fixed bottom-20 right-6 z-50 flex flex-col-reverse items-center gap-4">
                 {fab}
                 {isAdmin && <AdminShield />}
             </div>
@@ -126,4 +146,4 @@ export default function FabContainer() {
     }
 
     return null;
-}   
+}

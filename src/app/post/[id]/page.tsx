@@ -20,6 +20,7 @@ import LoadingSpinner from '@/app/components/LoadingSpinner';
 import { getPurifiedPostIds, addPurifiedPostId } from '@/lib/purifiedStore';
 import Poll from '@/app/components/Poll';
 import LinkPreviewCard from '@/app/components/LinkPreviewCard';
+import StarRating from '@/app/components/StarRating';
 
 // Use the same limit as the post feed
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
@@ -82,10 +83,37 @@ export default function PostDetailPage() {
     const [nextReplyCursor, setNextReplyCursor] = useState<number | null>(null);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
+    const [isSubmittingRating, setIsSubmittingRating] = useState(false);
 
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
     const isVisible = usePageVisibility();
+
+    useEffect(() => {
+        if (post) {
+            if (post.feed === 'JOB') {
+                document.body.classList.add('jobs-bg');
+            } else if (post.feed === 'PERMANENT') {
+                document.body.classList.add('permanent-bg');
+            } else {
+                document.body.classList.remove('jobs-bg', 'permanent-bg');
+            }
+        }
+
+        return () => {
+            document.body.classList.remove('jobs-bg', 'permanent-bg');
+        };
+    }, [post]);
+
+    useEffect(() => {
+        if (post) {
+            // This is a bit of a hack, but necessary without a global state manager
+            const fabLink = document.querySelector('a[aria-label="回复此回音"]');
+            if (fabLink) {
+                fabLink.setAttribute('href', `/compose?parentPostId=${post.id}&feedType=${post.feed}`);
+            }
+        }
+    }, [post]);
 
     useEffect(() => {
         if (post && sessionStorage.getItem('postFeedReturnExpected') === 'true') {
@@ -327,6 +355,29 @@ export default function PostDetailPage() {
         router.push(`/compose?parentPostId=${parentPostId}&parentReplyId=${replyToId}`);
     };
 
+    const handleRatingSubmit = async (rating: number) => {
+        if (!fingerprint || !post || post.feed !== 'JOB') return;
+        setIsSubmittingRating(true);
+        try {
+            const res = await fetch(`/api/jobs/${post.id}/rate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rating, fingerprintHash: fingerprint }),
+            });
+            if (!res.ok) {
+                throw new Error('Failed to submit rating');
+            }
+            const updatedStats = await res.json();
+            setPost(p => p ? { ...p, stats: { ...p.stats!, averageRating: updatedStats.averageRating, ratingCount: updatedStats.ratingCount } } : null);
+            alert('感谢您的评分！');
+        } catch (error) {
+            logger.error('Rating submission failed:', error);
+            alert('评分失败，请稍后再试。');
+        } finally {
+            setIsSubmittingRating(false);
+        }
+    };
+
     const renderMainContent = () => {
         if (showFinalMessage) {
             return <ExpiredPostMessage />;
@@ -340,8 +391,9 @@ export default function PostDetailPage() {
             return <p className="text-gray-400 text-center p-8">这回音已消散.</p>;
         }
 
-        const isPoll = post.type === 'POLL' && post.pollOptions && post.pollOptions.length > 0;
-        const isLinkPost = post.type === 'LINK' && post.url;
+        const isPoll = post.contentType === 'POLL' && post.pollOptions && post.pollOptions.length > 0;
+        const isLinkPost = post.contentType === 'LINK' && post.url;
+        const isJobPost = post.feed === 'JOB';
 
         // Filter out purified replies
         const filteredReplies = post.replies.filter(
@@ -381,6 +433,14 @@ export default function PostDetailPage() {
                         <Poll postId={post.id} options={post.pollOptions!} />
                     </div>
                 )}
+
+                {isJobPost && (
+                    <div className="my-6 glass-card p-4 rounded-lg">
+                        <h3 className="text-center font-semibold text-gray-300 mb-2">为这个职位评分</h3>
+                        <StarRating onRating={handleRatingSubmit} isSubmitting={isSubmittingRating} />
+                    </div>
+                )}
+
                 {(!post.isPurifying && !post.isDeleting) && (
                     <>
                         <div className="mt-8">

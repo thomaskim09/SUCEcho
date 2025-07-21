@@ -27,7 +27,8 @@ export default function AdminDashboardPage() {
     const [isCronRunning, setIsCronRunning] = useState(false);
     const [isDeepCleaning, setIsDeepCleaning] = useState(false);
     const [specialPostContent, setSpecialPostContent] = useState('');
-    const [postType, setPostType] = useState<'ANNOUNCEMENT' | 'ADVERTISEMENT'>('ANNOUNCEMENT');
+    const [contentType, setContentType] = useState<'ANNOUNCEMENT' | 'ADVERTISEMENT'>('ANNOUNCEMENT');
+    const [feedType, setFeedType] = useState<'EPHEMERAL' | 'PERMANENT' | 'JOB'>('EPHEMERAL');
     const [adUrl, setAdUrl] = useState('');
     const [isCreatingPost, setIsCreatingPost] = useState(false);
 
@@ -116,8 +117,9 @@ export default function AdminDashboardPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: specialPostContent,
-                    type: postType,
-                    url: postType === 'ADVERTISEMENT' ? adUrl : null,
+                    contentType: contentType,
+                    feed: feedType,
+                    url: contentType === 'ADVERTISEMENT' ? adUrl : null,
                 }),
             });
             if (!res.ok) {
@@ -159,16 +161,30 @@ export default function AdminDashboardPage() {
             >
                 <h2 className="text-2xl font-bold text-purple-400 mb-4">发布特别帖子</h2>
                 <form onSubmit={handleCreateSpecialPost} className="space-y-4">
-                    <div>
-                        <label className="block text-gray-300 mb-2">帖子类型</label>
-                        <select
-                            value={postType}
-                            onChange={(e) => setPostType(e.target.value as 'ANNOUNCEMENT' | 'ADVERTISEMENT')}
-                            className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
-                        >
-                            <option value="ANNOUNCEMENT">系统公告</option>
-                            <option value="ADVERTISEMENT">特约赞助</option>
-                        </select>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-gray-300 mb-2">帖子类型</label>
+                            <select
+                                value={contentType}
+                                onChange={(e) => setContentType(e.target.value as 'ANNOUNCEMENT' | 'ADVERTISEMENT')}
+                                className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
+                            >
+                                <option value="ANNOUNCEMENT">系统公告</option>
+                                <option value="ADVERTISEMENT">特约赞助</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-gray-300 mb-2">发布频道</label>
+                            <select
+                                value={feedType}
+                                onChange={(e) => setFeedType(e.target.value as 'EPHEMERAL' | 'PERMANENT' | 'JOB')}
+                                className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
+                            >
+                                <option value="EPHEMERAL">回音壁 (24小时)</option>
+                                <option value="PERMANENT">时光档案 (永久)</option>
+                                <option value="JOB">谋生墙 (永久)</option>
+                            </select>
+                        </div>
                     </div>
                     <div>
                         <label htmlFor="special-content" className="block text-gray-300 mb-2">内容</label>
@@ -181,7 +197,7 @@ export default function AdminDashboardPage() {
                             required
                         />
                     </div>
-                    {postType === 'ADVERTISEMENT' && (
+                    {contentType === 'ADVERTISEMENT' && (
                         <div>
                             <label htmlFor="ad-url" className="block text-gray-300 mb-2">广告链接 (URL)</label>
                             <input

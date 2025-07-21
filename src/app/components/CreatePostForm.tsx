@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { addMyEcho } from '@/hooks/useMyEchoes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -89,9 +89,11 @@ function LoadingDots() {
 interface CreatePostFormProps {
     parentPostId?: number;
     parentReplyId?: number;
+    feedType?: 'EPHEMERAL' | 'JOB' | 'PERMANENT' | null;
+    isPermanent: boolean;
 }
 
-export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePostFormProps) {
+export default function CreatePostForm({ parentPostId, parentReplyId, feedType, isPermanent }: CreatePostFormProps) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -111,11 +113,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
     const [url, setUrl] = useState("");
     const [urlError, setUrlError] = useState<string | null>(null);
 
-    const [isPermanent, setIsPermanent] = useState(false);
     const [jobRating, setJobRating] = useState(0);
-    const pathname = usePathname();
-    const isJobFeed = pathname.startsWith('/jobs');
-    const isPermanentFeed = pathname.startsWith('/permanent');
 
     const whitelistedDomains = (process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || '').split(',').map(d => d.trim().toLowerCase());
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -124,9 +122,9 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
         ? linkPlaceholders
         : isPoll
             ? pollPlaceholders
-            : isJobFeed
+            : feedType === 'JOB'
                 ? jobPlaceholders
-                : isPermanentFeed
+                : feedType === 'PERMANENT'
                     ? permanentPlaceholders
                     : parentReplyId
                         ? threadedReplyPlaceholders
@@ -252,6 +250,8 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
         setError(null);
 
         try {
+            const finalFeedType = feedType || (isPermanent ? 'PERMANENT' : 'EPHEMERAL');
+
             const response = await fetch('/api/posts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -261,10 +261,10 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                     parentPostId: parentPostId,
                     parentReplyId: parentReplyId,
                     contentType: isUrl ? 'LINK' : isPoll ? 'POLL' : 'TEXT',
-                    feed: isJobFeed ? 'JOB' : isPermanent ? 'PERMANENT' : 'EPHEMERAL',
+                    feed: finalFeedType,
                     url: isUrl ? url : undefined,
                     pollOptions: isPoll && !parentPostId ? pollOptions.filter(opt => opt.trim()) : undefined,
-                    jobRating: isJobFeed && parentPostId && jobRating > 0 ? jobRating : undefined,
+                    jobRating: feedType === 'JOB' && parentPostId && jobRating > 0 ? jobRating : undefined,
                 }),
             });
 
@@ -283,9 +283,9 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
             setTimeout(() => {
                 if (parentPostId) {
                     router.replace(`/post/${parentPostId}`);
-                } else if (isJobFeed) {
+                } else if (feedType === 'JOB') {
                     router.push('/jobs');
-                } else if (isPermanent) {
+                } else if (feedType === 'PERMANENT' || isPermanent) {
                     router.push('/permanent');
                 } else {
                     router.push('/');
@@ -308,9 +308,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                 <motion.div
                     className="p-4 rounded-lg relative transition-colors duration-500"
                     style={{
-                        background: isPermanent
-                            ? 'radial-gradient(ellipse at bottom, #2d1b35 0%, #0f0913 100%)'
-                            : (isJobFeed ? 'radial-gradient(ellipse at bottom, #0B192F 0%, #020a17 100%)' : 'var(--card-background)')
+                        background: 'var(--card-background)'
                     }}
                     initial={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{
@@ -325,19 +323,6 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                     }}
                 >
                     <form onSubmit={handleSubmit} className="relative">
-                        {!parentPostId && !isJobFeed && !isPermanentFeed && (
-                            <div className="absolute top-0 right-0 z-20">
-                                <label className="flex items-center cursor-pointer p-2">
-                                    <span className="mr-2 text-sm font-semibold text-gray-400">永久保存</span>
-                                    <div className="relative">
-                                        <input type="checkbox" checked={isPermanent} onChange={() => setIsPermanent(!isPermanent)} className="sr-only" />
-                                        <div className={`block w-12 h-6 rounded-full transition ${isPermanent ? 'bg-accent' : 'bg-gray-600'}`}></div>
-                                        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isPermanent ? 'transform translate-x-6' : ''}`}></div>
-                                    </div>
-                                </label>
-                            </div>
-                        )}
-
                         {content.length === 0 && (
                             <div className="absolute top-0 left-0 p-2 text-gray-500 pointer-events-none">
                                 <AnimatePresence mode="wait">
@@ -364,7 +349,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId }: CreatePo
                             disabled={isSubmitting}
                         />
 
-                        {isJobFeed && parentPostId && (
+                        {feedType === 'JOB' && parentPostId && (
                             <div className="my-4">
                                 <h3 className="text-center font-semibold text-gray-300 mb-2">为这个职位发布评分</h3>
                                 <StarRating onRating={setJobRating} isSubmitting={isSubmitting} />

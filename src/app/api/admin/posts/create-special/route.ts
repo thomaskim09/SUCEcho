@@ -17,16 +17,16 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { content, type, url } = body;
+        const { content, contentType, feed, url } = body;
 
         // 2. Validate the input
-        if (!content || !type) {
+        if (!content || !contentType || !feed) {
             return NextResponse.json(
-                { error: 'Missing content or type' },
+                { error: 'Missing content, contentType, or feed' },
                 { status: 400 }
             );
         }
-        if (type === 'ADVERTISEMENT' && !url) {
+        if (contentType === 'ADVERTISEMENT' && !url) {
             return NextResponse.json(
                 {
                     error: 'URL is required for ADVERTISEMENT type',
@@ -34,9 +34,15 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
-        if (!['ANNOUNCEMENT', 'ADVERTISEMENT'].includes(type)) {
+        if (!['ANNOUNCEMENT', 'ADVERTISEMENT'].includes(contentType)) {
             return NextResponse.json(
-                { error: 'Invalid post type' },
+                { error: 'Invalid post content type' },
+                { status: 400 }
+            );
+        }
+        if (!['EPHEMERAL', 'PERMANENT', 'JOB'].includes(feed)) {
+            return NextResponse.json(
+                { error: 'Invalid post feed type' },
                 { status: 400 }
             );
         }
@@ -46,9 +52,9 @@ export async function POST(request: NextRequest) {
             const createdPost = await tx.post.create({
                 data: {
                     content,
-                    type,
+                    contentType,
+                    feed,
                     url,
-                    // Admin posts use a system fingerprint to distinguish them
                     fingerprintHash: 'system-admin-post',
                 },
             });
