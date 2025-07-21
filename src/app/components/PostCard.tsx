@@ -372,7 +372,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                     {post.contentType !== 'ADVERTISEMENT' && (
                         <div className="relative flex items-center justify-between text-sm text-gray-400 mt-3 z-10">
                             {post.feed !== 'EPHEMERAL' ? (
-                                <div className="font-mono text-left text-gray-400">
+                                <div className="font-mono text-left text-gray-400 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis">
                                     {timeSince(new Date(post.createdAt))}
                                 </div>
                             ) : (
@@ -447,24 +447,24 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                         )}
                                         <div className="relative flex items-center">
                                             <button onClick={(e) => handleVote(e, 1)} className={`press-animation icon-base icon-thumb-up ${upvoteIsActive ? 'active' : ''} ${hasUpvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}>
-                                                <Icon name="thumb-up" value={post.stats?.upvotes ?? 0} /></button>
+                                                <Icon name="thumb-up" value={post.stats?.upvotes ?? 0} className="w-5 h-5" /></button>
                                             <Tooltip content={upvoteTooltipContent} isVisible={showUpvoteTooltip} onClose={closeUpvoteTooltip} />
                                         </div>
                                         <div className="relative flex items-center">
                                             <button onClick={(e) => handleVote(e, -1)} className={`press-animation icon-base icon-thumb-down ${downvoteIsActive ? 'active' : ''} ${hasDownvotes ? 'has-votes' : ''}`} disabled={isFingerprintLoading}>
-                                                <Icon name="thumb-down" value={post.stats?.downvotes ?? 0} /></button>
+                                                <Icon name="thumb-down" value={post.stats?.downvotes ?? 0} className="w-5 h-5" /></button>
                                             <Tooltip content={downvoteTooltipContent} isVisible={showDownvoteTooltip} onClose={closeDownvoteTooltip} />
                                         </div>
                                         {isChildEcho && onReplyClick ? (
                                             <div className="relative flex items-center">
                                                 <button onClick={handleReply} className="press-animation icon-base icon-comment">
-                                                    <Icon name="comment" />
+                                                    <Icon name="comment" className="w-5 h-5" />
                                                 </button>
                                             </div>
                                         ) : (
                                             <div className="relative flex items-center">
                                                 <button onClick={handleCommentClick} className={`press-animation icon-base icon-comment ${hasComments ? 'has-comments' : ''}`}>
-                                                    <Icon name="comment" value={post.stats?.replyCount ?? 0} />
+                                                    <Icon name="comment" value={post.stats?.replyCount ?? 0} className="w-5 h-5" />
                                                 </button>
                                             </div>
                                         )}
