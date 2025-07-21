@@ -227,7 +227,7 @@ export default function PostDetailPage() {
             if (post && post.feed === 'JOB' && fingerprint) {
                 setIsFetchingRating(true);
                 try {
-                    const res = await fetch(`/api/jobs/${post.id}/my-rating`, {
+                    const res = await fetch(`/api/jobs/${post.id}/my_rating`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ fingerprintHash: fingerprint }),
@@ -235,6 +235,10 @@ export default function PostDetailPage() {
                     if (res.ok) {
                         const data = await res.json();
                         setUserRating(data.rating);
+                    } else {
+                        // Handle non-ok responses from the API gracefully
+                        logger.error(`Failed to fetch user rating, status: ${res.status}`);
+                        setUserRating(null);
                     }
                 } catch (error) {
                     logger.error("Failed to fetch user's rating", error);
@@ -461,7 +465,7 @@ export default function PostDetailPage() {
                     </div>
                 )}
 
-                {isJobPost && !isFetchingRating && (
+                {isJobPost && (
                     <div className="my-6">
                         <StarRating
                             onRating={handleRatingSubmit}
@@ -469,6 +473,7 @@ export default function PostDetailPage() {
                             averageRating={post.stats?.averageRating || 0}
                             ratingCount={post.stats?.ratingCount || 0}
                             userRating={userRating}
+                            isFetchingRating={isFetchingRating}
                         />
                         <p className="text-center text-xs text-gray-500 pt-2">共 {post.stats?.ratingCount || 0} 评价</p>
                     </div>

@@ -1,3 +1,4 @@
+// SUCEcho_packaged/src/app/api/jobs/[id]/my_rating/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
@@ -26,7 +27,11 @@ export async function POST(
             },
         });
 
-        return NextResponse.json({ rating: existingRating?.rating || null });
+        if (!existingRating) {
+            return NextResponse.json({ rating: null });
+        }
+
+        return NextResponse.json({ rating: existingRating.rating });
     } catch (error) {
         logger.error(
             `Error fetching user rating for job post #${params.id}:`,
