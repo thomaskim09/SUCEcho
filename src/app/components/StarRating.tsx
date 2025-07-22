@@ -12,7 +12,6 @@ interface StarRatingProps {
     onRating: (rating: number) => Promise<void>;
     isSubmitting: boolean;
     averageRating: number;
-    ratingCount: number;
     userRating: number | null;
     isFetchingRating: boolean;
     postId: number;
@@ -58,7 +57,7 @@ const RatedState = ({ userRating, averageRating }: { userRating: number; average
 };
 
 
-export default function StarRating({ onRating, isSubmitting, averageRating, ratingCount, userRating: initialUserRating, isFetchingRating: initialIsFetching, postId }: StarRatingProps) {
+export default function StarRating({ onRating, isSubmitting, averageRating, userRating: initialUserRating, isFetchingRating: initialIsFetching, postId }: StarRatingProps) {
     const { fingerprint } = useFingerprint();
     const [selectedRating, setSelectedRating] = useState(0);
     const [hover, setHover] = useState(0);

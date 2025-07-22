@@ -433,7 +433,6 @@ export default function PostDetailPage() {
                             onRating={handleRatingSubmit}
                             isSubmitting={isSubmittingRating}
                             averageRating={post.stats?.averageRating || 0}
-                            ratingCount={post.stats?.ratingCount || 0}
                             userRating={null}
                             isFetchingRating={false}
                         />

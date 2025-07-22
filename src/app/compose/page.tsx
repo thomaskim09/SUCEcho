@@ -3,9 +3,9 @@
 
 import CreatePostForm from "../components/CreatePostForm";
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, Suspense } from 'react';
 
-export default function ComposePage() {
+function ComposePageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const parentPostId = searchParams.get('parentPostId');
@@ -76,5 +76,13 @@ export default function ComposePage() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function ComposePage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ComposePageContent />
+        </Suspense>
     );
 }

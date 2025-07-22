@@ -1,8 +1,8 @@
 // src/app/components/CreatePostForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShareModal } from "@/context/ModalContext";
@@ -114,7 +114,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
     const [url, setUrl] = useState("");
     const [urlError, setUrlError] = useState<string | null>(null);
 
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const urlRegex = useMemo(() => /(https?:\/\/[^\s]+)/g, []);
 
     const placeholderExamples = isUrl
         ? linkPlaceholders
@@ -146,13 +146,6 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
     }, [placeholderExamples.length]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setLinkPlaceholderIndex(prevIndex => (prevIndex + 1) % linkExamples.length);
-        }, 4000);
-        return () => clearInterval(interval);
-    }, [linkExamples.length]);
-
-    useEffect(() => {
         const foundUrls = content.match(urlRegex);
         if (foundUrls && foundUrls.length > 0) {
             const firstUrl = foundUrls[0];
@@ -161,6 +154,13 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
             setContent(content.replace(urlRegex, '').trim());
         }
     }, [content, urlRegex]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setLinkPlaceholderIndex(prevIndex => (prevIndex + 1) % linkExamples.length);
+        }, 4000);
+        return () => clearInterval(interval);
+    }, []);
 
     const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newUrl = e.target.value;

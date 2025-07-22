@@ -1,35 +1,20 @@
 // sucecho/src/hooks/useCountdown.ts
 import { useState, useEffect } from 'react';
 
-/**
- * A custom hook to manage a countdown timer for a post.
- * @param {Date} createdAt - The creation date of the post.
- * @param {string} feedType - The type of feed the post belongs to.
- * @returns {{countdownText: string, colorClass: string, isExpired: boolean, isVanishing: boolean}} - The display text, color class, and expiration status.
- */
 export const useCountdown = (
     createdAt: Date,
     feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB'
 ) => {
-    // Permanent and Job posts do not expire.
-    if (feedType === 'PERMANENT' || feedType === 'JOB') {
-        return {
-            countdownText: '',
-            colorClass: 'text-gray-400',
-            isExpired: false,
-            isVanishing: false,
-            isCritical: false,
-        };
-    }
-
     const twentyFourHours = 24 * 60 * 60 * 1000;
     const expiresAt = new Date(createdAt).getTime() + twentyFourHours;
-    const vanishTime = expiresAt + 4500; // Vanish 4.5 seconds after expiration (3s delay + 1.5s glitch)
+    const vanishTime = expiresAt + 4500;
 
     const [timeLeft, setTimeLeft] = useState(expiresAt - new Date().getTime());
     const [isVanishing, setIsVanishing] = useState(false);
 
     useEffect(() => {
+        if (feedType !== 'EPHEMERAL') return;
+
         const interval = setInterval(() => {
             const now = new Date().getTime();
             const newTimeLeft = expiresAt - now;
@@ -41,10 +26,19 @@ export const useCountdown = (
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [expiresAt, vanishTime]);
+    }, [expiresAt, vanishTime, feedType]);
+
+    if (feedType === 'PERMANENT' || feedType === 'JOB') {
+        return {
+            countdownText: '',
+            colorClass: 'text-gray-400',
+            isExpired: false,
+            isVanishing: false,
+            isCritical: false,
+        };
+    }
 
     const isExpired = timeLeft <= 0;
-
     const hours = Math.floor(timeLeft / (1000 * 60 * 60));
     const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
     const seconds = Math.floor((timeLeft / 1000) % 60);
@@ -63,7 +57,6 @@ export const useCountdown = (
             countdownText = `${seconds}秒`;
         }
 
-        // Reset colorClass if not expired
         if (isCritical) {
             colorClass = 'text-countdown-critical';
         } else if (hours < 1 && minutes >= 15) {

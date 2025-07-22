@@ -14,8 +14,9 @@ import { TabLeaderProvider } from "./components/TabLeaderProvider";
 import { RealtimeStatusProvider } from "@/context/RealtimeStatusContext";
 import { ModalProvider } from "@/context/ModalContext";
 import BottomNavBar from "./components/BottomNavBar";
-import PageThemeProvider from "./components/PageThemeProvider"; // Import the new component
+import PageThemeProvider from "./components/PageThemeProvider";
 import { InfoModalProvider } from "@/context/InfoModalContext";
+import { Suspense } from 'react';
 
 const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
               <RealtimeStatusProvider>
                 <ModalProvider>
                   <InfoModalProvider>
+                    <Suspense fallback={<div>Loading...</div>}>
                     <PageThemeProvider>
                       <OnboardingWrapper>
                         <UserStatusBanner />
@@ -67,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
                         <BottomNavBar />
                       </OnboardingWrapper>
                     </PageThemeProvider>
+                  </Suspense>
                   </InfoModalProvider>
                 </ModalProvider>
               </RealtimeStatusProvider>

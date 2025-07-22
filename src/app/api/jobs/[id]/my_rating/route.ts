@@ -1,11 +1,15 @@
 // SUCEcho_packaged/src/app/api/jobs/[id]/my_rating/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 
+interface Params {
+    id: string;
+}
+
 export async function POST(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    { params }: { params: Promise<Params> }
 ) {
     try {
         const { id } = await params;

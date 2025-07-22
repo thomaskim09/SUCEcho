@@ -14,12 +14,14 @@ const commentCooldown = new Map<string, number>();
 const replyCooldown = new Map<string, Map<number, number>>();
 const replyCounts = new Map<string, Map<number, number>>();
 
+type FeedType = 'EPHEMERAL' | 'PERMANENT' | 'JOB';
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const limit = parseInt(searchParams.get('limit') || '10', 10);
         const cursor = searchParams.get('cursor');
-        const feed = searchParams.get('feed') || 'EPHEMERAL';
+        const feed = (searchParams.get('feed') || 'EPHEMERAL') as FeedType;
 
         const posts = await prisma.post.findMany({
             take: limit,
@@ -32,7 +34,7 @@ export async function GET(request: Request) {
             where: {
                 content: { not: null },
                 parentPostId: null,
-                feed: feed as any,
+                feed: feed,
             },
             select: {
                 id: true,

@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { verifySession } from '@/lib/auth';
-import { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
     const session = request.headers
