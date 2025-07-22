@@ -204,7 +204,7 @@ export default function AdminDashboardPage() {
                                 className="w-full bg-gray-800 border border-gray-600 rounded-lg p-2 focus:outline-none focus:border-accent"
                             >
                                 <option value="EPHEMERAL">回音壁 (24小时)</option>
-                                <option value="PERMANENT">时光档案 (永久)</option>
+                                <option value="PERMANENT">时光档 (永久)</option>
                                 <option value="JOB">谋生墙 (永久)</option>
                             </select>
                         </div>

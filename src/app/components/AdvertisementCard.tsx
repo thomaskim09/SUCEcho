@@ -19,7 +19,7 @@ interface AdCardProps {
 export default function AdvertisementCard({ post, onFaded, onDelete, onDeletionComplete }: AdCardProps) {
     const isAdmin = useAdminSession();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { countdownText, colorClass, isExpired } = useCountdown(new Date(post.createdAt));
+    const { countdownText, colorClass, isExpired } = useCountdown(new Date(post.createdAt), post.feed);
     const [isCharging, setIsCharging] = useState(false);
     const [isGlitching, setIsGlitching] = useState(false);
     const [isEnlarged, setIsEnlarged] = useState(false);
@@ -110,7 +110,7 @@ export default function AdvertisementCard({ post, onFaded, onDelete, onDeletionC
                                 <span className={`font-mono text-sm ${colorClass}`}>
                                     {countdownText}
                                 </span>
-                                <div className="flex items-center gap-2 text-accent text-sm font-bold">
+                                <div className="flex items-center gap-2 text-sm">
                                     <span>了解更多</span>
                                     <Icon name="share" className="w-4 h-4" />
                                 </div>

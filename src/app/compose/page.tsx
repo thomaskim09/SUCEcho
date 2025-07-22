@@ -47,7 +47,7 @@ export default function ComposePage() {
             ? `撰写子回声 - ${getFeedName()}`
             : `发布新回音 - ${getFeedName()}`;
 
-    const postLifespan = isPermanent ? '这篇回音将永久保存' : '这篇回音将在24小时后消失';
+    const postLifespan = isPermanent ? '这篇回音将不会过期消散' : '这篇回音将在24小时后消失';
 
 
     return (
