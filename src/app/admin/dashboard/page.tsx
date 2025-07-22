@@ -11,12 +11,14 @@ import LocalStorageManager from '@/app/components/LocalStorageManager';
 interface AdminStats {
     totalUsers: number;
     activeUsers24h: number;
-    totalPosts: number;
-    postsWithin24h: number;
-    expiredPostsCount: number;
     totalVotes: number;
     totalUpvotes: number;
     totalDownvotes: number;
+    ephemeralPostsWithin24h: number;
+    ephemeralExpiredPosts: number;
+    totalEphemeralPosts: number;
+    totalJobPosts: number;
+    totalPermanentPosts: number;
 }
 
 export default function AdminDashboardPage() {
@@ -324,25 +326,39 @@ export default function AdminDashboardPage() {
                     {/* Echo Management Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #f97316' }}>
                         <div>
-                            <h2 className="text-2xl font-bold text-orange-400">回音管理</h2>
-                            <p className="text-sm text-gray-400 mt-1 mb-4">手动运行日常或深度数据清理任务。</p>
+                            <h2 className="text-2xl font-bold text-orange-400 mb-4">回音管理</h2>
                             {stats ? (
-                                <div className="space-y-2 font-mono">
-                                    <p>24小时内: <span className="font-bold text-xl text-green-400">{stats.postsWithin24h}</span></p>
-                                    <p>已过期: <span className="font-bold text-xl text-yellow-400">{stats.expiredPostsCount}</span></p>
-                                    <p>总数: <span className="font-bold text-xl text-white">{stats.totalPosts}</span></p>
+                                <div className="space-y-4">
+                                    <div className="p-4 rounded-lg bg-gray-800/50">
+                                        <h3 className="text-xl font-bold text-white mb-3">回音壁</h3>
+                                        <div className="space-y-2 font-mono mb-4">
+                                            <p>24小时内: <span className="font-bold text-xl text-green-400">{stats.ephemeralPostsWithin24h}</span></p>
+                                            <p>已过期: <span className="font-bold text-xl text-yellow-400">{stats.ephemeralExpiredPosts}</span></p>
+                                            <p>总数: <span className="font-bold text-xl text-white">{stats.totalEphemeralPosts}</span></p>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <button onClick={handleRunCron} disabled={isCronRunning} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+                                                {isCronRunning ? '...' : '清理过期'}
+                                            </button>
+                                            <button onClick={handleDeepClean} disabled={isDeepCleaning} className="bg-orange-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
+                                                {isDeepCleaning ? '...' : '深度清理'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                        <div className="p-4 rounded-lg bg-gray-800/50">
+                                            <h3 className="text-xl font-bold text-white mb-2">谋生墙</h3>
+                                            <p className="font-mono">总数: <span className="font-bold text-xl text-white">{stats.totalJobPosts}</span></p>
+                                        </div>
+                                        <div className="p-4 rounded-lg bg-gray-800/50">
+                                            <h3 className="text-xl font-bold text-white mb-2">时光档</h3>
+                                            <p className="font-mono">总数: <span className="font-bold text-xl text-white">{stats.totalPermanentPosts}</span></p>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <p className="text-lg text-gray-500 mt-2">加载中...</p>
                             )}
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-4">
-                            <button onClick={handleRunCron} disabled={isCronRunning} className="bg-blue-600 flex-1 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
-                                {isCronRunning ? '...' : '清理过期'}
-                            </button>
-                            <button onClick={handleDeepClean} disabled={isDeepCleaning} className="bg-orange-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
-                                {isDeepCleaning ? '...' : '深度清理'}
-                            </button>
                         </div>
                     </div>
                 </div>

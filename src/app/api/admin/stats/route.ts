@@ -18,42 +18,57 @@ export async function GET(request: Request) {
 
         const [
             totalUsers,
-            totalPosts,
-            postsWithin24h,
-            expiredPostsCount,
             activeUsers24h,
             totalVotes,
             totalUpvotes,
             totalDownvotes,
+            ephemeralPostsWithin24h,
+            ephemeralExpiredPosts,
+            totalEphemeralPosts,
+            totalJobPosts,
+            totalPermanentPosts,
         ] = await prisma.$transaction([
             prisma.userAnonymizedProfile.count(),
-            prisma.post.count(),
-            prisma.post.count({
-                where: { createdAt: { gte: twentyFourHoursAgo } },
-            }),
-            prisma.post.count({
-                where: {
-                    createdAt: { lt: twentyFourHoursAgo },
-                    feed: 'EPHEMERAL',
-                },
-            }),
             prisma.userAnonymizedProfile.count({
                 where: { lastSeenAt: { gte: twentyFourHoursAgo } },
             }),
             prisma.vote.count(),
             prisma.vote.count({ where: { voteType: 1 } }),
             prisma.vote.count({ where: { voteType: -1 } }),
+            prisma.post.count({
+                where: {
+                    feed: 'EPHEMERAL',
+                    createdAt: { gte: twentyFourHoursAgo },
+                },
+            }),
+            prisma.post.count({
+                where: {
+                    feed: 'EPHEMERAL',
+                    createdAt: { lt: twentyFourHoursAgo },
+                },
+            }),
+            prisma.post.count({
+                where: { feed: 'EPHEMERAL' },
+            }),
+            prisma.post.count({
+                where: { feed: 'JOB' },
+            }),
+            prisma.post.count({
+                where: { feed: 'PERMANENT' },
+            }),
         ]);
 
         return NextResponse.json({
             totalUsers,
-            totalPosts,
-            postsWithin24h,
-            expiredPostsCount,
             activeUsers24h,
             totalVotes,
             totalUpvotes,
             totalDownvotes,
+            ephemeralPostsWithin24h,
+            ephemeralExpiredPosts,
+            totalEphemeralPosts,
+            totalJobPosts,
+            totalPermanentPosts,
         });
     } catch (error) {
         logger.error('Error fetching admin stats:', error);
