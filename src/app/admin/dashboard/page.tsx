@@ -24,8 +24,10 @@ export default function AdminDashboardPage() {
     const router = useRouter();
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [reportCount, setReportCount] = useState<number | null>(null);
+    const [purifiedCount, setPurifiedCount] = useState<number | null>(null); // New state for purified count
     const [isCronRunning, setIsCronRunning] = useState(false);
     const [isDeepCleaning, setIsDeepCleaning] = useState(false);
+    const [isPurifying, setIsPurifying] = useState(false);
     const [specialPostContent, setSpecialPostContent] = useState('');
     const [contentType, setContentType] = useState<'ANNOUNCEMENT' | 'ADVERTISEMENT'>('ANNOUNCEMENT');
     const [feedType, setFeedType] = useState<'EPHEMERAL' | 'PERMANENT' | 'JOB'>('EPHEMERAL');
@@ -34,29 +36,30 @@ export default function AdminDashboardPage() {
 
     const fetchDashboardData = async () => {
         try {
-            const [statsResponse, reportsResponse] = await Promise.all([
+            const [statsResponse, reportsResponse, purifiedResponse] = await Promise.all([
                 fetch('/api/admin/stats'),
                 fetch('/api/admin/reports'),
+                fetch('/api/admin/stats/purified-count'), // Fetch new stat
             ]);
 
-            if (statsResponse.ok) {
-                setStats(await statsResponse.json());
-            } else {
-                logger.warn("Could not fetch admin stats");
-                setStats(null);
-            }
+            if (statsResponse.ok) setStats(await statsResponse.json());
+            else logger.warn("Could not fetch admin stats");
 
             if (reportsResponse.ok) {
                 const reportsData = await reportsResponse.json();
                 setReportCount(reportsData.length);
             } else {
                 logger.warn("Could not fetch report count");
-                setReportCount(0);
+            }
+
+            if (purifiedResponse.ok) {
+                const purifiedData = await purifiedResponse.json();
+                setPurifiedCount(purifiedData.purifiedCount);
+            } else {
+                logger.warn("Could not fetch purified post count");
             }
         } catch (e) {
             logger.error("Error fetching dashboard data:", e);
-            setReportCount(0);
-            setStats(null);
         }
     };
 
@@ -100,6 +103,24 @@ export default function AdminDashboardPage() {
             alert(`运行深度清理时出错: ${(err as Error).message}`);
         } finally {
             setIsDeepCleaning(false);
+        }
+    };
+
+    // New handler for the purify job
+    const handlePurify = async () => {
+        if (!confirm(`您确定要手动净化所有在过去3天内且符合净化标准的帖子吗？`)) {
+            return;
+        }
+        setIsPurifying(true);
+        try {
+            const res = await fetch('/api/admin/manual-purify', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+            await fetchDashboardData();
+        } catch (err) {
+            alert(`运行净化任务时出错: ${(err as Error).message}`);
+        } finally {
+            setIsPurifying(false);
         }
     };
 
@@ -243,6 +264,24 @@ export default function AdminDashboardPage() {
                             前往处理
                         </Link>
                     </div>
+                    {/* New Purified Posts Card */}
+                    <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #f59e0b' }}>
+                        <div>
+                            <h2 className="text-2xl font-bold text-yellow-400">净化统计 (3天内)</h2>
+                            <p className="text-sm text-gray-400 mt-1 mb-4">社区自治净化的帖子数量。</p>
+                            {purifiedCount !== null ? (
+                                <div className="space-y-2 font-mono">
+                                    <p className="text-5xl font-mono">{purifiedCount}</p>
+                                </div>
+                            ) : (
+                                <p className="text-lg text-gray-500 mt-2">加载中...</p>
+                            )}
+                        </div>
+                        <button onClick={handlePurify} disabled={isPurifying} className="mt-4 block w-full text-center bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50">
+                            {isPurifying ? '...' : '手动净化'}
+                        </button>
+                    </div>
+
 
                     {/* User Stats Card */}
                     <div className="p-6 rounded-lg flex flex-col justify-between" style={{ backgroundColor: 'var(--card-background)', border: '1px solid #3b82f6' }}>
@@ -297,8 +336,8 @@ export default function AdminDashboardPage() {
                                 <p className="text-lg text-gray-500 mt-2">加载中...</p>
                             )}
                         </div>
-                        <div className="flex gap-2 mt-4">
-                            <button onClick={handleRunCron} disabled={isCronRunning} className="bg-blue-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+                        <div className="flex flex-wrap gap-2 mt-4">
+                            <button onClick={handleRunCron} disabled={isCronRunning} className="bg-blue-600 flex-1 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
                                 {isCronRunning ? '...' : '清理过期'}
                             </button>
                             <button onClick={handleDeepClean} disabled={isDeepCleaning} className="bg-orange-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
