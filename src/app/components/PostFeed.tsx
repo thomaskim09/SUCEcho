@@ -71,14 +71,14 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
             showInfoModal({
                 title: "欢迎来到谋生墙",
                 iconName: "briefcase",
-                content: "这里是为南院人量身打造的互助平台。无论是寻找项目伙伴、发布实习机会，还是招募社团干部，你都可以在这里找到归属。你的每一次分享，都在为这个社区添砖加瓦。",
+                content: "这里是为南院人量身打造的互助平台。无论是寻找项目伙伴、发布实习机会，还是社团招募，你都可以在这里找到归属。在这里发布的内容将不会过期消散，你的每一次分享，都在为这个社区添砖加瓦，为南院人留下宝贵的资源和连接。",
                 storageKey: 'hasSeenJobFeedInfo',
             });
         } else if (feedType === 'PERMANENT') {
             showInfoModal({
                 title: "欢迎来到时光档",
                 iconName: "archive",
-                content: "有些回忆，值得被永远珍藏。时光档是我们的数字纪念碑，专门用来记录那些对南院社群有特殊意义的人、事、物。在这里发布的内容将不会过期消散。",
+                content: "在南院，有些话语和想法，你或许希望能留存更久。无论是想吐槽日常、分享见闻，还是记录下此刻的心情，都可以在这里放下。因为在这里发布的内容不会过期消散，它们会成为南院故事中持续存在的独特印记",
                 storageKey: 'hasSeenPermanentFeedInfo',
             });
         }
