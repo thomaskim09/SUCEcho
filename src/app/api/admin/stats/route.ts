@@ -32,7 +32,10 @@ export async function GET(request: Request) {
                 where: { createdAt: { gte: twentyFourHoursAgo } },
             }),
             prisma.post.count({
-                where: { createdAt: { lt: twentyFourHoursAgo } },
+                where: {
+                    createdAt: { lt: twentyFourHoursAgo },
+                    feed: 'EPHEMERAL',
+                },
             }),
             prisma.userAnonymizedProfile.count({
                 where: { lastSeenAt: { gte: twentyFourHoursAgo } },

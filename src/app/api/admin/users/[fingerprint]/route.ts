@@ -33,8 +33,6 @@ export async function GET(
             );
         }
 
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
         // 1. Fetch the user profile
         const user = await prisma.userAnonymizedProfile.findUnique({
             where: { fingerprintHash: userFingerprint },
@@ -51,9 +49,6 @@ export async function GET(
         const posts = await prisma.post.findMany({
             where: {
                 fingerprintHash: userFingerprint,
-                createdAt: {
-                    gte: twentyFourHoursAgo,
-                },
             },
             include: {
                 stats: true,

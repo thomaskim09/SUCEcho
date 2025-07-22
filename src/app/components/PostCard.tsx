@@ -95,7 +95,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isCharging, setIsCharging] = useState(false);
     const [isPurifyGlow, setIsPurifyGlow] = useState(false);
     const isChildEcho = !!post.parentPostId;
-    const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt));
+    const { countdownText, colorClass, isExpired, isVanishing, isCritical } = useCountdown(new Date(post.createdAt), post.feed);
     const isAnnouncement = post.contentType === 'ANNOUNCEMENT';
     const isPoll = post.contentType === 'POLL';
     const isLinkPost = post.contentType === 'LINK';

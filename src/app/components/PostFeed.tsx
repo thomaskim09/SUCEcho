@@ -15,8 +15,6 @@ import { getPurifiedPostIds } from '@/lib/purifiedStore';
 import FloatingNotification from './FloatingNotification';
 import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
-import InfoModal from './InfoModal';
-import { Icon } from './Icon';
 import { useInfoModal } from '@/context/InfoModalContext';
 
 
@@ -33,7 +31,6 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
     const router = useRouter();
     const hasFetchedInitialPosts = useRef(false);
     const { fingerprint } = useFingerprint();
-    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const { showInfoModal } = useInfoModal();
 
     function handleNewPost(newPost: PostWithStats) {
@@ -347,7 +344,6 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
         const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
         return postAge < twentyFourHours && !purifiedPostIds.has(post.id);
     });
-
 
     const feedEndLabels = {
         EPHEMERAL: '--- 回音壁尽头 ---',
