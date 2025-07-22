@@ -1,7 +1,7 @@
 // src/lib/voteStore.ts
 
 const VOTES_KEY = 'user_votes';
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+const MAX_VOTE_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 type VoteEntry = {
     postId: number;
@@ -25,7 +25,7 @@ export const getStoredVotes = (): Record<number, 1 | -1> => {
         const now = Date.now();
 
         const recentEntries = allEntries.filter(
-            (entry) => now - entry.timestamp < TWENTY_FOUR_HOURS_MS
+            (entry) => now - entry.timestamp < MAX_VOTE_AGE_MS
         );
 
         if (recentEntries.length < allEntries.length) {
