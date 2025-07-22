@@ -17,22 +17,39 @@ const LinkPreviewCard = ({ url }: LinkPreviewCardProps) => {
     let buttonLabel = '打开链接';
 
     try {
-        const urlObj = new URL(url);
-        const domain = urlObj.hostname.replace(/^www\./, '');
-        const path = urlObj.pathname.length > 20 ? urlObj.pathname.substring(0, 17) + '...' : urlObj.pathname;
-        // Display domain and path, but avoid showing just "/" for root domains
-        displayUrl = path === '/' ? domain : `${domain}${path}`;
+        if (url.startsWith('mailto:')) {
+            displayUrl = url;
+            buttonLabel = '发送邮件';
+        } else {
+            const urlObj = new URL(url);
+            const domain = urlObj.hostname.replace(/^www\./, '');
+            const path = urlObj.pathname.length > 20 ? urlObj.pathname.substring(0, 17) + '...' : urlObj.pathname;
+            displayUrl = path === '/' ? domain : `${domain}${path}`;
 
-        // Set button label based on domain
-        if (domain.includes('forms.gle') || domain.includes('google.com/forms')) {
-            buttonLabel = '查看表单';
-        } else if (domain.includes('youtube.com') || domain.includes('youtu.be')) {
-            buttonLabel = '观看视频';
+            // Set button label based on domain
+            if (domain.includes('forms.gle') || domain.includes('google.com/forms')) {
+                buttonLabel = '查看表单';
+            } else if (domain.includes('youtube.com') || domain.includes('youtu.be')) {
+                buttonLabel = '观看视频';
+            } else if (domain.includes('spotify.com')) {
+                buttonLabel = '收听音乐';
+            } else if (['instagram.com', 'tiktok.com', 'x.com', 'twitter.com', 'xiaohongshu.com', 'xhslink.com'].some(d => domain.includes(d))) {
+                buttonLabel = '查看帖子';
+            } else if (['wa.me', 'whatsapp.com'].some(d => domain.includes(d))) {
+                buttonLabel = '打开聊天';
+            } else if (['linkedin.com', 'jobstreet.com', 'indeed.com', 'glints.com'].some(d => domain.includes(d))) {
+                buttonLabel = '查看职位';
+            } else if (['behance.net', 'dribbble.com', 'github.com', 'gitlab.com', 'canva.com'].some(d => domain.includes(d))) {
+                buttonLabel = '查看作品';
+            } else if (['docs.google.com', 'drive.google.com', 'onedrive.live.com', '1drv.ms', 'notion.so'].some(d => domain.includes(d))) {
+                buttonLabel = '查看文件';
+            }
         }
     } catch {
         displayUrl = '无效的链接';
         buttonLabel = '链接无效';
     }
+
 
     const handleCardClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();

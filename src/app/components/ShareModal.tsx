@@ -74,7 +74,7 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                             </button>
                             <h3 className="text-2xl font-bold mb-4">嘘... 有个秘密要告诉你。</h3>
                             <p className="text-gray-300 mb-6">
-                                你已经发现了这个只存在24小时的世界。但还有很多人，仍在充满记录和审视的广场上徘徊。
+                                你已经发现了这个可以卸下伪装的秘密角落。但还有很多人，仍在充满记录和审视的广场上徘徊。
                                 <br /><br />
                                 把这个秘密通道，悄悄地递给你身边那个需要安全感的校内朋友吧。有些话，只适合在这里说给懂的人听。
                             </p>
