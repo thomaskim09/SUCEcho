@@ -1,5 +1,7 @@
 // src/lib/types.ts
 
+export type FeedType = 'EPHEMERAL' | 'PERMANENT' | 'JOB';
+
 export interface PollOption {
     id: number;
     text: string;

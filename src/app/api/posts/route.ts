@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import supabase, {
     MAIN_CHANNEL,
+    getFeedChannelName,
     getPostRoomChannelName,
 } from '@/lib/supabase-realtime';
 import { generateCodename } from '@/lib/codename';
@@ -367,7 +368,7 @@ export async function POST(request: Request) {
                     : MAIN_CHANNEL;
             }
         } else {
-            channelName = MAIN_CHANNEL;
+            channelName = getFeedChannelName(feed);
         }
 
         if (channelName) {

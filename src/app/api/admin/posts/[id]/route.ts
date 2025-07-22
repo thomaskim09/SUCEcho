@@ -1,10 +1,10 @@
 // sucecho/src/app/api/admin/posts/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import supabase from '@/lib/supabase-realtime';
+import supabase, { getFeedChannelName } from '@/lib/supabase-realtime';
 import logger from '@/lib/logger';
 import { verifySession } from '@/lib/auth';
-import { getPostRoomChannelName, MAIN_CHANNEL } from '@/lib/supabase-realtime';
+import { getPostRoomChannelName } from '@/lib/supabase-realtime';
 
 interface Params {
     id: string;
@@ -68,8 +68,9 @@ export async function DELETE(
             });
         } else {
             // If the deleted post was a parent post, notify the main channel
-            const mainChannel = supabase.channel(MAIN_CHANNEL);
-            await mainChannel.send({
+            const channelName = getFeedChannelName(existingPost.feed);
+            const channel = supabase.channel(channelName);
+            await channel.send({
                 type: 'broadcast',
                 event: 'delete_post',
                 payload: { postId: numericPostId },
