@@ -2,10 +2,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-// Key change: Import useAnimation
 import { motion, useAnimation } from 'framer-motion';
 import { useFingerprint } from '@/context/FingerprintContext';
 import logger from '@/lib/logger';
+import { getStoredPollVotes, storePollVote } from '@/lib/pollVoteStore'; // We will use our new store
 
 interface PollOption {
     id: number;
@@ -19,8 +19,6 @@ interface PollProps {
     options: PollOption[];
 }
 
-const POLL_VOTES_KEY = 'poll_votes';
-
 export default function Poll({ postId, options: initialOptions }: PollProps) {
     const { fingerprint } = useFingerprint();
     const [votedOptionId, setVotedOptionId] = useState<number | null>(null);
@@ -32,14 +30,40 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
     const controls = useAnimation();
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const votes = JSON.parse(localStorage.getItem(POLL_VOTES_KEY) || '{}');
-            const localVoteId = votes[postId] || null;
-            if (localVoteId) {
-                setVotedOptionId(localVoteId);
+        const checkVoteStatus = async () => {
+            // 1. Check local storage first for an immediate UI update.
+            const storedVotes = getStoredPollVotes();
+            const localVote = storedVotes[postId];
+
+            if (localVote) {
+                setVotedOptionId(localVote.optionId);
+            } else {
+                // 2. If not in local storage, fetch from the server.
+                if (fingerprint) {
+                    try {
+                        const res = await fetch(`/api/polls/${postId}/my_vote`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ fingerprintHash: fingerprint }),
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.votedOptionId) {
+                                // 3. Set state and save the fetched vote to local storage for next time.
+                                setVotedOptionId(data.votedOptionId);
+                                storePollVote(postId, data.votedOptionId);
+                            }
+                        }
+                    } catch (err) {
+                        logger.error("Failed to fetch user's poll vote", err);
+                    }
+                }
             }
-        }
-    }, [postId]);
+        };
+
+        checkVoteStatus();
+    }, [postId, fingerprint]);
+
 
     const totalVotes = options.reduce((sum, opt) => sum + opt.votes, 0);
 
@@ -77,6 +101,11 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
 
         setIsSubmitting(true);
         setError(null);
+
+        // Optimistic UI Update and cache locally
+        setVotedOptionId(optionId);
+        storePollVote(postId, optionId);
+
         try {
             const res = await fetch(`/api/polls/${postId}/vote`, {
                 method: 'POST',
@@ -86,21 +115,21 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
 
             if (!res.ok) {
                 const errorData = await res.json();
+                // Revert optimistic update on failure
+                setVotedOptionId(null);
+                storePollVote(postId, null);
                 throw new Error(errorData.error || '投票失败');
             }
 
             const updatedOptions: PollOption[] = await res.json();
-
-            setVotedOptionId(optionId);
             setOptions(updatedOptions);
-
-            const votes = JSON.parse(localStorage.getItem(POLL_VOTES_KEY) || '{}');
-            votes[postId] = optionId;
-            localStorage.setItem(POLL_VOTES_KEY, JSON.stringify(votes));
 
         } catch (err) {
             logger.error("Vote submission error:", err);
             setError((err as Error).message);
+            // Revert on error
+            setVotedOptionId(null);
+            storePollVote(postId, null);
             setTimeout(() => setError(null), 3000);
         } finally {
             setIsSubmitting(false);
@@ -110,7 +139,7 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
     return (
         <div className="mt-4 space-y-3">
             {error && <p className="text-red-500 text-sm text-center mb-2">{error}</p>}
-            {options.map((option, index) => { // Added index here
+            {options.map((option, index) => {
                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
                 const isMyVote = option.id === votedOptionId;
 
