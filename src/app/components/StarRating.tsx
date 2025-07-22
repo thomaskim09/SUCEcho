@@ -1,9 +1,12 @@
 // sucecho/src/app/components/StarRating.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from './Icon';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFingerprint } from '@/context/FingerprintContext';
+import logger from '@/lib/logger';
+import { getStoredRatings, storeRating } from '@/lib/ratingStore';
 
 interface StarRatingProps {
     onRating: (rating: number) => Promise<void>;
@@ -12,6 +15,7 @@ interface StarRatingProps {
     ratingCount: number;
     userRating: number | null;
     isFetchingRating: boolean;
+    postId: number;
 }
 
 const ratingLabels = ["糟糕", "不太行", "一般", "推荐", "极佳"];
@@ -53,12 +57,55 @@ const RatedState = ({ userRating, averageRating }: { userRating: number; average
     );
 };
 
-export default function StarRating({ onRating, isSubmitting, averageRating, ratingCount, userRating, isFetchingRating }: StarRatingProps) {
+
+export default function StarRating({ onRating, isSubmitting, averageRating, ratingCount, userRating: initialUserRating, isFetchingRating: initialIsFetching, postId }: StarRatingProps) {
+    const { fingerprint } = useFingerprint();
     const [selectedRating, setSelectedRating] = useState(0);
     const [hover, setHover] = useState(0);
+    const [userRating, setUserRating] = useState<number | null>(initialUserRating);
+    const [isFetchingRating, setIsFetchingRating] = useState(initialIsFetching);
+
+    useEffect(() => {
+        const checkRatingStatus = async () => {
+            const storedRatings = getStoredRatings();
+            const localRating = storedRatings[postId];
+
+            if (localRating) {
+                setUserRating(localRating.rating);
+                setIsFetchingRating(false);
+            } else if (fingerprint) {
+                setIsFetchingRating(true);
+                try {
+                    const res = await fetch(`/api/jobs/${postId}/my_rating`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fingerprintHash: fingerprint }),
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setUserRating(data.rating);
+                        if (data.rating) {
+                            storeRating(postId, data.rating);
+                        }
+                    }
+                } catch (error) {
+                    logger.error("Failed to fetch user's rating", error);
+                } finally {
+                    setIsFetchingRating(false);
+                }
+            } else {
+                setIsFetchingRating(false);
+            }
+        };
+
+        checkRatingStatus();
+    }, [postId, fingerprint]);
+
 
     const handleRateClick = async () => {
         if (selectedRating > 0 && !isSubmitting) {
+            setUserRating(selectedRating);
+            storeRating(postId, selectedRating);
             await onRating(selectedRating);
         }
     };
@@ -113,7 +160,7 @@ export default function StarRating({ onRating, isSubmitting, averageRating, rati
                                     >
                                         <Icon
                                             name="star"
-                                            className={`w-8 h-8 transition-colors duration-200 ${starValue <= (hover || selectedRating) ? 'text-yellow-400 fill-current' : 'text-gray-600'}`}
+                                            className={`w-8 h-8 transition-colors duration-200 ${starValue <= (hover || selectedRating) ? 'text-yellow-400' : 'text-gray-600'}`}
                                         />
                                     </motion.button>
                                 );

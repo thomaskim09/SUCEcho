@@ -85,8 +85,6 @@ export default function PostDetailPage() {
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(new Set());
     const [isSubmittingRating, setIsSubmittingRating] = useState(false);
-    const [userRating, setUserRating] = useState<number | null>(null);
-    const [isFetchingRating, setIsFetchingRating] = useState(true);
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
     const isVisible = usePageVisibility();
@@ -218,38 +216,6 @@ export default function PostDetailPage() {
         }
     }, [isVisible, isLoading, fetchPostDetails]);
 
-    useEffect(() => {
-        const fetchUserRating = async () => {
-            if (post && post.feed === 'JOB' && fingerprint) {
-                setIsFetchingRating(true);
-                try {
-                    const res = await fetch(`/api/jobs/${post.id}/my_rating`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fingerprintHash: fingerprint }),
-                    });
-                    if (res.ok) {
-                        const data = await res.json();
-                        setUserRating(data.rating);
-                    } else {
-                        // Handle non-ok responses from the API gracefully
-                        logger.error(`Failed to fetch user rating, status: ${res.status}`);
-                        setUserRating(null);
-                    }
-                } catch (error) {
-                    logger.error("Failed to fetch user's rating", error);
-                } finally {
-                    setIsFetchingRating(false);
-                }
-            } else if (post && post.feed !== 'JOB') {
-                setIsFetchingRating(false);
-            }
-        };
-
-        if (post && fingerprint) {
-            fetchUserRating();
-        }
-    }, [post, fingerprint]);
 
     const updatePostInState = (updatedPost: PostWithStats) => {
         setPost(currentThread => {
@@ -397,7 +363,6 @@ export default function PostDetailPage() {
             }
             const updatedStats = await res.json();
             setPost(p => p ? { ...p, stats: { ...p.stats!, averageRating: updatedStats.averageRating, ratingCount: updatedStats.ratingCount } } : null);
-            setUserRating(rating);
         } catch (error) {
             logger.error('Rating submission failed:', error);
             setError((error as Error).message);
@@ -464,12 +429,13 @@ export default function PostDetailPage() {
                 {isJobPost && (
                     <div className="my-6">
                         <StarRating
+                            postId={post.id}
                             onRating={handleRatingSubmit}
                             isSubmitting={isSubmittingRating}
                             averageRating={post.stats?.averageRating || 0}
                             ratingCount={post.stats?.ratingCount || 0}
-                            userRating={userRating}
-                            isFetchingRating={isFetchingRating}
+                            userRating={null}
+                            isFetchingRating={false}
                         />
                         <p className="text-center text-xs text-gray-500 pt-2">共 {post.stats?.ratingCount || 0} 评价</p>
                     </div>
