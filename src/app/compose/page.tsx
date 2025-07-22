@@ -1,4 +1,4 @@
-// sucecho/src/app/compose/page.tsx
+// src/app/compose/page.tsx
 "use client";
 
 import CreatePostForm from "../components/CreatePostForm";
@@ -21,18 +21,31 @@ export default function ComposePage() {
             rootElement.classList.add("jobs-bg");
         } else if (feedType === 'PERMANENT') {
             rootElement.classList.add("permanent-bg");
+        } else {
+            rootElement.classList.add("ephemeral-bg");
         }
 
         return () => {
-            rootElement.classList.remove("jobs-bg", "permanent-bg");
+            rootElement.classList.remove("ephemeral-bg", "jobs-bg", "permanent-bg");
         };
     }, [feedType]);
 
+    const getFeedName = () => {
+        switch (feedType) {
+            case 'JOB':
+                return '谋生墙';
+            case 'PERMANENT':
+                return '时光档';
+            default:
+                return '回音壁';
+        }
+    };
+
     const pageTitle = parentReplyId
-        ? '回复评论'
+        ? `回复评论`
         : parentPostId
-            ? '撰写子回声'
-            : '发布新回音';
+            ? `撰写子回声 - ${getFeedName()}`
+            : `发布新回音 - ${getFeedName()}`;
 
     const postLifespan = isPermanent ? '这篇回音将永久保存' : '这篇回音将在24小时后消失';
 

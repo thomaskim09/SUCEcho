@@ -91,6 +91,9 @@ interface CreatePostFormProps {
     isPermanent: boolean;
 }
 
+const whitelistedDomains = (process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || '').split(',').map(d => d.trim().toLowerCase());
+const linkExamples = whitelistedDomains.map(domain => `e.g., https://${domain}/...`);
+
 export default function CreatePostForm({ parentPostId, parentReplyId, feedType, isPermanent }: CreatePostFormProps) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,7 +114,6 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
     const [url, setUrl] = useState("");
     const [urlError, setUrlError] = useState<string | null>(null);
 
-    const whitelistedDomains = (process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || '').split(',').map(d => d.trim().toLowerCase());
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
     const placeholderExamples = isUrl
@@ -132,6 +134,8 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
 
 
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
+    const [linkPlaceholderIndex, setLinkPlaceholderIndex] = useState(0);
+
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -142,7 +146,13 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
     }, [placeholderExamples.length]);
 
     useEffect(() => {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const interval = setInterval(() => {
+            setLinkPlaceholderIndex(prevIndex => (prevIndex + 1) % linkExamples.length);
+        }, 4000);
+        return () => clearInterval(interval);
+    }, [linkExamples.length]);
+
+    useEffect(() => {
         const foundUrls = content.match(urlRegex);
         if (foundUrls && foundUrls.length > 0) {
             const firstUrl = foundUrls[0];
@@ -150,11 +160,22 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
             setIsUrl(true);
             setContent(content.replace(urlRegex, '').trim());
         }
-    }, [content]);
+    }, [content, urlRegex]);
 
     const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newUrl = e.target.value;
         setUrl(newUrl);
+
+        if (!newUrl.trim()) {
+            setUrlError(null);
+            return;
+        }
+
+        if (newUrl.startsWith('mailto:')) {
+            setUrlError(null);
+            return;
+        }
+
         try {
             const urlObj = new URL(newUrl);
             const domain = urlObj.hostname.replace(/^www\./, '').toLowerCase();
@@ -164,11 +185,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
                 setUrlError(null);
             }
         } catch {
-            if (newUrl.trim() !== '') {
-                setUrlError("无效的链接格式。");
-            } else {
-                setUrlError(null);
-            }
+            setUrlError("无效的链接格式。");
         }
     };
 
@@ -240,7 +257,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
             }
         }
 
-        if (isUrl && (!url.trim() || !!urlError)) {
+        if (isUrl && (url.trim().length === 0 || urlError)) {
             setError("请提供一个有效的、允许的链接。");
             return;
         }
@@ -352,14 +369,30 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
                                     transition={{ duration: 0.4, ease: "easeInOut" }}
                                 >
                                     <h3 className="font-bold text-gray-300">分享链接</h3>
-                                    <input
-                                        type="text"
-                                        value={url}
-                                        onChange={handleUrlChange}
-                                        placeholder="在此处粘贴链接..."
-                                        className={`w-full bg-gray-800 border rounded-lg p-2 focus:outline-none transition-colors ${urlError ? 'border-red-500' : 'border-gray-600 focus:border-accent'}`}
-                                        required
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={url}
+                                            onChange={handleUrlChange}
+                                            className={`w-full bg-gray-800 border rounded-lg p-2 focus:outline-none transition-colors ${urlError ? 'border-red-500' : 'border-gray-600 focus:border-accent'}`}
+                                            required
+                                        />
+                                        {url.length === 0 && (
+                                            <div className="absolute top-0 left-0 p-2 text-gray-500 pointer-events-none">
+                                                <AnimatePresence mode="wait">
+                                                    <motion.p
+                                                        key={linkPlaceholderIndex}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.5 }}
+                                                    >
+                                                        {linkExamples[linkPlaceholderIndex]}
+                                                    </motion.p>
+                                                </AnimatePresence>
+                                            </div>
+                                        )}
+                                    </div>
                                     {urlError && <p className="text-red-500 text-sm mt-1">{urlError}</p>}
                                 </motion.div>
                             )}
