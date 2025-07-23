@@ -1,9 +1,10 @@
-// src/app/compose/page.tsx
 "use client";
 
 import CreatePostForm from "../components/CreatePostForm";
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useLayoutEffect, Suspense } from 'react';
+import { useLayoutEffect, Suspense, useState } from 'react';
+import ContactCard from '../components/ContactCard';
+import { AnimatePresence, motion } from 'framer-motion';
 
 function ComposePageContent() {
     const searchParams = useSearchParams();
@@ -12,6 +13,8 @@ function ComposePageContent() {
     const parentReplyId = searchParams.get('parentReplyId');
     const feedType = searchParams.get('feedType') as 'JOB' | 'PERMANENT' | 'EPHEMERAL' | null;
     const isPermanent = feedType === 'PERMANENT' || feedType === 'JOB';
+    const [content, setContent] = useState("");
+    const [isSent, setIsSent] = useState(false);
 
     useLayoutEffect(() => {
         const rootElement = document.documentElement;
@@ -49,7 +52,6 @@ function ComposePageContent() {
 
     const postLifespan = isPermanent ? '这篇回音将不会过期消散' : '这篇回音将在24小时后消失';
 
-
     return (
         <div className="container mx-auto max-w-2xl p-4">
             <header className="py-4 flex justify-between items-center">
@@ -63,12 +65,33 @@ function ComposePageContent() {
                 </button>
             </header>
             <main className="mt-4">
-                <CreatePostForm
-                    parentPostId={parentPostId ? parseInt(parentPostId) : undefined}
-                    parentReplyId={parentReplyId ? parseInt(parentReplyId) : undefined}
-                    feedType={feedType}
-                    isPermanent={isPermanent}
-                />
+                <AnimatePresence>
+                    {!isSent && (
+                        <motion.div
+                            exit={{
+                                y: [0, 20, -250],
+                                opacity: [1, 1, 0],
+                                scale: [1, 0.98, 0.8],
+                            }}
+                            transition={{
+                                duration: 0.6,
+                                ease: "easeInOut",
+                                times: [0, 0.4, 1]
+                            }}
+                        >
+                            <CreatePostForm
+                                parentPostId={parentPostId ? parseInt(parentPostId) : undefined}
+                                parentReplyId={parentReplyId ? parseInt(parentReplyId) : undefined}
+                                feedType={feedType}
+                                isPermanent={isPermanent}
+                                onContentChange={setContent}
+                                isSent={isSent}
+                                onSuccess={() => setIsSent(true)}
+                            />
+                            {!parentPostId && <ContactCard content={content} />}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 {!parentPostId && (
                     <p className="text-center text-sm text-gray-400 mt-4">
                         {postLifespan}

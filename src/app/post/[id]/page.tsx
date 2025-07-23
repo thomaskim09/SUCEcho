@@ -21,6 +21,7 @@ import { getPurifiedPostIds, addPurifiedPostId } from '@/lib/purifiedStore';
 import Poll from '@/app/components/Poll';
 import LinkPreviewCard from '@/app/components/LinkPreviewCard';
 import StarRating from '@/app/components/StarRating';
+import ContactCard from '@/app/components/ContactCard';
 
 const POST_FEED_LIMIT = parseInt(process.env.NEXT_PUBLIC_POST_FEED_LIMIT || '10', 10);
 
@@ -420,6 +421,8 @@ export default function PostDetailPage() {
                         onAutoPurify={handleAutoPurify}
                     />
                 </div>
+
+                <ContactCard content={post.content || ''} />
 
                 {isLinkPost && (
                     <div className="my-6">

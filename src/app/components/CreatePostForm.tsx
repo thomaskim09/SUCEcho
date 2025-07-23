@@ -53,7 +53,13 @@ const jobPlaceholders = [
     "我们的社团正在招新！需要一位有创意的设计师。",
     "寻找一位校园代理，时间灵活，待遇从优。",
     "毕业设计项目急需一位会剪辑的伙伴！",
-    "咖啡厅招聘兼职，有兴趣的同学请联系！"
+    "咖啡厅招聘兼职，有兴趣的同学请联系！",
+    "急聘校园活动摄影师，请联系 012-3456789。",
+    "寻找市场实习生，有兴趣者请将简历发送至 myemail@gmail.com。",
+    "我们的戏剧社正在招募新成员！详情请私信 IG@suc_drama_club。",
+    "招聘数学家教，我的微信号是 WC@math_tutor。",
+    "寻找创业伙伴，一起改变世界！快来联系我 TG@startup_dreamer。",
+    "校内吉他社招募新社员，详情请查看我们的主页 FB@campusguitarsociety。",
 ];
 
 const jobReplyPlaceholders = [
@@ -89,16 +95,18 @@ interface CreatePostFormProps {
     parentReplyId?: number;
     feedType?: 'EPHEMERAL' | 'JOB' | 'PERMANENT' | null;
     isPermanent: boolean;
+    onContentChange: (content: string) => void;
+    isSent: boolean;
+    onSuccess: () => void;
 }
 
 const whitelistedDomains = (process.env.NEXT_PUBLIC_WHITELISTED_DOMAINS || '').split(',').map(d => d.trim().toLowerCase());
 const linkExamples = whitelistedDomains.map(domain => `e.g., https://${domain}/...`);
 
-export default function CreatePostForm({ parentPostId, parentReplyId, feedType, isPermanent }: CreatePostFormProps) {
+export default function CreatePostForm({ parentPostId, parentReplyId, feedType, isPermanent, onContentChange, isSent, onSuccess }: CreatePostFormProps) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isSent, setIsSent] = useState(false);
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const router = useRouter();
     const { triggerShareModal } = useShareModal();
@@ -191,6 +199,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
 
     const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const text = e.target.value;
+        onContentChange(text);
 
         if (isUrl) {
             setContent(text);
@@ -289,7 +298,7 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
             }
 
             triggerShareModal();
-            setIsSent(true);
+            onSuccess();
             setTimeout(() => {
                 if (parentPostId) {
                     router.replace(`/post/${parentPostId}?feedType=${feedType}`);

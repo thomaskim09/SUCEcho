@@ -27,7 +27,7 @@ const LinkPreviewCard = ({ url }: LinkPreviewCardProps) => {
             displayUrl = path === '/' ? domain : `${domain}${path}`;
 
             // Set button label based on domain
-            if (domain.includes('forms.gle') || domain.includes('google.com/forms')) {
+            if (domain.includes('forms.office.com') || domain.includes('forms.gle') || domain.includes('google.com/forms')) {
                 buttonLabel = '查看表单';
             } else if (domain.includes('youtube.com') || domain.includes('youtu.be')) {
                 buttonLabel = '观看视频';
