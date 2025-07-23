@@ -114,22 +114,22 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
     const [url, setUrl] = useState("");
     const [urlError, setUrlError] = useState<string | null>(null);
 
-        const urlRegex = useMemo(() => /(https?:\/\/[^\s]+)/g, []);
+    const urlRegex = useMemo(() => /(https?:\/\/[^\s]+)/g, []);
 
-    const placeholderExamples = isUrl
-        ? linkPlaceholders
-        : isPoll
-            ? pollPlaceholders
-            : feedType === 'JOB' && parentPostId
-                ? jobReplyPlaceholders
-                : feedType === 'JOB'
-                    ? jobPlaceholders
-                    : feedType === 'PERMANENT'
-                        ? permanentPlaceholders
-                        : parentReplyId
-                            ? threadedReplyPlaceholders
-                            : parentPostId
-                                ? replyEchoPlaceholders
+    const placeholderExamples = parentReplyId
+        ? threadedReplyPlaceholders
+        : parentPostId && feedType === 'JOB'
+            ? jobReplyPlaceholders
+            : parentPostId
+                ? replyEchoPlaceholders
+                : isUrl
+                    ? linkPlaceholders
+                    : isPoll
+                        ? pollPlaceholders
+                        : feedType === 'JOB'
+                            ? jobPlaceholders
+                            : feedType === 'PERMANENT'
+                                ? permanentPlaceholders
                                 : mainEchoPlaceholders;
 
 
