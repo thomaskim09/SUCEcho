@@ -12,6 +12,7 @@ import AdvertisementCard from './AdvertisementCard';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import LoadingSpinner from './LoadingSpinner';
 import { getPurifiedPostIds } from '@/lib/purifiedStore';
+import { getExpiredPostIds, addExpiredPostId } from '@/lib/expiredStore';
 import FloatingNotification from './FloatingNotification';
 import { useRouter } from 'next/navigation';
 import { useFingerprint } from '@/context/FingerprintContext';
@@ -62,6 +63,9 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
     const { status } = useTabLeaderContext();
     const isVisible = usePageVisibility();
     const [purifiedPostIds, setPurifiedPostIds] = useState<Set<number>>(
+        new Set()
+    );
+    const [expiredPostIds, setExpiredPostIds] = useState<Set<number>>(
         new Set()
     );
     const hasRestoredFromCache = useRef(false);
@@ -164,7 +168,17 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
 
     useEffect(() => {
         setPurifiedPostIds(getPurifiedPostIds());
-    }, []);
+        if (fetchMode === 'my-echoes') {
+            setExpiredPostIds(getExpiredPostIds());
+        }
+    }, [fetchMode]);
+
+    const handlePostExpired = (postId: number) => {
+        if (fetchMode === 'my-echoes') {
+            addExpiredPostId(postId);
+        }
+        handlePostFaded(postId);
+    };
 
     const loadMorePosts = useCallback(async () => {
         if (isFetchingMore || !nextCursor || status !== 'leader') return;
@@ -256,7 +270,6 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
         router.push(`/post/${postId}?feedType=${feedType}`);
     }, [router, posts]);
 
-    // Save feed state and scroll position before navigating to compose (comment)
     const handleCommentNavigate = useCallback((parentPostId: number, feedType: 'EPHEMERAL' | 'PERMANENT' | 'JOB') => {
         sessionStorage.setItem('postFeedScroll', window.scrollY.toString());
         const postDivs = Array.from(document.querySelectorAll('[data-post-id]'));
@@ -277,6 +290,14 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
         } catch { }
         router.push(`/compose?parentPostId=${parentPostId}&feedType=${feedType}`);
     }, [router, posts]);
+
+    const handleReplyToComment = useCallback((parentPostId: number, replyToId: number) => {
+        const post = posts.find(p => p.id === replyToId);
+        if (post) {
+            router.push(`/compose?parentPostId=${parentPostId}&parentReplyId=${replyToId}&feedType=${post.feed}`);
+        }
+    }, [router, posts]);
+
 
     useLayoutEffect(() => {
         if (!isLoading && sessionStorage.getItem('postFeedReturnExpected') === 'true' && !hasRestoredFromCache.current) {
@@ -338,11 +359,22 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
     const twentyFourHours = 24 * 60 * 60 * 1000;
 
     const displayablePosts = posts.filter((post) => {
-        if (fetchMode === 'my-echoes' || post.feed === 'PERMANENT' || post.feed === 'JOB') {
-            return !purifiedPostIds.has(post.id);
+        if (purifiedPostIds.has(post.id)) {
+            return false;
         }
-        const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
-        return postAge < twentyFourHours && !purifiedPostIds.has(post.id);
+
+        if (fetchMode === 'my-echoes' && expiredPostIds.has(post.id)) {
+            return false;
+        }
+
+        if (fetchMode !== 'my-echoes' && post.feed === 'EPHEMERAL') {
+            const postAge = new Date().getTime() - new Date(post.createdAt).getTime();
+            if (postAge >= twentyFourHours) {
+                return false;
+            }
+        }
+
+        return true;
     });
 
     const feedEndLabels = {
@@ -390,9 +422,9 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
                             initial="initial"
                             animate="animate"
                             layout
-                            onClick={() => handlePostClick(post.id, post.feed)}
+                            onClick={() => !isChildEcho && handlePostClick(post.id, post.feed)}
                             className={isChildEcho ? "border-l-2 border-accent/30 pl-4 ml-4" : ""}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: isChildEcho ? 'default' : 'pointer' }}
                         >
                             <PostCard
                                 post={post}
@@ -403,12 +435,13 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
                                     setPurifiedPostIds((prev) => new Set([...prev, postId]));
                                 }}
                                 onDeletionComplete={handlePostFaded}
-                                onFaded={handlePostFaded}
+                                onFaded={handlePostExpired}
                                 onVote={(_, voteType) => handleVote(post, voteType)}
                                 onDelete={handleDelete}
                                 userVote={userVotes[post.id]}
                                 onAutoPurify={handlePostPurified}
-                                onCommentNavigate={() => handleCommentNavigate(post.id, post.feed)}
+                                onCommentNavigate={handleCommentNavigate}
+                                onReplyClick={handleReplyToComment}
                             />
                         </motion.div>
                     );

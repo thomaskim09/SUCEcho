@@ -1,4 +1,4 @@
-// sucecho/src/app/components/PostCard.tsx
+// SUCEcho_packaged/src/app/components/PostCard.tsx
 "use client";
 
 import type { PostWithStats } from "@/lib/types";
