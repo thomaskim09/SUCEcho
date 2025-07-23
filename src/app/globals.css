@@ -210,14 +210,17 @@ html.permanent-bg {
     filter: url(#glow-white);
 }
 
-.icon-thumb-up:not(.active):hover,
-.icon-thumb-down:not(.active):hover,
-.icon-comment:hover {
+.icon-thumb-up:hover:not(.active) {
     color: white;
 }
-.icon-thumb-up:not(.active):hover svg,
-.icon-thumb-down:not(.active):hover svg,
-.icon-comment:hover svg {
+.icon-thumb-up:hover:not(.active) svg {
+    stroke: white;
+}
+
+.icon-thumb-down:hover:not(.active) {
+    color: white;
+}
+.icon-thumb-down:hover:not(.active) svg {
     stroke: white;
 }
 
@@ -237,13 +240,22 @@ html.permanent-bg {
   filter: url(#glow-white);
 }
 
+.icon-thumb-up.active {
+    color: #2ddc7d;
+}
+.icon-thumb-down.active {
+    color: #dc2d2d;
+}
+
 .icon-thumb-up.active svg {
     fill: rgba(45, 220, 125, 0.25);
     transform: scale(1.1);
+    stroke: #2ddc7d;
 }
 .icon-thumb-down.active svg {
     fill: rgba(220, 45, 45, 0.25);
     transform: scale(1.1);
+    stroke: #dc2d2d;
 }
 
 /* --- THE RIPPLE EFFECT SECTION --- */
