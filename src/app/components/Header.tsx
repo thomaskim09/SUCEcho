@@ -1,7 +1,7 @@
 // sucecho/src/app/components/Header.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
@@ -51,6 +51,30 @@ export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { status, multiTabAllowed } = useTabLeaderContext();
     const { isSubscribed } = useRealtimeStatus();
+
+    const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node) &&
+                buttonRef.current &&
+                !buttonRef.current.contains(event.target as Node)
+            ) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     if (status === 'checking') {
         return null;
@@ -126,7 +150,7 @@ export default function Header() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
+                        <button ref={buttonRef} onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent">
                             <Icon name="menu" />
                         </button>
                     </div>
@@ -135,6 +159,7 @@ export default function Header() {
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
+                            ref={menuRef}
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
