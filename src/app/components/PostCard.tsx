@@ -90,6 +90,13 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isReplyExpanded, setIsReplyExpanded] = useState(false);
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
     const isOwner = isChildEcho && parentFingerprintHash && post.fingerprintHash === parentFingerprintHash;
+    const [averageRating, setAverageRating] = useState(post.stats?.averageRating);
+
+    useEffect(() => {
+        if (post.stats?.averageRating !== undefined) {
+            setAverageRating(post.stats.averageRating);
+        }
+    }, [post.stats?.averageRating]);
 
     const cardVariants = {
         visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.5 } },
@@ -231,7 +238,11 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         }
         setIsEnlarged(true);
         setTimeout(() => setIsEnlarged(false), 180);
-        setTimeout(() => router.push(`/post/${post.id}?feedType=${post.feed}`), 180);
+        if (onCommentNavigate) {
+            onCommentNavigate(post.id, post.feed)
+        } else {
+            setTimeout(() => router.push(`/post/${post.id}?feedType=${post.feed}`), 180);
+        }
     };
 
     const getFeedBorderClass = () => {
@@ -277,7 +288,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         >
             <div
                 className={`glass-card rounded-lg p-4 ${getFeedBorderClass()}`}
-                onClick={isLink && !isChildEcho ? handleCardClick : undefined}
+                onClick={handleCardClick}
             >
                 <div>
                     {isLink && !isChildEcho && (
@@ -429,11 +440,11 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                                 <span className="ml-1 text-gray-400">投票</span>
                                             </div>
                                         )}
-                                        {isJobPost && post.stats?.averageRating != null && post.stats.averageRating > 0 && (
+                                        {isJobPost && averageRating != null && averageRating > 0 && (
                                             <div className="flex items-center gap-1">
-                                                <Icon name="star" className={`w-5 h-5 ${post.stats.averageRating >= 4 ? 'text-yellow-400' : post.stats.averageRating >= 2.5 ? 'text-yellow-500' : 'text-yellow-600'}`} />
-                                                <span className={`text-sm ${post.stats.averageRating >= 4 ? 'text-yellow-300' : post.stats.averageRating >= 2.5 ? 'text-yellow-400' : 'text-yellow-500'}`}>
-                                                    {post.stats.averageRating.toFixed(1)}
+                                                <Icon name="star" className={`w-5 h-5 ${averageRating >= 4 ? 'text-yellow-400' : averageRating >= 2.5 ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                                                <span className={`text-sm ${averageRating >= 4 ? 'text-yellow-300' : averageRating >= 2.5 ? 'text-yellow-400' : 'text-yellow-500'}`}>
+                                                    {averageRating.toFixed(1)}
                                                 </span>
                                             </div>
                                         )}

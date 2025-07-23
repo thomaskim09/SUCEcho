@@ -88,6 +88,13 @@ export default function PostDetailPage() {
     const { userVotes, handleOptimisticVote } = useOptimisticVote();
     const { fingerprint } = useFingerprint();
     const isVisible = usePageVisibility();
+    const [averageRating, setAverageRating] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (post?.stats?.averageRating !== undefined) {
+            setAverageRating(post.stats.averageRating);
+        }
+    }, [post?.stats?.averageRating]);
 
     useLayoutEffect(() => {
         const rootElement = document.documentElement;
@@ -432,7 +439,7 @@ export default function PostDetailPage() {
                             postId={post.id}
                             onRating={handleRatingSubmit}
                             isSubmitting={isSubmittingRating}
-                            averageRating={post.stats?.averageRating || 0}
+                            averageRating={averageRating || 0}
                             userRating={null}
                             isFetchingRating={false}
                         />
