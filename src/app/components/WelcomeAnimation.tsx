@@ -67,7 +67,7 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
                             exit={{ opacity: 0 }}
                             transition={{ duration: 1.5 }}
                         >
-                            声音只存在一天
+                            谋生 • 短暂 • 永恒
                         </motion.h1>
                     )}
                 </AnimatePresence>
@@ -110,7 +110,7 @@ export default function WelcomeAnimation({ onComplete }: { onComplete: () => voi
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 1 }}
                                 >
-                                    声音只存在一天
+                                    谋生 • 短暂 • 永恒
                                 </motion.h1>
                             )}
                         </AnimatePresence>
