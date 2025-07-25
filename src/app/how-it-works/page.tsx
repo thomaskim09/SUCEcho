@@ -39,8 +39,9 @@ export default function HowItWorksPage() {
                 </FeatureCard>
             </main>
             <div className="text-center mt-12 pb-12">
-                <Link href="/" className="text-accent hover:underline text-lg">
-                    ← 返回回音壁
+                <Link href="/" className="text-accent hover:underline text-lg inline-flex items-center gap-2">
+                    <Icon name="arrow-left" />
+                    <span>返回回音壁</span>
                 </Link>
             </div>
         </div>

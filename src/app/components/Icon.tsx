@@ -100,6 +100,15 @@ const icons = {
     'wechat': <path d="M9.5 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm5 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M21 6.5a10 10 0 0 0-18.78 4.16c0 3.5 2.1 6.54 5.14 8.05L6.5 21l3.22-2.14A11.72 11.72 0 0 0 11.5 19C16.75 19 21 15.21 21 10.5S16.75 2 11.5 2C9.53 2 7.7 2.65 6.18 3.75" />,
     'copy': <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></>,
     'more-vertical': <><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></>,
+    'search': (
+        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    ),
+    'arrow-left': (
+        <path d="M19 12H5m7 7l-7-7 7-7" />
+    ),
+    'filter': (
+        <path d="M3 4h18M7 12h10M10 20h4" />
+    ),
 };
 
 export interface IconProps {

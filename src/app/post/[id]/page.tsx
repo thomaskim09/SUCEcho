@@ -30,16 +30,6 @@ type PostThread = PostWithStats & {
 };
 
 const ExpiredPostMessage = () => {
-    const router = useRouter();
-
-    const handleBackClick = () => {
-        if (typeof document !== 'undefined' && document.referrer.includes('/compose')) {
-            router.push('/');
-        } else {
-            router.back();
-        }
-    };
-
     return (
         <motion.div
             key="expired"
@@ -54,12 +44,6 @@ const ExpiredPostMessage = () => {
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">此回音已消逝</h2>
             <p className="text-lg text-gray-400">它已完成了自己的使命，化作了数字尘埃。</p>
-            <button
-                onClick={handleBackClick}
-                className="mt-6 bg-accent text-white font-bold py-2 px-6 rounded-lg hover:opacity-90 transition-opacity"
-            >
-                返回
-            </button>
         </motion.div>
     );
 };
@@ -515,8 +499,9 @@ export default function PostDetailPage() {
                 onSubmit={handleReportSubmit}
             />
             <header className="py-4 flex justify-between items-center">
-                <button onClick={handleBackClick} className="p-2 rounded-lg text-accent hover:underline">
-                    ← 返回
+                <button onClick={handleBackClick} className="p-2 rounded-lg text-accent hover:underline flex items-center gap-2">
+                    <Icon name="arrow-left" />
+                    <span>返回</span>
                 </button>
 
                 <div className={`flex items-center gap-2 transition-opacity duration-300 ${(!isLoading && post && !showFinalMessage) ? 'opacity-100' : 'opacity-0'}`}>

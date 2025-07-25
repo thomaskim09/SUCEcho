@@ -75,7 +75,7 @@ export default function FabContainer() {
         return () => { if (hideTimer) clearTimeout(hideTimer); };
     }, [showReplyTip, handleReplyTipClose]);
 
-    if (pathname.startsWith('/admin') || pathname === '/compose') {
+    if (pathname.startsWith('/jobs/search') || pathname.startsWith('/admin') || pathname === '/compose') {
         return null;
     }
 
@@ -119,11 +119,19 @@ export default function FabContainer() {
         }
         if (isJobsPage) {
             return (
-                <FloatingActionButton
-                    href="/compose?feedType=JOB"
-                    iconName="plus"
-                    ariaLabel="发布新职位"
-                />
+                <>
+                    <FloatingActionButton
+                        href="/compose?feedType=JOB"
+                        iconName="plus"
+                        ariaLabel="发布新职位"
+                    />
+                    <FloatingActionButton
+                        href="/jobs/search"
+                        iconName="search"
+                        ariaLabel="搜索职位"
+                        color="blue"
+                    />
+                </>
             );
         }
         if (isPermanentPage) {

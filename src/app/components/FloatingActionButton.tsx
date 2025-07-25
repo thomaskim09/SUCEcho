@@ -10,10 +10,16 @@ interface FabProps {
     href: string;
     iconName: IconProps['name'];
     ariaLabel: string;
+    color?: 'purple' | 'blue'; // Added color prop
 }
 
-export default function FloatingActionButton({ href, iconName, ariaLabel }: FabProps) {
+export default function FloatingActionButton({ href, iconName, ariaLabel, color = 'purple' }: FabProps) {
     const buttonRef = useRef<HTMLAnchorElement>(null);
+
+    const gradientClasses = {
+        purple: "from-purple-500 to-indigo-600 shadow-purple-500/30 hover:shadow-purple-500/40",
+        blue: "from-blue-500 to-sky-600 shadow-blue-500/30 hover:shadow-blue-500/40",
+    };
 
     function createRipple(event: React.MouseEvent) {
         const button = buttonRef.current;
@@ -54,7 +60,7 @@ export default function FloatingActionButton({ href, iconName, ariaLabel }: FabP
             <Link
                 href={href}
                 ref={buttonRef}
-                className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-full p-4 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 flex items-center justify-center w-16 h-16 press-animation relative overflow-hidden"
+                className={`bg-gradient-to-br text-white rounded-full p-4 shadow-lg hover:shadow-xl flex items-center justify-center w-16 h-16 press-animation relative overflow-hidden ${gradientClasses[color]}`}
                 aria-label={ariaLabel}
                 onClick={createRipple}
             >

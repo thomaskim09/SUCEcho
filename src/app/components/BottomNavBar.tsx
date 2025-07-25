@@ -1,3 +1,4 @@
+// src/app/components/BottomNavBar.tsx
 "use client";
 
 import Link from 'next/link';
@@ -15,7 +16,7 @@ export default function BottomNavBar() {
     const pathname = usePathname();
 
     // Hide the nav bar on pages where it's not needed
-    if (pathname.startsWith('/admin') || pathname.startsWith('/post/') || pathname === '/compose' || pathname === '/about' || pathname === '/disclaimer' || pathname === '/how-it-works' || pathname === '/my-echoes') {
+    if (pathname.startsWith('/admin') || pathname.startsWith('/post/') || pathname === '/compose' || pathname === '/about' || pathname === '/disclaimer' || pathname === '/how-it-works' || pathname === '/my-echoes' || pathname.startsWith('/jobs/search')) {
         return null;
     }
 
