@@ -17,21 +17,37 @@ const FullScreenBlocker = () => (
     }} />
 );
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
 export default function OnboardingWrapper({ children }: { children: React.ReactNode }) {
     const [isChecking, setIsChecking] = useState(true);
     const [showSplash, setShowSplash] = useState(false);
 
     useEffect(() => {
-        const visited = localStorage.getItem('hasVisitedSUCEcho');
-        logger.log('[OnboardingWrapper] localStorage hasVisitedSUCEcho:', visited);
+        const visitedItem = localStorage.getItem('hasVisitedSUCEcho');
+        let hasVisited = false;
 
-        if (visited === 'true') {
+        if (visitedItem) {
+            try {
+                const { timestamp } = JSON.parse(visitedItem);
+                if (timestamp && (Date.now() - timestamp < THIRTY_DAYS_MS)) {
+                    hasVisited = true;
+                }
+            } catch (error) {
+                logger.error('[OnboardingWrapper] Failed to parse hasVisitedSUCEcho:', error);
+                // Treat as not visited if parsing fails
+            }
+        }
+
+        logger.log('[OnboardingWrapper] hasVisited within 30 days:', hasVisited);
+
+        if (hasVisited) {
             setShowSplash(false);
-            logger.log('[OnboardingWrapper] Splash will NOT show (visited)');
+            logger.log('[OnboardingWrapper] Splash will NOT show (visited recently)');
         } else {
-            localStorage.setItem('hasVisitedSUCEcho', 'true');
+            localStorage.setItem('hasVisitedSUCEcho', JSON.stringify({ timestamp: Date.now() }));
             setShowSplash(true);
-            logger.log('[OnboardingWrapper] Splash WILL show (first visit)');
+            logger.log('[OnboardingWrapper] Splash WILL show (first visit or expired)');
         }
         setIsChecking(false);
     }, []);
