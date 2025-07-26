@@ -404,6 +404,9 @@ export default function PostDetailPage() {
                         onDeletionComplete={() => handleAnimationEnd(post.id)}
                         onAutoPurify={handleAutoPurify}
                     />
+                    {isJobPost && (
+                        <p className="text-xs text-center text-gray-500 pt-2">温馨提醒：请对招聘内容进行独立核实，谨防诈骗。</p>
+                    )}
                 </div>
 
                 <ContactCard content={post.content || ''} />
