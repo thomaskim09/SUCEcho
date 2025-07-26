@@ -1,4 +1,4 @@
-// src/app/components/FabContainer.tsx
+// SUCEcho_packaged/src/app/components/FabContainer.tsx
 "use client"
 
 import { useAdmin } from "@/context/AdminContext"
@@ -10,11 +10,17 @@ const AdminShield = dynamic(() => import('./AdminShield'), {
 import { usePathname, useSearchParams } from "next/navigation"
 import Tooltip from './Tooltip';
 import { useEffect, useState, useCallback } from 'react';
+import NotificationButton from "./NotificationButton";
+import NotificationModal from "./NotificationModal";
+import { useNotifications } from "@/hooks/useNotifications";
+import { AnimatePresence } from "motion/react";
 
 export default function FabContainer() {
     const { isAdmin } = useAdmin();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+    const [isNotificationModalOpen, setNotificationModalOpen] = useState(false);
 
     const isHomePage = pathname === '/';
     const isPostPage = pathname.startsWith('/post/');
@@ -150,11 +156,26 @@ export default function FabContainer() {
     const hasBottomNav = isHomePage || isJobsPage || isPermanentPage;
     const fabContainerClass = `fixed right-6 z-50 flex flex-col-reverse items-center gap-4 ${hasBottomNav ? "bottom-20" : "bottom-6"}`;
 
-    if (fab || isAdmin) {
+    if (fab || isAdmin || unreadCount > 0) {
         return (
             <div className={fabContainerClass}>
                 {fab}
                 {isAdmin && <AdminShield />}
+                <AnimatePresence>
+                    {unreadCount > 0 && (
+                        <NotificationButton
+                            count={unreadCount}
+                            onClick={() => setNotificationModalOpen(true)}
+                        />
+                    )}
+                </AnimatePresence>
+                <NotificationModal
+                    isOpen={isNotificationModalOpen}
+                    onClose={() => setNotificationModalOpen(false)}
+                    notifications={notifications}
+                    markAsRead={markAsRead}
+                    markAllAsRead={markAllAsRead}
+                />
             </div>
         )
     }

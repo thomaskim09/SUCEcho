@@ -22,6 +22,11 @@ enum FeedType {
   JOB       
 }
 
+enum NotificationType {
+  REPLY_TO_POST
+  REPLY_TO_REPLY
+}
+
 model Post {
   id              Int         @id @default(autoincrement())
   content         String?
@@ -43,11 +48,28 @@ model Post {
   reports         Report[]
   pollOptions     PollOption[]
   jobRatings      JobRating[]
+  notifications   Notification[]
 
-  @@index([feed]) // Add index to the new column for faster queries
+  @@index([feed])
   @@index([contentType])
   @@index([createdAt])
   @@index([fingerprintHash])
+}
+
+model Notification {
+  id                       Int              @id @default(autoincrement())
+  recipientFingerprintHash String
+  postId                   Int
+  replyId                  Int?
+  type                     NotificationType
+  count                    Int              @default(1)
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  post                     Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientFingerprintHash, postId, type], name: "Notification_reply_to_post_key")
+  @@unique([recipientFingerprintHash, postId, replyId, type], name: "Notification_reply_to_reply_key")
+  @@index([recipientFingerprintHash])
 }
 
 model JobRating {

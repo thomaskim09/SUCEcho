@@ -309,6 +309,66 @@ export async function POST(request: Request) {
                 });
             }
 
+            if (parentPostId && !parentReplyId) {
+                const parent = await tx.post.findUnique({
+                    where: { id: Number(parentPostId) },
+                });
+                if (parent && parent.fingerprintHash !== fingerprintHash) {
+                    await tx.notification.upsert({
+                        where: {
+                            Notification_reply_to_post_key: {
+                                recipientFingerprintHash:
+                                    parent.fingerprintHash,
+                                postId: Number(parentPostId),
+                                type: 'REPLY_TO_POST',
+                            },
+                        },
+                        update: {
+                            count: { increment: 1 },
+                            replyId: createdPost.id,
+                        },
+                        create: {
+                            recipientFingerprintHash: parent.fingerprintHash,
+                            postId: Number(parentPostId),
+                            replyId: createdPost.id,
+                            type: 'REPLY_TO_POST',
+                        },
+                    });
+                }
+            }
+
+            if (parentReplyId) {
+                const parentReply = await tx.post.findUnique({
+                    where: { id: Number(parentReplyId) },
+                });
+                if (
+                    parentReply &&
+                    parentReply.fingerprintHash !== fingerprintHash
+                ) {
+                    await tx.notification.upsert({
+                        where: {
+                            Notification_reply_to_reply_key: {
+                                recipientFingerprintHash:
+                                    parentReply.fingerprintHash,
+                                postId: Number(parentPostId),
+                                replyId: Number(parentReplyId),
+                                type: 'REPLY_TO_REPLY',
+                            },
+                        },
+                        update: {
+                            count: { increment: 1 },
+                        },
+                        create: {
+                            recipientFingerprintHash:
+                                parentReply.fingerprintHash,
+                            postId: Number(parentPostId),
+                            replyId: Number(parentReplyId),
+                            type: 'REPLY_TO_REPLY',
+                        },
+                    });
+                }
+            }
+
             if (parentPostId) {
                 await tx.postStats.upsert({
                     where: { postId: Number(parentPostId) },
