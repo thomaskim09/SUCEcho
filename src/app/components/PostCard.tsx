@@ -39,30 +39,6 @@ interface Ripple {
     size: number;
 }
 
-const renderContentWithLinks = (content: string) => {
-    const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-    const parts = content.split(urlRegex);
-
-    return parts.map((part, index) => {
-        if (!part) return null;
-        if (part.match(urlRegex)) {
-            return (
-                <a
-                    key={index}
-                    href={part}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {part}
-                </a>
-            );
-        }
-        return part;
-    });
-};
-
 export default function PostCard({ post, isLink = true, onVote, onDelete, onReport, userVote, isPurifying = false, onPurificationComplete, onDeletionComplete, onFaded, onAutoPurify, onCommentNavigate, onReplyClick, parentFingerprintHash }: PostCardProps) {
     const { fingerprint, isLoading: isFingerprintLoading } = useFingerprint();
     const { isAdmin, isVerifying } = useAdmin();
@@ -350,7 +326,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                                 (isLink && isOverflowing ? " truncated-content" : "")
                         }
                     >
-                        <p className="text-white whitespace-pre-wrap break-words">{post.content && renderContentWithLinks(post.content)}</p>
+                        <p className="text-white whitespace-pre-wrap break-words">{post.content}</p>
                     </div>
 
                     {isChildEcho && isReplyOverflowing && !isReplyExpanded && (

@@ -160,9 +160,15 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
         const foundUrls = content.match(urlRegex);
         if (foundUrls && foundUrls.length > 0) {
             const firstUrl = foundUrls[0];
-            setUrl(firstUrl);
-            setIsUrl(true);
-            setContent(content.replace(urlRegex, '').trim());
+            const urlObj = new URL(firstUrl);
+            const domain = urlObj.hostname.replace(/^www\./, '').toLowerCase();
+            if (whitelistedDomains.includes(domain)) {
+                setUrl(firstUrl);
+                setIsUrl(true);
+                setContent(content.replace(urlRegex, '').trim());
+                setUrlError(null);
+            }
+
         }
     }, [content, urlRegex]);
 
