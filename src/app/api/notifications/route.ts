@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
                         id: true,
                         content: true,
                         parentPostId: true,
+                        feed: true,
                     },
                 },
             },

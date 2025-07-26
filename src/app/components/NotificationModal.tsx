@@ -4,7 +4,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Portal from './Portal';
 import { Notification } from '@/hooks/useNotifications';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Icon } from './Icon';
 import { timeSince } from '@/lib/time-helpers';
 import { useRef, useState } from 'react';
@@ -102,10 +102,15 @@ const NotificationItem = ({ notification, onSelect }: { notification: Notificati
 
 export default function NotificationModal({ isOpen, onClose, notifications, markAsRead, markAllAsRead }: NotificationModalProps) {
     const router = useRouter();
+    const params = useParams();
 
     const handleSelect = (notification: Notification) => {
         markAsRead(notification.id);
-        router.push(`/post/${notification.post.id}`);
+        const currentPostId = params.id ? parseInt(params.id as string, 10) : null;
+        if (currentPostId !== notification.post.id) {
+            router.push(`/post/${notification.post.id}?feedType=${notification.post.feed}`);
+        }
+
         onClose();
     };
 

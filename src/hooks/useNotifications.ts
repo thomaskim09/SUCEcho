@@ -13,6 +13,7 @@ export interface Notification {
     post: {
         id: number;
         content: string | null;
+        feed: 'EPHEMERAL' | 'PERMANENT' | 'JOB';
     };
     updatedAt: string;
     repliedToContent?: string | null;

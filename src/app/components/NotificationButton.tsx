@@ -12,10 +12,10 @@ interface NotificationButtonProps {
 export default function NotificationButton({ count, onClick }: NotificationButtonProps) {
     return (
         <motion.div
-            initial={{ scale: 0, y: 50 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0, y: 50, opacity: 0 }} // Add this exit animation
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            initial={{ scale: 0, y: 50, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0, y: 50, opacity: 0 }}
+            transition={{ type: 'tween', ease: 'easeInOut', duration: 0.5 }}
         >
             <button
                 onClick={onClick}
