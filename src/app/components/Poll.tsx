@@ -1,11 +1,11 @@
-// src/app/components/Poll.tsx
+// SUCEcho_packaged/src/app/components/Poll.tsx
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useFingerprint } from '@/context/FingerprintContext';
 import logger from '@/lib/logger';
-import { getStoredPollVotes, storePollVote } from '@/lib/pollVoteStore'; // We will use our new store
+import { getStoredPollVotes, storePollVote } from '@/lib/pollVoteStore';
 
 interface PollOption {
     id: number;
@@ -28,35 +28,36 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
     const [ripples, setRipples] = useState<{ id: number, x: number, y: number, optionId: number, width: number, height: number }[]>([]);
     const optionRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
     const controls = useAnimation();
+    const [hasCheckedVote, setHasCheckedVote] = useState(false);
 
     useEffect(() => {
         const checkVoteStatus = async () => {
-            // 1. Check local storage first for an immediate UI update.
+            if (!fingerprint) return;
             const storedVotes = getStoredPollVotes();
             const localVote = storedVotes[postId];
-
-            if (localVote) {
+            if (localVote !== undefined) {
                 setVotedOptionId(localVote.optionId);
+                setHasCheckedVote(true);
             } else {
-                // 2. If not in local storage, fetch from the server.
-                if (fingerprint) {
-                    try {
-                        const res = await fetch(`/api/polls/${postId}/my_vote`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ fingerprintHash: fingerprint }),
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data.votedOptionId) {
-                                // 3. Set state and save the fetched vote to local storage for next time.
-                                setVotedOptionId(data.votedOptionId);
-                                storePollVote(postId, data.votedOptionId);
-                            }
-                        }
-                    } catch (err) {
-                        logger.error("Failed to fetch user's poll vote", err);
+                try {
+                    const res = await fetch(`/api/polls/${postId}/my_vote`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fingerprintHash: fingerprint }),
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        const fetchedVoteId = data.votedOptionId || null;
+                        setVotedOptionId(fetchedVoteId);
+                        storePollVote(postId, fetchedVoteId);
+                    } else if (res.status === 404) {
+                        storePollVote(postId, null);
                     }
+                } catch (err) {
+                    logger.error("Failed to fetch user's poll vote", err);
+                } finally {
+                    setHasCheckedVote(true); // Mark check as complete even on error
                 }
             }
         };
@@ -148,11 +149,11 @@ export default function Poll({ postId, options: initialOptions }: PollProps) {
                         <button
                             ref={el => { optionRefs.current[option.id] = el; }}
                             onClick={(e) => handleVote(option.id, e)}
-                            disabled={!!votedOptionId || isSubmitting}
+                            disabled={!hasCheckedVote || !!votedOptionId || isSubmitting}
                             className={`w-full text-left p-3 rounded-lg border-2 transition-all duration-300 ease-in-out overflow-hidden relative
                                 ${isMyVote ? 'border-accent' : 'border-gray-600 hover:border-accent'}
                                 ${votedOptionId && !isMyVote ? 'opacity-80' : ''}
-                                ${isSubmitting ? 'cursor-wait' : 'cursor-pointer'}
+                                ${isSubmitting || !hasCheckedVote ? 'cursor-wait' : 'cursor-pointer'}
                                 ${!votedOptionId ? 'bg-gray-800/50' : 'bg-transparent'}`
                             }
                         >

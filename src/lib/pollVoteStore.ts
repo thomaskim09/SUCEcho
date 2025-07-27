@@ -1,11 +1,12 @@
 // SUCEcho_packaged/src/lib/pollVoteStore.ts
 import logger from './logger';
 
-const POLL_VOTES_KEY = 'poll_votes_v2'; // Use a new key to avoid conflicts
+const POLL_VOTES_KEY = 'poll_votes_v2';
 const MAX_VOTE_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+// The type now explicitly allows for a null optionId
 type PollVoteEntry = {
-    optionId: number;
+    optionId: number | null;
     timestamp: number;
 };
 
@@ -30,14 +31,16 @@ export const getStoredPollVotes = (): PollVoteStore => {
         for (const postId in allVotes) {
             if (Object.prototype.hasOwnProperty.call(allVotes, postId)) {
                 const entry = allVotes[postId];
-                if (now - entry.timestamp < MAX_VOTE_AGE_MS) {
+                // Check if the entry is valid and not expired
+                if (entry && now - entry.timestamp < MAX_VOTE_AGE_MS) {
                     recentVotes[Number(postId)] = entry;
                 } else {
-                    needsUpdate = true; // Mark that we found an old entry
+                    needsUpdate = true; // Mark for cleanup
                 }
             }
         }
 
+        // If any old entries were found, update localStorage with the cleaned list
         if (needsUpdate) {
             window.localStorage.setItem(
                 POLL_VOTES_KEY,
@@ -48,13 +51,13 @@ export const getStoredPollVotes = (): PollVoteStore => {
         return recentVotes;
     } catch (error) {
         logger.error('Failed to parse poll votes from localStorage', error);
-        window.localStorage.removeItem(POLL_VOTES_KEY);
+        window.localStorage.removeItem(POLL_VOTES_KEY); // Clear corrupted data
         return {};
     }
 };
 
 /**
- * Stores a user's poll vote in localStorage.
+ * Stores a user's poll vote, or their "not-voted" status, in localStorage.
  */
 export const storePollVote = (
     postId: number,
@@ -64,14 +67,11 @@ export const storePollVote = (
 
     try {
         const votes = getStoredPollVotes(); // This also triggers a cleanup
-        if (optionId === null) {
-            delete votes[postId];
-        } else {
-            votes[postId] = {
-                optionId,
-                timestamp: Date.now(),
-            };
-        }
+        // Store the vote or the explicit "not voted" (null) state
+        votes[postId] = {
+            optionId,
+            timestamp: Date.now(),
+        };
         window.localStorage.setItem(POLL_VOTES_KEY, JSON.stringify(votes));
     } catch (error) {
         logger.error('Failed to store poll vote in localStorage', error);

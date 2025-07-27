@@ -323,13 +323,7 @@ html.permanent-bg {
 
 
 /* --- UPDATE THE TRUNCATION EFFECT SECTION --- */
-.truncated-content {
-  max-height: 10rem; /* Approx 5-6 lines */
-  position: relative;
-  overflow: hidden;
-}
-
-.truncated-content::after {
+.truncated-content::after, .apply-fade-out::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -339,6 +333,7 @@ html.permanent-bg {
   background: linear-gradient(to bottom, transparent, var(--card-background));
   pointer-events: none; /* Allows clicks to pass through */
 }
+
 
 .announcement-post .truncated-content::after {
   background: none;

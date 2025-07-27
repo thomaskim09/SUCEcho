@@ -122,17 +122,24 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
     useLayoutEffect(() => {
         const checkOverflow = () => {
-            if (contentRef.current) {
-                const maxHeight = 125;
-                if (isChildEcho) {
-                    setIsReplyOverflowing(contentRef.current.scrollHeight > maxHeight);
+            if (contentRef.current && isLink && !isChildEcho) {
+                const isCurrentlyOverflowing = contentRef.current.scrollHeight > 200;
+                if (isCurrentlyOverflowing && !isAnnouncement) {
+                    contentRef.current.classList.add('apply-fade-out');
+                } else {
+                    contentRef.current.classList.remove('apply-fade-out');
                 }
+            }
+            if (contentRef.current && isChildEcho) {
+                const maxHeight = 125;
+                setIsReplyOverflowing(contentRef.current.scrollHeight > maxHeight);
             }
         };
         checkOverflow();
         window.addEventListener('resize', checkOverflow);
         return () => window.removeEventListener('resize', checkOverflow);
-    }, [post.content, isChildEcho]);
+    }, [post.content, isLink, isChildEcho, isAnnouncement]);
+
 
     useEffect(() => {
         return () => {
@@ -320,7 +327,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         className={
                             isChildEcho
                                 ? `relative transition-all duration-300 ${!isReplyExpanded ? 'max-h-[125px] overflow-y-hidden' : ''}`
-                                : isLink ? "max-h-[300px] overflow-y-hidden relative truncated-content" : ""
+                                : (isLink ? "max-h-[200px] overflow-y-hidden relative" : "")
                         }
                     >
                         <p className="text-white whitespace-pre-wrap break-words">{post.content}</p>
