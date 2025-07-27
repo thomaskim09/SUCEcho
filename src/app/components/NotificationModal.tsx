@@ -28,6 +28,26 @@ interface Ripple {
 const NotificationItem = ({ notification, onSelect }: { notification: Notification, onSelect: (event: React.MouseEvent) => void }) => {
     const [ripples, setRipples] = useState<Ripple[]>([]);
     const cardRef = useRef<HTMLDivElement>(null);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const getFeedAccentColor = (feed: 'EPHEMERAL' | 'PERMANENT' | 'JOB') => {
+        switch (feed) {
+            case 'JOB':
+                return 'var(--job-accent)';
+            case 'PERMANENT':
+                return 'var(--permanent-accent)';
+            case 'EPHEMERAL':
+            default:
+                return 'var(--ephemeral-accent)';
+        }
+    };
+
+    const accentColor = getFeedAccentColor(notification.post.feed);
+
+    const cardStyle = {
+        borderColor: isHovered ? accentColor : 'transparent',
+        transition: 'border-color 0.2s ease-in-out',
+    };
 
     const truncate = (text: string | null, length: number) => {
         if (!text) return '一条已消逝的回音';
@@ -69,13 +89,18 @@ const NotificationItem = ({ notification, onSelect }: { notification: Notificati
             exit={{ opacity: 0, x: 30, transition: { duration: 0.3 } }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             onClick={handleCardClick}
-            className="glass-card p-4 rounded-lg hover:bg-gray-700/50 cursor-pointer transition-colors border border-transparent hover:border-accent relative overflow-hidden"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={cardStyle}
+            className="glass-card p-4 rounded-lg hover:bg-gray-700/50 cursor-pointer border border-transparent relative overflow-hidden"
         >
             <div className="flex items-start gap-4 relative z-10">
-                <Icon name="comment" className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
+                <div style={{ color: accentColor }}>
+                    <Icon name="comment" className="w-6 h-6 flex-shrink-0 mt-1" />
+                </div>
                 <div className="flex-grow">
                     <p className="text-gray-200">
-                        {notificationText} 收到了 <span className="font-bold text-accent">{notification.count}</span> 个新的回应。
+                        {notificationText} 收到了 <span className="font-bold" style={{ color: accentColor }}>{notification.count}</span> 个新的回应。
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
                         {timeSince(new Date(notification.updatedAt))}

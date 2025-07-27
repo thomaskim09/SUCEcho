@@ -37,7 +37,11 @@ export const useNotifications = () => {
             if (res.ok) {
                 const data: Notification[] = await res.json();
                 setNotifications(data);
-                setUnreadCount(data.length);
+                const totalCount = data.reduce(
+                    (sum, notification) => sum + notification.count,
+                    0
+                );
+                setUnreadCount(totalCount);
             }
         } catch (error) {
             logger.error('Failed to fetch notifications:', error);
@@ -59,13 +63,18 @@ export const useNotifications = () => {
 
     const markAsRead = async (notificationId: number) => {
         try {
+            const notificationToRemove = notifications.find(
+                (n) => n.id === notificationId
+            );
             await fetch(`/api/notifications/${notificationId}/mark-as-read`, {
                 method: 'POST',
             });
             setNotifications((prev) =>
                 prev.filter((n) => n.id !== notificationId)
             );
-            setUnreadCount((prev) => prev - 1);
+            if (notificationToRemove) {
+                setUnreadCount((prev) => prev - notificationToRemove.count);
+            }
         } catch (error) {
             logger.error('Failed to mark notification as read:', error);
         }
