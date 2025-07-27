@@ -50,7 +50,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const cardRef = useRef<HTMLDivElement>(null);
     const upvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
     const downvoteTooltipTimer = useRef<NodeJS.Timeout | null>(null);
-    const [isOverflowing, setIsOverflowing] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
     const [shouldPurifyVanish, setShouldPurifyVanish] = useState(false);
     const [isGlitching, setIsGlitching] = useState(false);
@@ -125,7 +124,6 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         const checkOverflow = () => {
             if (contentRef.current) {
                 const maxHeight = 125;
-                setIsOverflowing(contentRef.current.scrollHeight > maxHeight);
                 if (isChildEcho) {
                     setIsReplyOverflowing(contentRef.current.scrollHeight > maxHeight);
                 }
@@ -322,12 +320,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         className={
                             isChildEcho
                                 ? `relative transition-all duration-300 ${!isReplyExpanded ? 'max-h-[125px] overflow-y-hidden' : ''}`
-                                : (isLink ? "max-h-[300px] overflow-y-hidden relative" : "") +
-                                (isLink && isOverflowing ? " truncated-content" : "")
+                                : isLink ? "max-h-[300px] overflow-y-hidden relative truncated-content" : ""
                         }
                     >
                         <p className="text-white whitespace-pre-wrap break-words">{post.content}</p>
                     </div>
+
 
                     {isChildEcho && isReplyOverflowing && !isReplyExpanded && (
                         <div className="mt-2 text-sm font-bold text-accent hover:underline cursor-pointer z-10" onClick={() => setIsReplyExpanded(true)}>
