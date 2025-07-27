@@ -28,7 +28,6 @@ interface Ripple {
 const NotificationItem = ({ notification, onSelect }: { notification: Notification, onSelect: (event: React.MouseEvent) => void }) => {
     const [ripples, setRipples] = useState<Ripple[]>([]);
     const cardRef = useRef<HTMLDivElement>(null);
-    const [isHovered, setIsHovered] = useState(false);
 
     const getFeedAccentColor = (feed: 'EPHEMERAL' | 'PERMANENT' | 'JOB') => {
         switch (feed) {
@@ -42,12 +41,18 @@ const NotificationItem = ({ notification, onSelect }: { notification: Notificati
         }
     };
 
-    const accentColor = getFeedAccentColor(notification.post.feed);
-
-    const cardStyle = {
-        borderColor: isHovered ? accentColor : 'transparent',
-        transition: 'border-color 0.2s ease-in-out',
+    const getFeedBorderClass = () => {
+        switch (notification.post.feed) {
+            case 'JOB':
+                return 'border-job';
+            case 'PERMANENT':
+                return 'border-permanent';
+            default:
+                return 'border-ephemeral';
+        }
     };
+
+    const accentColor = getFeedAccentColor(notification.post.feed);
 
     const truncate = (text: string | null, length: number) => {
         if (!text) return '一条已消逝的回音';
@@ -89,10 +94,7 @@ const NotificationItem = ({ notification, onSelect }: { notification: Notificati
             exit={{ opacity: 0, x: 30, transition: { duration: 0.3 } }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             onClick={handleCardClick}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            style={cardStyle}
-            className="glass-card p-4 rounded-lg hover:bg-gray-700/50 cursor-pointer border border-transparent relative overflow-hidden"
+            className={`notification-item-card p-4 rounded-lg hover:bg-gray-700/50 cursor-pointer relative overflow-hidden ${getFeedBorderClass()}`}
         >
             <div className="flex items-start gap-4 relative z-10">
                 <div style={{ color: accentColor }}>
@@ -154,7 +156,7 @@ export default function NotificationModal({ isOpen, onClose, notifications, mark
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="p-6 rounded-lg shadow-xl w-full max-w-md glass-card"
+                            className="p-6 rounded-lg shadow-xl w-full max-w-md notification-modal-card"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center mb-4">

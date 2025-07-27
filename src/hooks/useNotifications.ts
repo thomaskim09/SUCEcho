@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useFingerprint } from '@/context/FingerprintContext';
 import logger from '@/lib/logger';
 import { usePageVisibility } from './usePageVisibility';
+import { useParams } from 'next/navigation';
 
 export interface Notification {
     id: number;
@@ -25,6 +26,7 @@ export const useNotifications = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const isVisible = usePageVisibility();
+    const params = useParams();
 
     const fetchNotifications = useCallback(async () => {
         if (!fingerprint) return;
@@ -35,7 +37,30 @@ export const useNotifications = () => {
                 `/api/notifications?fingerprintHash=${fingerprint}`
             );
             if (res.ok) {
-                const data: Notification[] = await res.json();
+                let data: Notification[] = await res.json();
+                const currentPostId = params.id
+                    ? parseInt(params.id as string, 10)
+                    : null;
+
+                if (currentPostId) {
+                    const notificationsForCurrentPost = data.filter(
+                        (n) => n.post.id === currentPostId
+                    );
+                    if (notificationsForCurrentPost.length > 0) {
+                        await Promise.all(
+                            notificationsForCurrentPost.map((notification) =>
+                                fetch(
+                                    `/api/notifications/${notification.id}/mark-as-read`,
+                                    {
+                                        method: 'POST',
+                                    }
+                                )
+                            )
+                        );
+                        data = data.filter((n) => n.post.id !== currentPostId);
+                    }
+                }
+
                 setNotifications(data);
                 const totalCount = data.reduce(
                     (sum, notification) => sum + notification.count,
@@ -48,7 +73,7 @@ export const useNotifications = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [fingerprint]);
+    }, [fingerprint, params]);
 
     useEffect(() => {
         fetchNotifications();

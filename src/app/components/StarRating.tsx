@@ -67,10 +67,10 @@ export default function StarRating({ onRating, isSubmitting, averageRating, user
     useEffect(() => {
         const checkRatingStatus = async () => {
             const storedRatings = getStoredRatings();
-            const localRating = storedRatings[postId];
+            const localRatingEntry = storedRatings[postId];
 
-            if (localRating) {
-                setUserRating(localRating.rating);
+            if (localRatingEntry) {
+                setUserRating(localRatingEntry.rating);
                 setIsFetchingRating(false);
             } else if (fingerprint) {
                 setIsFetchingRating(true);
@@ -83,9 +83,7 @@ export default function StarRating({ onRating, isSubmitting, averageRating, user
                     if (res.ok) {
                         const data = await res.json();
                         setUserRating(data.rating);
-                        if (data.rating) {
-                            storeRating(postId, data.rating);
-                        }
+                        storeRating(postId, data.rating);
                     }
                 } catch (error) {
                     logger.error("Failed to fetch user's rating", error);

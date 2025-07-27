@@ -5,7 +5,7 @@ const RATING_VOTES_KEY = 'job_ratings_v1';
 const MAX_RATING_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 type RatingEntry = {
-    rating: number;
+    rating: number | null;
     timestamp: number;
 };
 
@@ -62,7 +62,10 @@ export const storeRating = (postId: number, rating: number | null): void => {
     try {
         const ratings = getStoredRatings();
         if (rating === null) {
-            delete ratings[postId];
+            ratings[postId] = {
+                rating: null,
+                timestamp: Date.now(),
+            };
         } else {
             ratings[postId] = {
                 rating,

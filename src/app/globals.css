@@ -340,6 +340,19 @@ html.permanent-bg {
   pointer-events: none; /* Allows clicks to pass through */
 }
 
+.announcement-post .truncated-content::after {
+  background: none;
+}
+
+.notification-modal-card {
+  background-color: var(--background-end);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-item-card {
+    background-color: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
 /* --- GLOWING EXPIRED TEXT --- */
 .expired-text-glow {

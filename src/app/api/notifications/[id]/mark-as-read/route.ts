@@ -22,12 +22,19 @@ export async function POST(
             );
         }
 
-        // Changed from 'update' to 'delete'
-        await prisma.notification.delete({
-            where: {
-                id: notificationId,
-            },
-        });
+        try {
+            // Changed from 'update' to 'delete'
+            await prisma.notification.delete({
+                where: {
+                    id: notificationId,
+                },
+            });
+        } catch (error: unknown) {
+            // If the error is that the record was not found, it means it was already deleted, which is fine.
+            if ((error as { code?: string }).code !== 'P2025') {
+                throw error;
+            }
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
