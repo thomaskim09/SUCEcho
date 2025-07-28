@@ -30,4 +30,8 @@ export interface PostWithStats {
     isDeleting?: boolean;
     parentReply?: { id: number; content: string | null } | null;
     pollOptions?: PollOption[];
+    depth?: number; // Add depth property here
 }
+
+// No changes needed here, it inherits from PostWithStats
+export type PostWithReplies = PostWithStats & { replies: PostWithReplies[] };

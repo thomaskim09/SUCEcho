@@ -294,7 +294,7 @@ export default function PostFeed({ feedType, fetchMode = 'feed' }: { feedType: '
     const handleReplyToComment = useCallback((parentPostId: number, replyToId: number) => {
         const post = posts.find(p => p.id === replyToId);
         if (post) {
-            router.push(`/compose?parentPostId=${parentPostId}&parentReplyId=${replyToId}&feedType=${post.feed}`);
+            router.replace(`/compose?parentPostId=${parentPostId}&parentReplyId=${replyToId}&feedType=${post.feed}`);
         }
     }, [router, posts]);
 

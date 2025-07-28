@@ -308,6 +308,11 @@ export default function CreatePostForm({ parentPostId, parentReplyId, feedType, 
 
             triggerShareModal();
             onSuccess();
+
+            if (parentReplyId) {
+                sessionStorage.setItem('expandReplyId', parentReplyId.toString());
+            }
+
             setTimeout(() => {
                 if (parentPostId) {
                     router.replace(`/post/${parentPostId}?feedType=${feedType}`);

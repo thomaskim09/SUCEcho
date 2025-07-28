@@ -66,6 +66,8 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
     const [isReplyOverflowing, setIsReplyOverflowing] = useState(false);
     const isOwner = isChildEcho && parentFingerprintHash && post.fingerprintHash === parentFingerprintHash;
     const [averageRating, setAverageRating] = useState(post.stats?.averageRating);
+    const MAX_DEPTH = parseInt(process.env.NEXT_PUBLIC_MAX_REPLY_DEPTH || '3', 10);
+
 
     useEffect(() => {
         if (post.stats?.averageRating !== undefined) {
@@ -195,7 +197,7 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
         if (onCommentNavigate) {
             onCommentNavigate(post.id, post.feed);
         } else {
-            router.push(`/compose?parentPostId=${post.id}&feedType=${post.feed}`);
+            router.replace(`/compose?parentPostId=${post.id}&feedType=${post.feed}`);
         }
     };
 
@@ -252,6 +254,8 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
 
     const upvoteTooltipContent = "点赞是对于内容的肯定\n让有共鸣的声音浮现";
     const downvoteTooltipContent = "到赞是社区净化的力量\n当回声被足够多的人反对时\n回声将被永久销毁";
+    const showParentReply = post.parentReply && post.parentReply.content && post.depth && post.depth > MAX_DEPTH;
+
 
     return (
         <motion.div
@@ -316,11 +320,12 @@ export default function PostCard({ post, isLink = true, onVote, onDelete, onRepo
                         )}
                     </div>
 
-                    {post.parentReply && post.parentReply.content && (
+                    {showParentReply && (
                         <div className="text-xs text-gray-400 border-l-2 border-gray-600 pl-2 mb-2 italic opacity-80 whitespace-nowrap overflow-hidden text-ellipsis">
-                            {`回复: "${truncate(post.parentReply.content, 50)}"`}
+                            {`回复: "${truncate(post.parentReply!.content!, 50)}"`}
                         </div>
                     )}
+
 
                     <div
                         ref={contentRef}
